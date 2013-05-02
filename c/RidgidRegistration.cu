@@ -1,4 +1,4 @@
-#include "RidgedRegistration.h"
+#include "RidgidRegistration.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -375,7 +375,7 @@ float calcCorr( const Overlap &overlap, int deltaX, int deltaY, int deltaZ, cuda
 	return numerator / (staticSig*overlapSig) / overlapPixelCount;
 }
 
-void ridgedRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap, int& deltaXout,
+void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap, int& deltaXout,
 	int& deltaYout, int deviceNum)
 {
 	cudaDeviceProp prop;

@@ -1,6 +1,6 @@
 #include "AlignImages.h"
 #include "main.h"
-#include "RidgedRegistration.h"
+#include "RidgidRegistration.h"
 
 void align()
 {
@@ -77,7 +77,7 @@ void align()
 			for (int chan=3; chan<gImageTiffs[staticImageInd]->getNumberOfChannels(); ++chan)
 			{
 				int deltaX, deltaY;
-				ridgedRegistration(gImageTiffs[staticImageInd]->getImage(chan,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(chan,0),overlaps[staticImageInd][overlapImageInd],deltaX,deltaY,1);
+				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(chan,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(chan,0),overlaps[staticImageInd][overlapImageInd],deltaX,deltaY,1);
 			}
 		}
 	}
