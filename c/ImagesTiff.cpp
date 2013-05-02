@@ -383,10 +383,10 @@ void ImagesTiff::setMetadata(std::map<std::string,std::string> metadata)
 		this->setXPixelPhysicalSize(atof(metadata["XPixelPhysicalSize"].c_str()));
 
 	if (metadata.count("XPosition")!=0)
-		this->xPosition = atof(metadata["XPosition"].c_str()) * 1e6;
+		this->yPosition = atof(metadata["XPosition"].c_str()) * 1e6;
 
 	if (metadata.count("YPosition")!=0)
-		this->yPosition = atof(metadata["YPosition"].c_str()) * 1e6;
+		this->xPosition = atof(metadata["YPosition"].c_str()) * 1e6;
 
 	setScales();
 

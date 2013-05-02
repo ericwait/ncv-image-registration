@@ -1,22 +1,28 @@
 #ifndef ALIGN_IMAGES_H
 #define ALIGN_IMAGES_H
 
-#define MARGIN (150)
+#define MARGIN (70)
+#define MIN_OVERLAP (25)
+#define MIN_OVERLAP_Z (10)
 
 struct Overlap
 {
 	int ind;
-	int staticXminInd;
-	int staticYminInd;
-	int staticZminInd;
 
-	int overlapXminInd;
-	int overlapYminInd;
-	int overlapZminInd;
+	int deltaXss;
+	int deltaXse;
+	int deltaXmax;
+	int deltaXmin;
 
-	int xSize;
-	int ySize;
-	int zSize;
+	int deltaYss;
+	int deltaYse;
+	int deltaYmax;
+	int deltaYmin;
+
+	int deltaZss;
+	int deltaZse;
+	int deltaZmax;
+	int deltaZmin;
 };
 
 void align();
