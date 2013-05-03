@@ -2,7 +2,7 @@
 #include "cuda.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-
+#include <time.h>
 #include "CudaUtilities.h"
 
 
@@ -93,7 +93,6 @@ __global__ void getROI(const float* imageIn, int orgSizeX, int orgSizeY, int org
 	}
 }
 
-template<unsigned int blockSize>
 __global__ void reduceArray(float* arrayIn, float* arrayOut, unsigned int n)
 {
 	//This algorithm was used from a this website:
@@ -103,50 +102,46 @@ __global__ void reduceArray(float* arrayIn, float* arrayOut, unsigned int n)
 	extern __shared__ float sdata[];
 
 	unsigned int tid = threadIdx.x;
-	unsigned int i = blockIdx.x*(blockSize*2) + tid;
-	unsigned int gridSize = blockSize*2*gridDim.x;
+	unsigned int i = blockIdx.x*blockDim.x*2 + tid;
+	unsigned int gridSize = blockDim.x*2*gridDim.x;
 	sdata[tid] = 0;
 
-	while (i<n)
-	{
-		sdata[tid] += arrayIn[i] + arrayIn[i+blockSize];
+ 	while (i<n)
+ 	{
+ 		sdata[tid] = arrayIn[i];
+
+		if (i+blockDim.x<n)
+			sdata[tid] += arrayIn[i+blockDim.x];
+
 		i += gridSize;
 	}
-// 	if (i<n)
-// 		sdata[tid] = arrayIn[i];
-// 
-// // 	while (i+blockSize<n)
-// // 	{
-// 	if (i+blockSize<n)
-// 		sdata[tid] += arrayIn[i+blockSize];
-// 		//i += gridSize;
-// 	//}
 	__syncthreads();
 
-	if (blockSize >= 2048)
+
+	if (blockDim.x >= 2048)
 	{
 		if (tid < 1024) 
 			sdata[tid] += sdata[tid + 1024];
 		__syncthreads();
 	}
-	if (blockSize >= 1024)
+	if (blockDim.x >= 1024)
 	{
 		if (tid < 512) 
 			sdata[tid] += sdata[tid + 512];
 		__syncthreads();
 	}
-	if (blockSize >= 512)
+	if (blockDim.x >= 512)
 	{
 		if (tid < 256) 
 			sdata[tid] += sdata[tid + 256];
 		__syncthreads();
 	}
-	if (blockSize >= 256) {
+	if (blockDim.x >= 256) {
 		if (tid < 128)
 			sdata[tid] += sdata[tid + 128];
 		__syncthreads(); 
 	}
-	if (blockSize >= 128) 
+	if (blockDim.x >= 128) 
 	{
 		if (tid < 64)
 			sdata[tid] += sdata[tid + 64];
@@ -154,23 +149,42 @@ __global__ void reduceArray(float* arrayIn, float* arrayOut, unsigned int n)
 	}
 
 	if (tid < 32) {
-		if (blockSize >= 64) 
+		if (blockDim.x >= 64) 
+		{
 			sdata[tid] += sdata[tid + 32];
-		if (blockSize >= 32)
+			__syncthreads(); 
+		}
+		if (blockDim.x >= 32)
+		{
 			sdata[tid] += sdata[tid + 16];
-		if (blockSize >= 16)
+			__syncthreads(); 
+		}
+		if (blockDim.x >= 16)
+		{
 			sdata[tid] += sdata[tid + 8];
-		if (blockSize >= 8)
+			__syncthreads(); 
+		}
+		if (blockDim.x >= 8)
+		{
 			sdata[tid] += sdata[tid + 4];
-		if (blockSize >= 4)
+			__syncthreads(); 
+		}
+		if (blockDim.x >= 4)
+		{
 			sdata[tid] += sdata[tid + 2];
-		if (blockSize >= 2)
+			__syncthreads(); 
+		}
+		if (blockDim.x >= 2)
+		{
 			sdata[tid] += sdata[tid + 1];
+			__syncthreads(); 
+		}
 	}
 
 	if (tid==0)
 		arrayOut[blockIdx.x] = sdata[0];
 }
+
 
 void calcBlockThread(unsigned int n, cudaDeviceProp& prop, dim3& blocks, dim3& threads)
 {
@@ -245,45 +259,26 @@ void calcBlockThread(unsigned int width, unsigned int height, unsigned int depth
 	}
 }
 
-#pragma optimize("",off)
+//#pragma optimize("",off)
 float calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* deviceStaticROIimage, float* deviceStaticSum, float* deviceOverlapROIimage, float* deviceOverlapSum, float* staticSum, float* overlapSum, float* deviceMulImage)
 {
 	dim3 blocks;
 	dim3 threads;
-	float staticMean = 0.0f;
-	float overlapMean = 0.0f;
-	float staticSig = 0.0f;
-	float overlapSig = 0.0f;
-	float numerator = 0.0f;
-	////////////////////////////////////////////////////////////
+	double staticMean = 0.0;
+	double overlapMean = 0.0;
+	double staticSig = 0.0;
+	double overlapSig = 0.0;
+	double numerator = 0.0;
+
+//////////////////////////////////////////////////////////////////////////
 	//Find the Mean of both images
 	unsigned int overlapPixelCount = xSize*ySize*zSize;
 	calcBlockThread(overlapPixelCount, prop, blocks, threads);
 
 	blocks.x = (blocks.x+1) / 2;
 
-	switch (threads.x)
-	{
-	case 2048:
-		reduceArray<2048><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<2048><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	case 1024:
-		reduceArray<1024><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<1024><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	case 512:
-		reduceArray<512><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<512><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	case 256:
-		reduceArray<256><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<256><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	default:
-		//Really? get a new card
-		break;
-	}
+	reduceArray<<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
+	reduceArray<<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
 
 	HANDLE_ERROR(cudaMemcpy(staticSum,deviceStaticSum,sizeof(float)*blocks.x,cudaMemcpyDeviceToHost));
 	HANDLE_ERROR(cudaMemcpy(overlapSum,deviceOverlapSum,sizeof(float)*blocks.x,cudaMemcpyDeviceToHost));
@@ -296,22 +291,22 @@ float calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* devi
 
 	staticMean /= overlapPixelCount;
 	overlapMean /= overlapPixelCount;
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	//Subtract the mean off each image in place
 	calcBlockThread(xSize,ySize,zSize, prop, blocks, threads);
 
 	addConstantInPlace<<<blocks,threads>>>(deviceStaticROIimage,xSize,ySize,zSize,-staticMean);
 	addConstantInPlace<<<blocks,threads>>>(deviceOverlapROIimage,xSize,ySize,zSize,-overlapMean);
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	//multiply two images for the numarator
 	multiplyTwoImages<<<blocks,threads>>>(deviceStaticROIimage,deviceOverlapROIimage,deviceMulImage,xSize,ySize,zSize);
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	//get the standard deviation of each image
 	powerInPlace<<<blocks,threads>>>(deviceStaticROIimage,xSize,ySize,zSize,2);
 	powerInPlace<<<blocks,threads>>>(deviceOverlapROIimage,xSize,ySize,zSize,2);
@@ -319,28 +314,8 @@ float calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* devi
 	calcBlockThread(overlapPixelCount, prop, blocks, threads);
 	blocks.x = (blocks.x+1) / 2;
 
-	switch (threads.x)
-	{
-	case 2048:
-		reduceArray<2048><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<2048><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	case 1024:
-		reduceArray<1024><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<1024><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	case 512:
-		reduceArray<512><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<512><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	case 256:
-		reduceArray<256><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
-		reduceArray<256><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
-		break;
-	default:
-		//Really? get a new card
-		break;
-	}
+	reduceArray<<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceStaticROIimage,deviceStaticSum,overlapPixelCount);
+	reduceArray<<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceOverlapROIimage,deviceOverlapSum,overlapPixelCount);
 
 	HANDLE_ERROR(cudaMemcpy(staticSum,deviceStaticSum,sizeof(float)*blocks.x,cudaMemcpyDeviceToHost));
 	HANDLE_ERROR(cudaMemcpy(overlapSum,deviceOverlapSum,sizeof(float)*blocks.x,cudaMemcpyDeviceToHost));
@@ -352,40 +327,23 @@ float calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* devi
 	}
 
 	staticSig /= overlapPixelCount;
-	overlapSig/= overlapPixelCount;
+	overlapSig /= overlapPixelCount;
 
 	staticSig = sqrt(staticSig);
 	overlapSig = sqrt(overlapSig);
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	//calculate the numerator
-	switch (threads.x)
-	{
-	case 2048:
-		reduceArray<2048><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceMulImage,deviceStaticSum,overlapPixelCount);
-		break;
-	case 1024:
-		reduceArray<1024><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceMulImage,deviceStaticSum,overlapPixelCount);
-		break;
-	case 512:
-		reduceArray<512><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceMulImage,deviceStaticSum,overlapPixelCount);
-		break;
-	case 256:
-		reduceArray<256><<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceMulImage,deviceStaticSum,overlapPixelCount);
-		break;
-	default:
-		//Really? get a new card
-		break;
-	}
+	reduceArray<<<blocks.x,threads.x,sizeof(float)*threads.x>>>(deviceMulImage,deviceStaticSum,overlapPixelCount);
 
 	HANDLE_ERROR(cudaMemcpy(staticSum,deviceStaticSum,sizeof(float)*blocks.x,cudaMemcpyDeviceToHost));
 
 	for (int i=0; i<blocks.x; ++i)
 		numerator += staticSum[i];
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	//calculate the correlation
 	return numerator / (staticSig*overlapSig) / overlapPixelCount;
 }
@@ -411,7 +369,7 @@ int overlapPixels(int deltaSe, int deltaSs, int width, int x)
 }
 
 void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap, int& deltaXout,
-	int& deltaYout, int deviceNum)
+	int& deltaYout, int& deltaZout, int deviceNum)
 {
 	cudaDeviceProp prop;
 	dim3 blocks;
@@ -454,7 +412,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 // 	meanFilter<<<blocks,threads>>>(deviceStaticImage,deviceStaticImageSmooth,overlap.xSize,overlap.ySize,overlap.zSize,11);
 // 	meanFilter<<<blocks,threads>>>(deviceOverlapImage,deviceOverlapImageSmooth,overlap.xSize,overlap.ySize,overlap.zSize,11);
 	
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	//Find max pixel overlap count
 	int midPointX = (overlap.deltaXmax + overlap.deltaXmin) / 2.0;
 	int maxOverlapPixelCountX = max(overlapPixels(overlap.deltaXse,overlap.deltaXss,staticImage->getWidth(),overlap.deltaXmin),overlapPixels(overlap.deltaXse,overlap.deltaXss,staticImage->getWidth(),overlap.deltaXmax));
@@ -469,43 +427,40 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	maxOverlapPixelCountZ = max(maxOverlapPixelCountZ,overlapPixels(overlap.deltaZse,overlap.deltaZss,staticImage->getDepth(),midPointZ));
 
 	unsigned int maxOverlapPixelCount = maxOverlapPixelCountX*maxOverlapPixelCountY*maxOverlapPixelCountZ;
-	//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////
+	//Set up memory space on the card for the largest possible size we need
 	calcBlockThread(maxOverlapPixelCount, prop, blocks, threads);
 	HANDLE_ERROR(cudaMalloc((void**)&deviceStaticROIimage,sizeof(float)*maxOverlapPixelCount));
 	HANDLE_ERROR(cudaMalloc((void**)&deviceOverlapROIimage,sizeof(float)*maxOverlapPixelCount));
 	HANDLE_ERROR(cudaMalloc((void**)&deviceMulImage,sizeof(float)*maxOverlapPixelCount));
 	HANDLE_ERROR(cudaMalloc((void**)&deviceStaticSum,sizeof(float)*(blocks.x+1)/2));
 	HANDLE_ERROR(cudaMalloc((void**)&deviceOverlapSum,sizeof(float)*(blocks.x+1)/2));
+//////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////
+	//Find the best correlation
+	time_t mainStart, mainEnd, xStart, xEnd, yStart, yEnd, zStart, zEnd;
+	double mainSec=0, xSec=0, ySec=0, zSec=0;
 	float* staticSum = new float[(blocks.x+1)/2];
 	float* overlapSum = new float[(blocks.x+1)/2];
 
-	const int numElem = 2048;
+	unsigned int iterations = (overlap.deltaXmax-overlap.deltaXmin)*(overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin);
+	unsigned int curIter = 0;
 
-	float* deviceTestSum;
-	HANDLE_ERROR(cudaMalloc((void**)&deviceTestSum,sizeof(float)*numElem));
-	float testSum[numElem];
-	for (int i=0; i<numElem; ++i)
-		testSum[i] = 1.0f;
+	printf("Device:%d Starting on (%d,%d,%d)\n",deviceNum,overlap.deltaXmax-overlap.deltaXmin,overlap.deltaYmax-overlap.deltaYmin,overlap.deltaZmax-overlap.deltaZmin);
 
-	HANDLE_ERROR(cudaMemcpy(deviceTestSum,testSum,sizeof(float)*numElem,cudaMemcpyHostToDevice));
-
-	reduceArray<1024><<<2,1024,sizeof(float)*1024>>>(deviceTestSum,deviceStaticSum,numElem);
-	HANDLE_ERROR(cudaMemcpy(staticSum,deviceStaticSum,sizeof(float)*numElem,cudaMemcpyDeviceToHost));
-
-
-
-
+	time(&mainStart);
 	for (int deltaX=overlap.deltaXmin; deltaX<overlap.deltaXmax; ++deltaX)
 	{
-		time_t start = time(NULL);
+		time(&xStart);
 		for (int deltaY=overlap.deltaYmin; deltaY<overlap.deltaYmax; ++deltaY)
 		{
-			int deltaZ=0;
-			printf(".");
-// 			for (int deltaZ=overlap.deltaZmin; deltaZ<overlap.deltaZmax; ++deltaZ)
-// 			{
+			//time(&yStart);
+ 			for (int deltaZ=overlap.deltaZmin; deltaZ<overlap.deltaZmax; ++deltaZ)
+ 			{
+				//time(&zStart);
 				int staticXmin, staticYmin, staticZmin;
 				int overlapXmin, overlapYmin, overlapZmin;
 				int xSize, ySize, zSize;
@@ -521,6 +476,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 				staticZmin = max(0,overlap.deltaZss+deltaZ);
 				overlapZmin = max(deltaZ-overlap.deltaZss,0);
 				zSize = min(staticImage->getDepth(),overlap.deltaZse+deltaZ) - staticZmin;
+				
 				//get optimal blocks and threads for the image size that we have
 				calcBlockThread(staticImage->getWidth(),staticImage->getHeight(),staticImage->getDepth(), prop, blocks, threads);
 
@@ -530,23 +486,6 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 
 				getROI<<<blocks,threads>>>(deviceStaticImage,staticImage->getWidth(),staticImage->getHeight(),staticImage->getDepth(),deviceStaticROIimage,staticXmin,staticYmin,staticZmin,xSize,ySize,zSize);
 				getROI<<<blocks,threads>>>(deviceOverlapImage,overlapImage->getWidth(),overlapImage->getHeight(),overlapImage->getDepth(),deviceOverlapROIimage,overlapXmin,overlapYmin,overlapZmin,xSize,ySize,zSize);
-
- 				float* staticROI = new float[overlapPixelCount];
- 				float* overlapROI = new float[overlapPixelCount];
- 
- 				HANDLE_ERROR(cudaMemcpy(staticROI,deviceStaticROIimage,sizeof(float)*overlapPixelCount,cudaMemcpyDeviceToHost));
- 				HANDLE_ERROR(cudaMemcpy(overlapROI,deviceOverlapROIimage,sizeof(float)*overlapPixelCount,cudaMemcpyDeviceToHost));
- 
- 				writeImage(staticROI,xSize,ySize,zSize,"staticROI.tif");
- 				writeImage(overlapROI,xSize,ySize,zSize,"overlapROI.tif");
-
-				double mean = 0.0;
-				for (int i=0; i<overlapPixelCount; ++i)
-					mean += overlapROI[i];
-
-				mean /= overlapPixelCount;
- 				delete staticROI;
- 				delete overlapROI;
 				////////////////////////////////////////////////////////////
 
 				float correlation = calcCorr(xSize, ySize, zSize, prop, deviceStaticROIimage, deviceStaticSum, deviceOverlapROIimage, deviceOverlapSum, staticSum, overlapSum, deviceMulImage);
@@ -558,12 +497,24 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 					bestDeltaY = deltaY;
 					bestDeltaZ = deltaZ;
 				}
-			//}
+				++curIter;
+// 				time(&zEnd);
+// 				zSec = difftime(zEnd,zStart);
+			}
+// 			time(&yEnd);
+// 			ySec = difftime(yEnd,yStart);
 		}
-		start = time(NULL) - start;
-		printf("%d:%d\n",deltaX,start);
+		time(&xEnd);
+		xSec = difftime(xEnd,xStart);
+		if (0==deltaX%20)
+			printf("(%d) PerctDone:%3.2f (%d,%d,%d) Total:%4.2f avgY:%4.2f avgZ:%4.2f\n",deviceNum,(float)curIter/iterations*100,overlap.deltaXmax,overlap.deltaYmax,overlap.deltaZmax,xSec,xSec/(overlap.deltaYmax-overlap.deltaYmin),xSec/(overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin));
 	}
+	time(&mainEnd);
+	mainSec = difftime(mainEnd,mainStart);
+//////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////
+	//Clean up
 	HANDLE_ERROR(cudaFree(deviceStaticROIimage));
 	HANDLE_ERROR(cudaFree(deviceOverlapROIimage));
 	HANDLE_ERROR(cudaFree(deviceStaticSum));
@@ -575,6 +526,11 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	delete overlapImageFloat;
 	delete staticSum;
 	delete overlapSum;
+//////////////////////////////////////////////////////////////////////////
+	
+	printf("Delta (%d,%d,%d) max:%f totalTime:%f avgTime:%f\n",bestDeltaX,bestDeltaY,bestDeltaZ,maxCorrelation,mainSec,mainSec/iterations);
 
-	printf("Delta (%d,%d,%d) max:%f\n",bestDeltaX,bestDeltaY,bestDeltaZ,maxCorrelation);
+	deltaXout = bestDeltaX;
+	deltaYout = bestDeltaY;
+	deltaZout = bestDeltaZ;
 }

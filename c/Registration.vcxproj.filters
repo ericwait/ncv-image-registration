@@ -14,9 +14,6 @@
     <None Include="CudaUtilities.h">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="RidgedRegistration.h">
-      <Filter>Header Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -48,9 +45,12 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RidgidRegistration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="RidgedRegistration.cu">
+    <CudaCompile Include="RidgidRegistration.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

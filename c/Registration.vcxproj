@@ -98,6 +98,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ITK_INCLUDE)ITK-4.3\%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -113,7 +114,7 @@ copy $(ITK_PATH)bin\ITKCommon-4.3Debug.dll "$(OutDir)\ITKCommon-4.3.dll"</Comman
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35;</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\</AdditionalLibraryDirectories>
@@ -147,6 +148,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ITK_INCLUDE)ITK-4.3\%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -164,7 +167,7 @@ copy $(ITK_PATH)bin\ITKCommon-4.3Release.dll "$(OutDir)\ITKCommon-4.3.dll"</Comm
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35;</CodeGeneration>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\</AdditionalLibraryDirectories>
@@ -172,7 +175,6 @@ copy $(ITK_PATH)bin\ITKCommon-4.3Release.dll "$(OutDir)\ITKCommon-4.3.dll"</Comm
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="CudaUtilities.h" />
-    <None Include="RidgedRegistration.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AlignImages.cpp" />
@@ -184,13 +186,12 @@ copy $(ITK_PATH)bin\ITKCommon-4.3Release.dll "$(OutDir)\ITKCommon-4.3.dll"</Comm
     <ClInclude Include="AlignImages.h" />
     <ClInclude Include="ImagesTiff.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="RidgidRegistration.h" />
     <ClInclude Include="Utility.h" />
     <ClInclude Include="winHead.h" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="RidgedRegistration.cu">
-      <GPUDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GPUDebugInfo>
-    </CudaCompile>
+    <CudaCompile Include="RidgidRegistration.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

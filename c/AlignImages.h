@@ -1,7 +1,7 @@
 #ifndef ALIGN_IMAGES_H
 #define ALIGN_IMAGES_H
 
-#define MARGIN (70)
+#define MARGIN (150)
 #define MIN_OVERLAP (25)
 #define MIN_OVERLAP_Z (10)
 
