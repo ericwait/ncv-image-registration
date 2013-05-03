@@ -96,6 +96,7 @@ public:
 	float getYPosition() const {return yPosition;}
 	float getZPosition() const {return zPosition;}
 	pixelType getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const;
+	bool isAlligned(){return alligned;}
 
 	//Setters
 	void setImage(ImageContainer& image, unsigned char channel, unsigned int frame);
@@ -106,6 +107,7 @@ public:
 	void setXPixelPhysicalSize(float xPixelPhysicalSize){this->xPixelPhysicalSize=xPixelPhysicalSize;}
 	void setYPixelPhysicalSize(float yPixelPhysicalSize){this->yPixelPhysicalSize=yPixelPhysicalSize;}
 	void setZPixelPhysicalSize(float zPixelPhysicalSize){this->zPixelPhysicalSize=zPixelPhysicalSize;}
+	void setAlligned(bool isAlligned){this->alligned = isAlligned;}
 
 	//Processors
 	void segment(const unsigned char CHANNEL);
@@ -146,6 +148,7 @@ private:
 	float			zPosition;
 
 	unsigned int	maxThreads;
+	bool			alligned;
 };//*gImagesTiff;
 
 #endif

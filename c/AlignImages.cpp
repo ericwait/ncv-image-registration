@@ -29,22 +29,34 @@ void align()
 			ov.deltaZmax = min(MARGIN, gImageTiffs[staticImageInd]->getZSize() - MIN_OVERLAP_Z - ov.deltaZss);
 			ov.deltaZmin = max(-MARGIN, (MIN_OVERLAP_Z-1) - ov.deltaZse);
 
-			if (ov.deltaXmax-ov.deltaXmin<=0 && ov.deltaYmax-ov.deltaYmin<=0) // && all dims
-				continue;
-
-			ov.ind = overlapImageInd;
-			overlaps[staticImageInd].push_back(ov);
+			if (ov.deltaXmax-ov.deltaXmin>0 && ov.deltaYmax-ov.deltaYmin>0)
+			{
+				ov.ind = overlapImageInd;
+				overlaps[staticImageInd].push_back(ov);
+			}
 		}
 	}
 
 	for (int staticImageInd=0; staticImageInd<overlaps.size(); ++staticImageInd)
 	{
-		#pragma omp parallel for default(none) shared(overlaps,staticImageInd,gImageTiffs) num_threads(2)
+		//#pragma omp parallel for default(none) shared(overlaps,staticImageInd,gImageTiffs) num_threads(2)
 		for (int overlapImageInd=0; overlapImageInd<overlaps[staticImageInd].size(); ++overlapImageInd)
 		{
+			char buffer[255];
+			sprintf(buffer,"%s_corrResults.txt",gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
+
+			if(!gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->isAlligned() && !fileExists(buffer))
+			{
 				int deltaX, deltaY, deltaZ;
-				printf("%s <-- %s\n",gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
-				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(3,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(3,0),overlaps[staticImageInd][overlapImageInd],deltaX,deltaY,deltaZ,omp_get_thread_num());
+				double maxCorr;
+				//printf("(%d) %s <-- %s\n",omp_get_thread_num(),gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
+				printf("(%d) %s <-- %s\n",1,gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
+				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(0,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(0,0),overlaps[staticImageInd][overlapImageInd],deltaX,deltaY,deltaZ,maxCorr,1);//omp_get_thread_num());
+
+				FILE* f = fopen(buffer,"wt");
+				fprintf(f,"deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%lf\n",deltaX,deltaY,deltaZ,maxCorr);
+				fclose(f);
+			}
 		}
 	}
 

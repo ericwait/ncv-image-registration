@@ -279,6 +279,7 @@ void ImagesTiff::reset()
 	xPosition = 0.0f;
 	yPosition = 0.0f;
 	zPosition = 0.0f;
+	alligned = false;
 }
 
 bool ImagesTiff::readMetadata(std::string metadataFile)
@@ -444,6 +445,7 @@ void ImagesTiff::clear ()
 	this->xPixelPhysicalSize = 0.0;
 	this->yPixelPhysicalSize = 0.0;
 	this->zPixelPhysicalSize = 0.0;
+	this->alligned = false;
 }
 
 void ImagesTiff::setImage(ImageContainer& image, unsigned char channel, unsigned int frame)
