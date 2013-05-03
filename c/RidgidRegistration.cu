@@ -353,16 +353,16 @@ int overlapPixels(int deltaSe, int deltaSs, int width, int x)
 	if (deltaSe+x<0 || deltaSs+x>width)
 		return 0;
 
-	if (deltaSs+x<=0 && deltaSe+x>=width)
+	if (deltaSs+x<=0 && deltaSe+x>=(width-1))
 		return width;
 
-	if (deltaSs+x>0 && deltaSe+x<width)
-		return deltaSe-deltaSs;
+	if (deltaSs+x>=0 && deltaSe+x<=(width-1))
+		return deltaSe-deltaSs+1;
 
 	if (deltaSs+x<=0 && deltaSe+x<width)
-		return deltaSe+x;
+		return deltaSe+x+1;
 
-	if (deltaSs+x>0 && deltaSs+x<=width)
+	if (deltaSs+x>0)
 		return width-deltaSs-x;
 
 	return std::numeric_limits<int>::min();
