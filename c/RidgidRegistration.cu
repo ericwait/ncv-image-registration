@@ -5,6 +5,7 @@
 #include <time.h>
 #include "CudaUtilities.h"
 
+unsigned int gMaxOverlapPixels = 0;
 
 __global__ void meanFilter(float* imageIn, float* imageOut, int imageWidth, int imageHeight, int imageDepth, int kernalDiameter)
 {
@@ -262,6 +263,10 @@ void calcBlockThread(unsigned int width, unsigned int height, unsigned int depth
 //#pragma optimize("",off)
 double calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* deviceStaticROIimage, float* deviceStaticSum, float* deviceOverlapROIimage, float* deviceOverlapSum, float* staticSum, float* overlapSum, float* deviceMulImage)
 {
+#ifdef _DEBUG
+	assert(xSize*ySize*zSize<gMaxOverlapPixels);
+#endif // _DEBUG
+
 	dim3 blocks;
 	dim3 threads;
 	double staticMean = 0.0;
@@ -426,15 +431,15 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	int maxOverlapPixelCountZ = max(overlapPixels(overlap.deltaZse,overlap.deltaZss,staticImage->getDepth(),overlap.deltaZmin),overlapPixels(overlap.deltaZse,overlap.deltaZss,staticImage->getDepth(),overlap.deltaZmax));
 	maxOverlapPixelCountZ = max(maxOverlapPixelCountZ,overlapPixels(overlap.deltaZse,overlap.deltaZss,staticImage->getDepth(),midPointZ));
 
-	unsigned int maxOverlapPixelCount = maxOverlapPixelCountX*maxOverlapPixelCountY*maxOverlapPixelCountZ;
+	gMaxOverlapPixels = maxOverlapPixelCountX*maxOverlapPixelCountY*maxOverlapPixelCountZ;
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
 	//Set up memory space on the card for the largest possible size we need
-	calcBlockThread(maxOverlapPixelCount, prop, blocks, threads);
-	HANDLE_ERROR(cudaMalloc((void**)&deviceStaticROIimage,sizeof(float)*maxOverlapPixelCount));
-	HANDLE_ERROR(cudaMalloc((void**)&deviceOverlapROIimage,sizeof(float)*maxOverlapPixelCount));
-	HANDLE_ERROR(cudaMalloc((void**)&deviceMulImage,sizeof(float)*maxOverlapPixelCount));
+	calcBlockThread(gMaxOverlapPixels, prop, blocks, threads);
+	HANDLE_ERROR(cudaMalloc((void**)&deviceStaticROIimage,sizeof(float)*gMaxOverlapPixels));
+	HANDLE_ERROR(cudaMalloc((void**)&deviceOverlapROIimage,sizeof(float)*gMaxOverlapPixels));
+	HANDLE_ERROR(cudaMalloc((void**)&deviceMulImage,sizeof(float)*gMaxOverlapPixels));
 	HANDLE_ERROR(cudaMalloc((void**)&deviceStaticSum,sizeof(float)*(blocks.x+1)/2));
 	HANDLE_ERROR(cudaMalloc((void**)&deviceOverlapSum,sizeof(float)*(blocks.x+1)/2));
 //////////////////////////////////////////////////////////////////////////
