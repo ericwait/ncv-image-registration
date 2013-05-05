@@ -1,0 +1,19 @@
+global imageDatasets
+
+hold off
+img = max(newImage,[],3);
+imagesc(img), colormap gray
+hold on
+
+cmap = hsv(length(imageDatasets));
+
+for i=1:length(imageDatasets)
+    rectangle('Position',...
+        [(imageDatasets(i).yMinPos-minYPos)/imageDatasets(i).yVoxelSize...
+        (imageDatasets(i).xMinPos-minXPos)/imageDatasets(i).xVoxelSize...
+        imageDatasets(i).yDim imageDatasets(i).xDim],'EdgeColor','g');
+    rectangle('Position',...
+        [(imageDatasets(i).yMinPos-minYPos+imageDatasets(i).yDelta)/imageDatasets(i).yVoxelSize...
+        (imageDatasets(i).xMinPos-minXPos+imageDatasets(i).xDelta)/imageDatasets(i).xVoxelSize...
+        imageDatasets(i).yDim imageDatasets(i).xDim],'EdgeColor','r');
+end

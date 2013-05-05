@@ -1,14 +1,33 @@
 #ifndef ALIGN_IMAGES_H
 #define ALIGN_IMAGES_H
 
-#define MARGIN (75)
+#include <map>
+#include <set>
+#include <vector>
+
+#define MARGIN (150)
 #define MIN_OVERLAP (25)
 #define MIN_OVERLAP_Z (10)
+#define SCAN_CHANNEL (3)
 
 struct Overlap
 {
 	int ind;
-
+//////////////////////////////////////////////////////////////////////////
+// Definitions:
+// 
+//  deltaSs:	Distance between the start position of the static image 
+//				and the overlap image's starting position
+//				
+//  deltaSe:	Distance between the start position of the static image
+//				and the overlap image's end position
+//				
+//	deltaMin:	Distance we are willing to move the start position of the 
+//				overlap image to the left 
+//	
+//	deltaMax:	The distance we are will to move the start position of the
+//				overlap image to the right
+//////////////////////////////////////////////////////////////////////////
 	int deltaXss;
 	int deltaXse;
 	int deltaXmax;
@@ -24,6 +43,48 @@ struct Overlap
 	int deltaZmax;
 	int deltaZmin;
 };
+
+template<typename T>
+struct Vec
+{
+	T x;
+	T y;
+	T z;
+	
+	Vec()
+	{
+		x=0;
+		y=0;
+		z=0;
+	}
+
+	Vec(T x, T y, T z)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+};
+
+template<typename T>
+struct comparedImages
+{
+	Vec<T> staticIm;
+	Vec<T> overlapIm;
+};
+
+struct edge
+{
+	Vec<int> deltas;
+	int node1;
+	int node2;
+};
+
+std::multimap<double,edge> edgeList;
+
+std::set<int> visitedNodes;
+
+std::vector<edge> bestEdges;
 
 void align();
 #endif

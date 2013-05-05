@@ -3,6 +3,7 @@
 
 #include "winHead.h"
 #include "Utility.h"
+#include "AlignImages.h"
 
 #define MAX_CHANNELS (6) //Make sure that this is synced with the .fx file
 #define DIMENSION (3)
@@ -61,9 +62,9 @@ private:
 	unsigned int	width;
 	unsigned int	height;
 	unsigned int	depth;
-	float			xPosition;
-	float			yPosition;
-	float			zPosition;
+	double			xPosition;
+	double			yPosition;
+	double			zPosition;
 
 	pixelType*	image;
 };
@@ -97,6 +98,7 @@ public:
 	float getZPosition() const {return zPosition;}
 	pixelType getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const;
 	bool isAlligned(){return alligned;}
+	Vec<int> getDeltas(){return deltas;}
 
 	//Setters
 	void setImage(ImageContainer& image, unsigned char channel, unsigned int frame);
@@ -108,6 +110,7 @@ public:
 	void setYPixelPhysicalSize(float yPixelPhysicalSize){this->yPixelPhysicalSize=yPixelPhysicalSize;}
 	void setZPixelPhysicalSize(float zPixelPhysicalSize){this->zPixelPhysicalSize=zPixelPhysicalSize;}
 	void setAlligned(bool isAlligned){this->alligned = isAlligned;}
+	void setDeltas(Vec<int> bestDeltas){deltas = bestDeltas;}
 
 	//Processors
 	void segment(const unsigned char CHANNEL);
@@ -137,18 +140,19 @@ private:
 	int				xSize;
 	int				ySize;
 	int				zSize;
-	float			xPixelPhysicalSize;
-	float			yPixelPhysicalSize;
-	float			zPixelPhysicalSize;
-	float			xScale;
-	float			yScale;
-	float			zScale;
-	float			xPosition;
-	float			yPosition;
-	float			zPosition;
+	double			xPixelPhysicalSize;
+	double			yPixelPhysicalSize;
+	double			zPixelPhysicalSize;
+	double			xScale;
+	double			yScale;
+	double			zScale;
+	double			xPosition;
+	double			yPosition;
+	double			zPosition;
 
 	unsigned int	maxThreads;
 	bool			alligned;
+	Vec<int>		deltas;
 };//*gImagesTiff;
 
 #endif

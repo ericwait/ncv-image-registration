@@ -1,5 +1,6 @@
 #include "ImagesTiff.h"
 #include <limits.h>
+#include "AlignImages.h"
 //#include "BackgroundSubtraction.h"
 //#include "Denoise.h"
 //#include "Hull.h"
@@ -273,12 +274,12 @@ void ImagesTiff::reset()
 	xSize = 0.0f;
 	ySize = 0.0f;
 	zSize = 0.0f;
-	xPixelPhysicalSize = 1.0f;
-	yPixelPhysicalSize = 1.0f;
-	zPixelPhysicalSize = 1.0f;
-	xPosition = 0.0f;
-	yPosition = 0.0f;
-	zPosition = 0.0f;
+	xPixelPhysicalSize = 1.0;
+	yPixelPhysicalSize = 1.0;
+	zPixelPhysicalSize = 1.0;
+	xPosition = 0.0;
+	yPosition = 0.0;
+	zPosition = 0.0;
 	alligned = false;
 }
 
@@ -445,7 +446,13 @@ void ImagesTiff::clear ()
 	this->xPixelPhysicalSize = 0.0;
 	this->yPixelPhysicalSize = 0.0;
 	this->zPixelPhysicalSize = 0.0;
+	xPosition = 0.0;
+	yPosition = 0.0;
+	zPosition = 0.0;
 	this->alligned = false;
+	deltas.x = 0;
+	deltas.y = 0;
+	deltas.z = 0;
 }
 
 void ImagesTiff::setImage(ImageContainer& image, unsigned char channel, unsigned int frame)
@@ -561,12 +568,13 @@ void ImagesTiff::setupCharReader()
 
 	for (int frame=0; frame<this->getNumberOfFrames(); ++frame)
 	{
-		for (int chan=0; chan<this->getNumberOfChannels(); ++chan)
-		{
+// 		for (int chan=0; chan<this->getNumberOfChannels(); ++chan)
+// 		{
+		int chan = SCAN_CHANNEL;
 			sprintf_s(buffer,"Reading Image Data for Frame:%d/%d Channel:%d/%d",CToMat(frame),numberOfFrames,CToMat(chan),numberOfChannels);
 			updateWindowTitle(buffer);
 			reader(chan, frame);
-		} 
+		//} 
 	}
 	updateWindowTitle("");
 }
