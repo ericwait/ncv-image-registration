@@ -7,7 +7,7 @@ if ~exist('root','var')
 else
     rootDir = root;
 end
-
+names = {imageDatasets(:).DatasetName};
 for i=1:length(imageDatasets)
     filename = fullfile(root,[imageDatasets(i).DatasetName '_corrResults.txt']);
    
@@ -17,6 +17,7 @@ for i=1:length(imageDatasets)
 
     fid = fopen(filename,'rt');
     data = fscanf(fid,'deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%f\n');
+    deltaParent = fscanf(fid,'Parent:%255c\n');
     fclose(fid);
     
     imageDatasets(i).xDelta = data(2);
@@ -28,5 +29,6 @@ for i=1:length(imageDatasets)
     imageDatasets(i).yMaxPos = imageDatasets(i).yMinPos+ imageDatasets(i).yDim*imageDatasets(i).yVoxelSize;
     imageDatasets(i).zMinPos =  data(3)*imageDatasets(i).zVoxelSize;
     imageDatasets(i).zMaxPos = imageDatasets(i).zMinPos+ imageDatasets(i).zDim*imageDatasets(i).zVoxelSize;
+    imageDatasets(i).ParentDelta = find(cellfun(@(x)(~isempty(x)),strfind(names,deltaParent)));
 end
 end

@@ -8,7 +8,7 @@
 #define MARGIN (150)
 #define MIN_OVERLAP (25)
 #define MIN_OVERLAP_Z (10)
-#define SCAN_CHANNEL (3)
+#define SCAN_CHANNEL (2)
 
 struct Overlap
 {
@@ -64,6 +64,36 @@ struct Vec
 		this->y = y;
 		this->z = z;
 	}
+
+	Vec<T> operator+ (Vec<T> other) const
+	{
+		Vec<T> outVec;
+		outVec.x = x + other.x;
+		outVec.y = y + other.y;
+		outVec.z = z + other.z;
+
+		return outVec;
+	}
+
+	Vec<T> operator- (Vec<T> other) const
+	{
+		Vec<T> outVec;
+		outVec.x = x - other.x;
+		outVec.y = y - other.y;
+		outVec.z = z - other.z;
+
+		return outVec;
+	}
+
+	Vec<T> operator- () const
+	{
+		Vec<T> outVec;
+		outVec.x = -x;
+		outVec.y = -y;
+		outVec.z = -z;
+
+		return outVec;
+	}
 };
 
 template<typename T>
@@ -78,13 +108,8 @@ struct edge
 	Vec<int> deltas;
 	int node1;
 	int node2;
+	double maxCorr;
 };
-
-std::multimap<double,edge> edgeList;
-
-std::set<int> visitedNodes;
-
-std::vector<edge> bestEdges;
 
 void align();
 #endif

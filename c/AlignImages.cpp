@@ -3,6 +3,30 @@
 #include "RidgidRegistration.h"
 #include <omp.h>
 
+//#define _USE_OMP
+
+std::multimap<double,edge> edgeList;
+std::set<int> visitedNodes;
+std::vector<std::map<int,edge>> edges;
+
+//#pragma optimize("",off)
+
+void addEdge(Vec<int> deltas, int curNode, int parentNode, double maxCorr)
+{
+	std::map<int,edge>::iterator it = edges[curNode].begin();
+	for (; it!=edges[curNode].end(); ++it)
+	{
+			Vec<int> newDelta = deltas + it->second.deltas;
+			addEdge(newDelta,it->second.node2,it->second.node1,it->second.maxCorr);
+	}
+
+	char buffer[255];
+	sprintf(buffer,"%s_corrResults.txt",gImageTiffs[curNode]->getDatasetName().c_str());
+
+	FILE* f = fopen(buffer,"wt");
+	fprintf(f,"deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%lf\nParent:%s\n",deltas.x,deltas.y,deltas.z,maxCorr,gImageTiffs[parentNode]->getDatasetName().c_str());
+	fclose(f);
+}
 
 void align()
 {
@@ -39,59 +63,52 @@ void align()
 
 	for (int staticImageInd=0; staticImageInd<overlaps.size(); ++staticImageInd)
 	{
-// #ifndef _DEBUG
-// 		#pragma omp parallel for default(none) shared(overlaps,staticImageInd,gImageTiffs) num_threads(2)
-// #endif
+ #ifdef _USE_OMP
+ 		#pragma omp parallel for default(none) shared(overlaps,staticImageInd,gImageTiffs) num_threads(2)
+ #endif
 		for (int overlapImageInd=0; overlapImageInd<overlaps[staticImageInd].size(); ++overlapImageInd)
 		{
-			char buffer[255];
-			sprintf(buffer,"%s_corrResults.txt",gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
-
-			//if(!gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->isAlligned() && !fileExists(buffer))
-			//{
 				Vec<int> deltas;
 				double maxCorr;
-//#ifndef _DEBUG
-// 				printf("(%d) %s <-- %s\n",omp_get_thread_num(),gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
-// 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(SCAN_CHANNEL,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(SCAN_CHANNEL,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,omp_get_thread_num());
-// #else
- 				printf("(%d) %s <-- %s\n",1,gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
- 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(SCAN_CHANNEL,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(SCAN_CHANNEL,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,1);
-// #endif
+				unsigned int bestN;
+#ifdef _USE_OMP
+ 				printf("(%d) %s <-- %s\n",omp_get_thread_num(),gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
+ 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(SCAN_CHANNEL,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(SCAN_CHANNEL,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,omp_get_thread_num());
+ #else
+ 				printf("\n(%d) %s <-- %s\n",1,gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
+ 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(SCAN_CHANNEL,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(SCAN_CHANNEL,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,1);
+ #endif
 				edge curEdge;
 				curEdge.deltas = deltas;
 				curEdge.node1 = staticImageInd;
-				curEdge.node2 = overlapImageInd;
+				curEdge.node2 = overlaps[staticImageInd][overlapImageInd].ind;
+				curEdge.maxCorr = maxCorr;
 
-				edgeList.insert(std::pair<double,edge>(-maxCorr,curEdge));
-
-// 				deltas.x += gImageTiffs[staticImageInd]->getDeltas().x;
-// 				deltas.y += gImageTiffs[staticImageInd]->getDeltas().y;
-// 				deltas.z += gImageTiffs[staticImageInd]->getDeltas().z;
-// 
-// 				FILE* f = fopen(buffer,"wt");
-// 				fprintf(f,"deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%lf\n",deltas.x,deltas.y,deltas.z,maxCorr);
-// 				fclose(f);
-
-				//gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->setDeltas(deltas);
-			//}
+				edgeList.insert(std::pair<double,edge>(-maxCorr,curEdge));//*bestN,curEdge));
+				curEdge.node1 = curEdge.node2;
+				curEdge.node2 = staticImageInd;
+				curEdge.deltas = -curEdge.deltas;
+				edgeList.insert(std::pair<double,edge>(-maxCorr,curEdge));//*bestN,curEdge));
 		}
 	}
 
+	edges.resize(gImageTiffs.size());
+	visitedNodes.insert(0);
 	while(visitedNodes.size()<gImageTiffs.size())
 	{
 		std::multimap<double,edge>::iterator best = edgeList.begin();
-		if (visitedNodes.count(best->second.node1)>0 && visitedNodes.count(best->second.node1)>0)
+		for (; best!=edgeList.end(); ++best)
 		{
-			edgeList.erase(best);
-			continue;
+			if (visitedNodes.count(best->second.node1)==1 && visitedNodes.count(best->second.node2)==0)
+			{
+				visitedNodes.insert(best->second.node2);
+				edges[best->second.node1].insert(std::pair<int,edge>(best->second.node2,best->second));
+				edgeList.erase(best);
+				break;
+			}
 		}
-
-		visitedNodes.insert(best->second.node1);
-		visitedNodes.insert(best->second.node2);
-		bestEdges.push_back(*best);
-		edgeList.erase(best);
 	}
 
-
+	Vec<int> nullDeltas(0,0,0);
+	addEdge(nullDeltas,0,0,0.0);
 }

@@ -380,6 +380,20 @@ int overlapPixels(int deltaSe, int deltaSs, int width, int x)
 
 void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<int>& imStarts, comparedImages<int>& imSizes, Vec<int>& maxOverlapSize, cudaDeviceProp prop)
 {
+	imStarts.staticIm.x = std::numeric_limits<int>::max();
+	imStarts.staticIm.y = std::numeric_limits<int>::max();
+	imStarts.staticIm.z = std::numeric_limits<int>::max();
+	imStarts.overlapIm.x = std::numeric_limits<int>::max();
+	imStarts.overlapIm.y = std::numeric_limits<int>::max();
+	imStarts.overlapIm.z = std::numeric_limits<int>::max();
+
+	imSizes.staticIm.x = 0;
+	imSizes.staticIm.y = 0;
+	imSizes.staticIm.z = 0;
+	imSizes.overlapIm.x = 0;
+	imSizes.overlapIm.y = 0;
+	imSizes.overlapIm.z = 0;
+
 	for (int deltaX=overlap.deltaXmin; deltaX<overlap.deltaXmax; ++deltaX)
 	{
 		for (int deltaY=overlap.deltaYmin; deltaY<overlap.deltaYmax; ++deltaY)
@@ -432,7 +446,8 @@ void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<i
 	imSizes.overlapIm.z -= imStarts.overlapIm.z;
 }
 
-void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap, Vec<int>& bestDelta, double& maxCorrOut, int deviceNum)
+void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap,
+	Vec<int>& bestDelta, double& maxCorrOut, unsigned int& bestN, int deviceNum)
 {
 	cudaDeviceProp prop;
 	dim3 blocks;
@@ -458,19 +473,20 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	calcMaxROIs(overlap,staticImageExtents,imStarts,imSizes,maxOverlapSize,prop);
 
 	//check that we are within the memory space of the card
-	//
 	gMaxOverlapPixels = maxOverlapSize.x*maxOverlapSize.y*maxOverlapSize.z;
 	unsigned int staticPixelCount = imSizes.staticIm.x*imSizes.staticIm.y*imSizes.staticIm.z;
 	unsigned int overlapPixelCount = imSizes.overlapIm.x*imSizes.overlapIm.y*imSizes.overlapIm.z;
 
-	if (prop.totalGlobalMem*.8 < (gMaxOverlapPixels*4 + staticPixelCount + overlapPixelCount)*sizeof(float))
+	size_t usableMem = (deviceNum==0 ? prop.totalGlobalMem*.6 : prop.totalGlobalMem*1.0);
+	if (usableMem < (gMaxOverlapPixels*4 + staticPixelCount + overlapPixelCount)*sizeof(float))
 	{
 		bestDelta.x = 0;
 		bestDelta.y = 0;
 		bestDelta.z = 0;
+		bestN = 1;
 		maxCorrelation = -std::numeric_limits<double>::infinity();
 
-		printf("(%d) OUT OF MEMORY FOR THIS OVERLAP!!!!\n");
+		printf("(%d) OUT OF MEMORY FOR THIS OVERLAP!!!!\n",deviceNum);
 		return;
 	}
 
@@ -523,7 +539,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 				imSizes.overlapIm.x,imSizes.overlapIm.y,imSizes.overlapIm.z,9);
 		}
 
-		unsigned int iterations = (deltaMaxs.x-deltaMins.x)*(deltaMaxs.y-deltaMins.y)*(deltaMaxs.z-deltaMins.z)/smoothness;
+		unsigned int iterations = max(1,(deltaMaxs.x-deltaMins.x)*(deltaMaxs.y-deltaMins.y)*(deltaMaxs.z-deltaMins.z)/smoothness);
 		unsigned int curIter = 0;
 
 		time(&smoothStart);
@@ -595,6 +611,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 						bestDelta.x = deltaX;
 						bestDelta.y = deltaY;
 						bestDelta.z = deltaZ;
+						bestN = szs.x*szs.y*szs.z;
 					}
 					++curIter;
 					//  				time(&zEnd);
@@ -609,13 +626,13 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 				time(&xEnd);
 				xSec = difftime(xEnd,xStart);
 
-				printf("\t(%d) BestCorr: %6.4f (%3d,%3d,%2d)",
+				printf("\t(%d)  BestCorr:%6.4f(%4d,%4d,%3d)",
 					deviceNum, maxCorrelation, bestDelta.x, bestDelta.y, bestDelta.z);
 
-				printf("  Done:%5.2f%% of (%3d:%3d,%3d,%2d)",
-					(float)curIter/iterations*100, deltaX, overlap.deltaXmax, overlap.deltaYmax,overlap.deltaZmax);
+				printf("  Done:%5.2f%% (%4d:%4d,%4d,%2d)",
+					(float)curIter/iterations*100.0, deltaX, overlap.deltaXmax, overlap.deltaYmax,overlap.deltaZmax);
 
-				printf("  X:%7.2f avgY:%6.3f avgZ:%6.4f Est(min):%6.2f\n",
+				printf("  X:%6.2f avgY:%5.3f avgZ:%6.4f Est(min):%6.2f\n",
 					xSec, xSec/(overlap.deltaYmax-overlap.deltaYmin),
 					xSec/((overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin)),
 					(iterations-curIter)*(xSec/((overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin)))/60.0);
@@ -636,7 +653,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		deltaMins.z = max(overlap.deltaZmin, (int)round(bestDelta.z - offsets.z));
 		deltaMaxs.z = min(overlap.deltaZmax, (int)round(bestDelta.z + offsets.z));
 
-		printf("Delta (%d,%d,%d) max:%f totalTime:%f avgTime:%f\n",bestDelta.x,bestDelta.y,bestDelta.z,maxCorrelation,smoothSec,smoothSec/iterations);
+		printf("   (%d) Delta (%d,%d,%d) max:%f totalTime:%f avgTime:%f\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrelation,smoothSec,smoothSec/iterations);
 	}
 //////////////////////////////////////////////////////////////////////////
 // 	comparedImages<int> starts;
@@ -690,6 +707,6 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	time(&mainEnd);
 	mainSec = difftime(mainEnd,mainStart);
 
-	printf("(%d) Delta (%d,%d,%d) max:%f totalTime:%f\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrelation,mainSec);
+	printf("(%d) Delta (%d,%d,%d) max:%f totalTime:%f\n\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrelation,mainSec);
 	maxCorrOut = maxCorrelation;
 }
