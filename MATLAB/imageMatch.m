@@ -45,7 +45,8 @@ for i=1:length(children)
     X = [double(childIm(:)) ones(length(childIm(:)),1)];
     b = X\double(parentIm(:));
     
-    newImage{children(i)} = newImage{children(i)}*b(1) + b(2);
+%     newImage{children(i)} = newImage{children(i)}*b(1) + b(2);
+newImage{children(i)} = newImage{children(i)}*1 + 0;
     
     imageMatch(A,children(i));
 end

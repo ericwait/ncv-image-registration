@@ -259,7 +259,6 @@ void calcBlockThread(unsigned int width, unsigned int height, unsigned int depth
 	}
 }
 
-//#pragma optimize("",off)
 double calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* deviceStaticROIimage, float* deviceStaticSum, float* deviceOverlapROIimage, float* deviceOverlapSum, float* staticSum, float* overlapSum, float* deviceMulImage)
 {
 #ifdef _DEBUG
@@ -446,6 +445,7 @@ void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<i
 	imSizes.overlapIm.z -= imStarts.overlapIm.z;
 }
 
+//#pragma optimize("",off)
 void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap,
 	Vec<int>& bestDelta, double& maxCorrOut, unsigned int& bestN, int deviceNum)
 {
@@ -477,7 +477,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	unsigned int staticPixelCount = imSizes.staticIm.x*imSizes.staticIm.y*imSizes.staticIm.z;
 	unsigned int overlapPixelCount = imSizes.overlapIm.x*imSizes.overlapIm.y*imSizes.overlapIm.z;
 
-	size_t usableMem = (deviceNum==0 ? prop.totalGlobalMem*.6 : prop.totalGlobalMem*1.0);
+	size_t usableMem = (deviceNum==0 ? prop.totalGlobalMem*.6 : prop.totalGlobalMem*.8);
 	if (usableMem < (gMaxOverlapPixels*4 + staticPixelCount + overlapPixelCount)*sizeof(float))
 	{
 		bestDelta.x = 0;
@@ -486,7 +486,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		bestN = 1;
 		maxCorrelation = -std::numeric_limits<double>::infinity();
 
-		printf("(%d) OUT OF MEMORY FOR THIS OVERLAP!!!!\n",deviceNum);
+		printf("(%d) OUT OF MEMORY FOR THIS OVERLAP!!!! Need:%d\n",deviceNum,(gMaxOverlapPixels*4 + staticPixelCount + overlapPixelCount)*sizeof(float)-prop.totalGlobalMem);
 		return;
 	}
 

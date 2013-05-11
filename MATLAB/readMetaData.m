@@ -42,6 +42,7 @@ for i=1:length(dlist)
         imageDatum.xDelta = 0;
         imageDatum.yDelta = 0;
         imageDatum.zDelta = 0;
+        imageDatum.ParentDelta = 1;
         if isempty(imageDatasets)
             imageDatasets = imageDatum;
         else        

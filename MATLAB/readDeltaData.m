@@ -30,5 +30,8 @@ for i=1:length(imageDatasets)
     imageDatasets(i).zMinPos =  data(3)*imageDatasets(i).zVoxelSize;
     imageDatasets(i).zMaxPos = imageDatasets(i).zMinPos+ imageDatasets(i).zDim*imageDatasets(i).zVoxelSize;
     imageDatasets(i).ParentDelta = find(cellfun(@(x)(~isempty(x)),strfind(names,deltaParent)));
+    if isempty(imageDatasets(i).ParentDelta)
+        imageDatasets(i).ParentDelta = i;
+    end
 end
 end
