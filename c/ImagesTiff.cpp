@@ -570,7 +570,7 @@ void ImagesTiff::setupCharReader()
 	{
 // 		for (int chan=0; chan<this->getNumberOfChannels(); ++chan)
 // 		{
-		int chan = SCAN_CHANNEL;
+		int chan = scanChannel;
 			sprintf_s(buffer,"Reading Image Data for Frame:%d/%d Channel:%d/%d",CToMat(frame),numberOfFrames,CToMat(chan),numberOfChannels);
 			updateWindowTitle(buffer);
 			reader(chan, frame);

@@ -8,7 +8,7 @@
 #define MARGIN (150)
 #define MIN_OVERLAP (25)
 #define MIN_OVERLAP_Z (10)
-#define SCAN_CHANNEL (2)
+extern int scanChannel;
 
 struct Overlap
 {

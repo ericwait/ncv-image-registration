@@ -8,6 +8,7 @@
 std::multimap<double,edge> edgeList;
 std::set<int> visitedNodes;
 std::vector<std::map<int,edge>> edges;
+int scanChannel = 0;
 
 //#pragma optimize("",off)
 
@@ -73,10 +74,10 @@ void align()
 				unsigned int bestN;
 #ifdef _USE_OMP
  				printf("(%d) %s <-- %s\n",omp_get_thread_num(),gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
- 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(SCAN_CHANNEL,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(SCAN_CHANNEL,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,omp_get_thread_num());
+ 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,omp_get_thread_num());
  #else
  				printf("\n(%d) %s <-- %s\n",1,gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
- 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(SCAN_CHANNEL,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(SCAN_CHANNEL,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,1);
+ 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,1);
  #endif
 				edge curEdge;
 				curEdge.deltas = deltas;
