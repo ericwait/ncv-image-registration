@@ -3,6 +3,7 @@
 
 #include "cuda.h"
 #include "cuda_runtime.h"
+#include <stdio.h>
 
 static void HandleError( cudaError_t err, const char *file,	int line ) 
 {
