@@ -1,7 +1,7 @@
 global imageDatasets outImage
 figure
 hold off
-img = max(outImage,[],3);
+img = max(outImage(:,:,:,3),[],3);
 imagesc(img), colormap gray
 hold on
 

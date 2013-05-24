@@ -2,7 +2,7 @@ function combineImages()
 global imageDatasets rootDir MARGIN newImage outImage datasetName
 
 % root = 'B:\Users\eric_000\Documents\Programming\Chris\';
-datasetName = 'CP2';
+datasetName = 'CP1';
 readMetaData();
 
 readDeltaData(rootDir);
@@ -30,7 +30,7 @@ imageHeight = round((maxYPos-minYPos)/minYvoxelSize +1);
 imageDepth = round((maxZPos-minZPos)/minZvoxelSize +1);
 
 newImage = cell(length(imageDatasets),1);
-outImage = uint8(zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels])));
+outImage = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
 for c=1:min([imageDatasets(:).NumberOfChannels])
     
     fprintf('Chan:%d',c);
