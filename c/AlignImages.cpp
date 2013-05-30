@@ -91,11 +91,11 @@ void align()
 				curEdge.node2 = overlaps[staticImageInd][overlapImageInd].ind;
 				curEdge.maxCorr = maxCorr;
 
-				edgeList.insert(std::pair<double,edge>(-maxCorr,curEdge));//*bestN,curEdge));
+				edgeList.insert(std::pair<double,edge>(-maxCorr*sqrt((double)bestN),curEdge));
 				curEdge.node1 = curEdge.node2;
 				curEdge.node2 = staticImageInd;
 				curEdge.deltas = -curEdge.deltas;
-				edgeList.insert(std::pair<double,edge>(-maxCorr,curEdge));//*bestN,curEdge));
+				edgeList.insert(std::pair<double,edge>(-maxCorr*sqrt((double)bestN),curEdge));
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////

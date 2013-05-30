@@ -66,8 +66,8 @@ for c=1:min([imageDatasets(:).NumberOfChannels])
                     = newImage{im}(:,:,z);
             end
         end
-%         for z=1:size(outImage,3)
-%             imwrite(outImage(:,:,z,c),fullfile(rootDir, 'Mosiac', [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif');
+%         for z=1:size(chan3,3)
+%             imwrite(uint8(chan3(:,:,z)),fullfile(rootDir, 'Mosiac', [datasetName sprintf('_c%d_t%04d_z%04da.tif',c,t,z)]),'tif');
 %         end
     end
     fprintf('\n');

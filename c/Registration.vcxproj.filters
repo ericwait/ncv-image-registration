@@ -14,6 +14,9 @@
     <None Include="CudaUtilities.h">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="cudaKernals.h">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -51,6 +54,9 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RidgidRegistration.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="cudaKernals.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
