@@ -41,17 +41,23 @@ void align()
 		for (int overlapImageInd = staticImageInd+1; overlapImageInd < gImageTiffs.size() ; overlapImageInd++)
 		{
 			Overlap ov;
-			ov.deltaXss = gImageTiffs[overlapImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize() - gImageTiffs[staticImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize();
+			ov.deltaXss = gImageTiffs[overlapImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize() - 
+				gImageTiffs[staticImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize();
+
 			ov.deltaXse = ov.deltaXss + (int)gImageTiffs[overlapImageInd]->getXSize()-1;
 			ov.deltaXmax = min(MARGIN, (int)gImageTiffs[staticImageInd]->getXSize() - MIN_OVERLAP - ov.deltaXss);
 			ov.deltaXmin = max(-MARGIN, (MIN_OVERLAP-1) - ov.deltaXse);
 
-			ov.deltaYss = gImageTiffs[overlapImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize() - gImageTiffs[staticImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize();
+			ov.deltaYss = gImageTiffs[overlapImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize() - 
+				gImageTiffs[staticImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize();
+
 			ov.deltaYse = ov.deltaYss + (int)gImageTiffs[overlapImageInd]->getYSize()-1;
 			ov.deltaYmax = min(MARGIN, (int)gImageTiffs[staticImageInd]->getYSize() - MIN_OVERLAP - ov.deltaYss);
 			ov.deltaYmin = max(-MARGIN, (MIN_OVERLAP-1) - ov.deltaYse);
 
-			ov.deltaZss = gImageTiffs[overlapImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize() - gImageTiffs[staticImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize();
+			ov.deltaZss = gImageTiffs[overlapImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize() - 
+				gImageTiffs[staticImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize();
+
 			ov.deltaZse = ov.deltaZss + (int)gImageTiffs[overlapImageInd]->getZSize()-1;
 			ov.deltaZmax = min(MARGIN, (int)gImageTiffs[staticImageInd]->getZSize() - MIN_OVERLAP_Z - ov.deltaZss);
 			ov.deltaZmin = max(-MARGIN, (MIN_OVERLAP_Z-1) - ov.deltaZse);
@@ -91,11 +97,11 @@ void align()
 				curEdge.node2 = overlaps[staticImageInd][overlapImageInd].ind;
 				curEdge.maxCorr = maxCorr;
 
-				edgeList.insert(std::pair<double,edge>(-maxCorr*sqrt((double)bestN),curEdge));
+				edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
 				curEdge.node1 = curEdge.node2;
 				curEdge.node2 = staticImageInd;
 				curEdge.deltas = -curEdge.deltas;
-				edgeList.insert(std::pair<double,edge>(-maxCorr*sqrt((double)bestN),curEdge));
+				edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
