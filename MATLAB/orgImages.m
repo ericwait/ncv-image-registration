@@ -10,15 +10,20 @@ while ~isempty(fileList)
     
     volumeName = tifName(1:tokenInd(1)-1);
     if ~isdir([root '\' volumeName ])
+        fprintf('\nMaking dir %s',[root '\' volumeName ]);
         mkdir(root,volumeName);
-    end
-    try
-        movefile([root '\' volumeName '*'], [root '\' volumeName]);
-    catch
-        %this seems to error eventhough it worked :-/
+    else
+        try
+            fprintf('.');
+            movefile([root '\' volumeName '*'], [root '\' volumeName]);
+        catch
+            %this seems to error eventhough it worked :-/
+%             fprintf(1,'error moving %s\n',[root '\' volumeName '*']);
+        end
     end
     createMetadata([root '\' volumeName], volumeName);
     tifNamePatternFix([root '\' volumeName]);
     fileList = dir(fullfile(root,'*.tif'));
 end
+fprintf('\nDone\n');
 end

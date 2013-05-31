@@ -8,6 +8,7 @@ else
     rootDir = root;
 end
 names = {imageDatasets(:).DatasetName};
+names = cellfun(@(x)([x '.']),names,'uniformOutput',0);
 for i=1:length(imageDatasets)
     filename = fullfile(root,[imageDatasets(i).DatasetName '_corrResults.txt']);
    
@@ -17,7 +18,7 @@ for i=1:length(imageDatasets)
 
     fid = fopen(filename,'rt');
     data = fscanf(fid,'deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%f\n');
-    deltaParent = strtrim(fscanf(fid,'Parent:%255c\n'));
+    deltaParent = [strtrim(fscanf(fid,'Parent:%255c\n')) '.'];
     fclose(fid);
     
     imageDatasets(i).xDelta = data(2);
