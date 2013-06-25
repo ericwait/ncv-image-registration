@@ -67,17 +67,15 @@ void calcBlockThread(unsigned int width, unsigned int height, unsigned int depth
 	}
 	else
 	{
-		int dim = pow((float)prop.maxThreadsPerBlock,1/3.0f);
-		int eqDim = dim*dim*dim;
-		int extra = prop.maxThreadsPerBlock/eqDim;
-
-		threads.x = dim * (prop.maxThreadsPerBlock/eqDim);
+		int dim = (int)pow((float)prop.maxThreadsPerBlock,1/3.0f);
+		int extra = (prop.maxThreadsPerBlock-dim*dim*dim)/(dim*dim);
+		threads.x = dim + extra;
 		threads.y = dim;
 		threads.z = dim;
 
-		blocks.x = ceil((float)width/threads.x);
-		blocks.y = ceil((float)height/threads.y);
-		blocks.z = ceil((float)depth/threads.z);
+		blocks.x = (unsigned int)ceil((float)width/threads.x);
+		blocks.y = (unsigned int)ceil((float)height/threads.y);
+		blocks.z = (unsigned int)ceil((float)depth/threads.z);
 	}
 }
 
@@ -130,7 +128,7 @@ double calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* dev
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-	//multiply two images for the numarator
+	//multiply two images for the numerator
 	multiplyTwoImages<<<blocks,threads>>>(deviceStaticROIimage,deviceOverlapROIimage,deviceMulImage,xSize,ySize,zSize);
 //////////////////////////////////////////////////////////////////////////
 

@@ -8,11 +8,11 @@
 #define MAX_CHANNELS (6) //Make sure that this is synced with the .fx file
 #define DIMENSION (3)
 
-typedef unsigned char pixelType; 
+typedef unsigned char PixelType; 
 
 bool fileExists(const char* filename);
 DWORD WINAPI processingThread(LPVOID lpParam);
-void writeImage(const pixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName);
+void writeImage(const PixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName);
 void writeImage(const float* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName);
 
 class ImageContainer
@@ -24,11 +24,11 @@ public:
 	ImageContainer& operator=(const ImageContainer& image){copy(image);}
 
 	std::string getName() const {return name;}
-	pixelType getPixelValue(unsigned int x, unsigned int y, unsigned int z) const;
-	const pixelType* getConstMemoryPointer() const {return image;}
-	const pixelType* getConstROIData (unsigned int minX, unsigned int maxX, unsigned int minY, unsigned int maxY, unsigned int minZ, unsigned int sizeZ) const;
+	PixelType getPixelValue(unsigned int x, unsigned int y, unsigned int z) const;
+	const PixelType* getConstMemoryPointer() const {return image;}
+	const PixelType* getConstROIData (unsigned int minX, unsigned int maxX, unsigned int minY, unsigned int maxY, unsigned int minZ, unsigned int sizeZ) const;
 	const float* getConstFloatROIData (unsigned int minX, unsigned int maxX, unsigned int minY, unsigned int maxY, unsigned int minZ, unsigned int sizeZ) const;
-	pixelType* getMemoryPointer(){return image;}
+	PixelType* getMemoryPointer(){return image;}
 	unsigned int getWidth() const {return width;}
 	unsigned int getHeight() const {return height;}
 	unsigned int getDepth() const {return depth;}
@@ -36,7 +36,7 @@ public:
 	float getYPosition() const {return yPosition;}
 	float getZPosition() const {return zPosition;}
 
-	void setPixelValue(unsigned int x, unsigned int y, unsigned int z,pixelType val);
+	void setPixelValue(unsigned int x, unsigned int y, unsigned int z,PixelType val);
 	void setExtents(unsigned int width, unsigned int height, unsigned int depth);
 	void setWidth(unsigned int width){this->width=width;}
 	void setHeight(unsigned int height){this->height=height;}
@@ -66,7 +66,7 @@ private:
 	double			yPosition;
 	double			zPosition;
 
-	pixelType*	image;
+	PixelType*	image;
 };
 
 void writeImage(const ImageContainer* image, std::string fileName);
@@ -79,7 +79,7 @@ public:
 
 	//Getters
 	ImageContainer* getImage(unsigned char channel, unsigned int frame);
-	const pixelType* getConstImageData(unsigned char channel, unsigned int frame) const;
+	const PixelType* getConstImageData(unsigned char channel, unsigned int frame) const;
 	std::string	getDatasetName() const {return datasetName;}
 	std::string	getImagesPath() const {return imagesPath;}
 	unsigned char getNumberOfChannels() const {return numberOfChannels;}
@@ -96,7 +96,7 @@ public:
 	float getXPosition() const {return xPosition;}
 	float getYPosition() const {return yPosition;}
 	float getZPosition() const {return zPosition;}
-	pixelType getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const;
+	PixelType getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const;
 	bool isAlligned(){return alligned;}
 	Vec<int> getDeltas(){return deltas;}
 

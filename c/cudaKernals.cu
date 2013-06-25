@@ -182,31 +182,34 @@ __global__ void reduceArray(float* arrayIn, float* arrayOut, unsigned int n)
 		arrayOut[blockIdx.x] = sdata[0];
 }
 
-__global__ void reduceImage(float* imageIn, int width, int height, int depth, float* imageOut, int xNeighborhood, int yNeighborhood, int zNeighborhood)
+__global__ void reduceImage(PixelType* imageIn, PixelType* imageOut, unsigned int inWidth, unsigned int inHeight,
+	unsigned int inDepth, unsigned int outWidth, unsigned int outHeight, unsigned int outDepth, unsigned int reduction)
 {
-	int x = threadIdx.x + blockIdx.x * blockDim.x;
-	int y = threadIdx.y	+ blockIdx.y * blockDim.y;
-	int z = threadIdx.z + blockIdx.z * blockDim.z;
+	unsigned int x = threadIdx.x + blockIdx.x * blockDim.x;
+	unsigned int y = threadIdx.y + blockIdx.y * blockDim.y;
+	unsigned int z = threadIdx.z + blockIdx.z * blockDim.z;
 
-	if (x%xNeighborhood==0 && y%yNeighborhood==0 && z%zNeighborhood==0)
+	if (x<outWidth && y<outHeight && z<outDepth)
 	{
-		int newWidth = width/xNeighborhood;
-		int newHeight = height/yNeighborhood;
-		int newdepth = depth/zNeighborhood;
-		int neighborhoodPixels = xNeighborhood*yNeighborhood*zNeighborhood;
-		float val = 0.0f;
+		float val = 0;
+		unsigned int xMin = x*reduction;
+		unsigned int xMax = min(x*reduction+reduction,inWidth);
+		unsigned int yMin = y*reduction;
+		unsigned int yMax = min(y*reduction+reduction,inHeight);
+		unsigned int zMin = z*(reduction/2);
+		unsigned int zMax = min(z*(reduction/2)+(reduction/2),inDepth);
 
-		for (int xInd=x; xInd<x+xNeighborhood&&xInd<width; ++xInd)
+		for (unsigned int i=xMin; i<xMax; ++i)
 		{
-			for (int yInd=y; yInd<y+yNeighborhood&&yInd<height; ++yInd)
+			for (unsigned int j=yMin; j<yMax; ++j)
 			{
-				for (int zInd=z; zInd<z+zNeighborhood&&zInd<depth; ++zInd)
-				{
-					val += imageIn[xInd+yInd*width+zInd*height*width];
-				}
+				for (unsigned int k=zMin; k<zMax; ++k)
+					//center imageIn[x+y*imageWidth]
+					val += (float)imageIn[i+j*inWidth+k*inHeight*inWidth];
 			}
 		}
 
-		imageOut[(x/xNeighborhood)+(y/yNeighborhood)*newWidth+(z/zNeighborhood)*newHeight*newWidth] = val/neighborhoodPixels;
+		imageOut[x+y*outWidth+z*outHeight*outWidth] = 
+			val/((xMax-xMin)*(yMax-yMin)*(zMax-zMin));
 	}
 }

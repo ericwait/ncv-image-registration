@@ -1,27 +1,9 @@
 #include "ImagesTiff.h"
 #include <limits.h>
 #include "AlignImages.h"
-//#include "BackgroundSubtraction.h"
-//#include "Denoise.h"
-//#include "Hull.h"
-//#include "Segmentation.h"
-//#include "LEVer3D.h"
-//#include "windowProcessing.h"
-//#include "dxGlobals.h"
-//#include "LEVer3dMex.h"
-//#include "tracker.h"
-//#include "DataHandling.h"
 
-#include "itkTIFFImageIO.h"
-#include "itkMetaImageIO.h"
-#include "itkImageFileReader.h"
-#include "ITKImageSeriesReader.h"
-#include "itkNumericSeriesFileNames.h"
-#include "itkStatisticsImageFilter.h"
-#include "itkImageFileWriter.h"
-#include "itkImageLinearConstIteratorWithIndex.h"
-#include "itkImageSliceIteratorWithIndex.h"
-#include "itkImageSliceConstIteratorWithIndex.h"
+#include "tiffio.h"
+#include "tiff.h"
 
 #define MAX_THREAD_USAGE (0.5)
 #define CToMat(x) ((x)+1)
@@ -138,7 +120,7 @@ ImageContainer::ImageContainer(unsigned int width, unsigned int height, unsigned
 	this->height = height;
 	this->depth = depth;
 
-	image = new pixelType[width*height*depth];
+	image = new PixelType[width*height*depth];
 }
 
 void ImageContainer::copy(const ImageContainer& im)
@@ -152,8 +134,8 @@ void ImageContainer::copy(const ImageContainer& im)
 	yPosition = im.getYPosition();
 	zPosition = im.getZPosition();
 
-	image = new pixelType[width*height*depth];
-	memcpy((void*)image,(void*)(im.getConstMemoryPointer()),sizeof(pixelType)*width*height*depth);
+	image = new PixelType[width*height*depth];
+	memcpy((void*)image,(void*)(im.getConstMemoryPointer()),sizeof(PixelType)*width*height*depth);
 }
 
 void ImageContainer::clear()
@@ -167,7 +149,7 @@ void ImageContainer::clear()
 	}
 }
 
-pixelType ImageContainer::getPixelValue(unsigned int x, unsigned int y, unsigned int z) const
+PixelType ImageContainer::getPixelValue(unsigned int x, unsigned int y, unsigned int z) const
 {
 #ifdef _DEBUG
 	assert(width!=-1 && x<width);
@@ -190,13 +172,13 @@ void ImageContainer::setPixelValue(unsigned int x, unsigned int y, unsigned int 
 	image[x+y*width+z*height*width] = val;
 }
 
-const pixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned int sizeX, unsigned int minY, unsigned int sizeY, unsigned int minZ, unsigned int sizeZ) const
+const PixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned int sizeX, unsigned int minY, unsigned int sizeY, unsigned int minZ, unsigned int sizeZ) const
 {
 	assert(sizeX<=width);
 	assert(sizeY<=height);
 	assert(sizeZ<=depth);
 
-	pixelType* image = new pixelType[sizeX*sizeY*sizeZ];
+	PixelType* image = new PixelType[sizeX*sizeY*sizeZ];
 
 	unsigned int i=0;
 	for (unsigned int z=0; z<sizeZ; ++z)
@@ -413,7 +395,7 @@ ImageContainer* ImagesTiff::getImage(unsigned char channel, unsigned int frame)
 	return imageBuffers[channel][frame];
 }
 
-const pixelType* ImagesTiff::getConstImageData(unsigned char channel, unsigned int frame) const
+const PixelType* ImagesTiff::getConstImageData(unsigned char channel, unsigned int frame) const
 {
 #ifdef _DEBUG
 	assert(channel<numberOfChannels);
@@ -467,7 +449,7 @@ void ImagesTiff::setImage(ImageContainer& image, unsigned char channel, unsigned
 	imageBuffers[channel][frame] = new ImageContainer(image);
 }
 
-pixelType ImagesTiff::getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const
+PixelType ImagesTiff::getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const
 {
 #ifdef _DEBUG
 	assert(channel<numberOfChannels);
@@ -581,229 +563,126 @@ void ImagesTiff::setupCharReader()
 
 void ImagesTiff::reader(unsigned char channel, unsigned int frame) 
 {
-	typedef itk::Image<pixelType,3> CharImageVolumeType;
-	typedef itk::TIFFImageIO UnsignedCharTIFF_IOType;
-	typedef itk::ImageSeriesReader<CharImageVolumeType> CharVolumeReaderType;
-	typedef itk::NumericSeriesFileNames NameGeneratorType;
+	char filenameTemplate[255], curFileName[255];
+	sprintf_s(filenameTemplate,"%s\\%s_c%d_t%04d_z%s.tif",imagesPath.c_str(),datasetName.c_str(),CToMat(channel),CToMat(frame),"%04d");
+	printf("Reading:%s...\n",filenameTemplate);
+	TIFF* image;
+	unsigned int stripCount=0, stripSize=0, imageOffset=0, result=0, width=0, height=0, depth=0;
+	unsigned short bps, spp;
+	PixelType* imageBuffer;
 
-	typedef itk::ImageSliceConstIteratorWithIndex<CharImageVolumeType> cellConstIteratorType;
-	char buffer[255];
-	CharVolumeReaderType::Pointer reader = CharVolumeReaderType::New();
-	UnsignedCharTIFF_IOType::Pointer imageIO = UnsignedCharTIFF_IOType::New();
-	NameGeneratorType::Pointer nameGenerator = NameGeneratorType::New();
-	CharImageVolumeType::Pointer image;
-
-	nameGenerator->SetStartIndex(1);
-	nameGenerator->SetIncrementIndex(1);
-	reader->SetImageIO(imageIO);
-
-	sprintf_s(buffer,"%s\\%s_c%d_t%04d_z%s.tif",imagesPath.c_str(),datasetName.c_str(),CToMat(channel),CToMat(frame),"%04d");
-
-	nameGenerator->SetSeriesFormat(buffer);
-	nameGenerator->SetEndIndex(getZSize());
-
-	reader->SetFileNames(nameGenerator->GetFileNames());
-	reader->Update();
-
-	image = reader->GetOutput();
-
-	CharImageVolumeType::SizeType size = image->GetLargestPossibleRegion().GetSize();
-	imageBuffers[channel][frame] = new ImageContainer(size[0],size[1],size[2]);
-	imageBuffers[channel][frame]->setName(this->datasetName);
-
-	cellConstIteratorType imageIterator = itk::ImageSliceConstIteratorWithIndex<CharImageVolumeType>(image, image->GetLargestPossibleRegion());
-	imageIterator.SetFirstDirection(0);
-	imageIterator.SetSecondDirection(1);
-	imageIterator.GoToBegin();
-
-	unsigned int x=0, y=0, z=0;
-
-	while (!imageIterator.IsAtEnd())
+	for (unsigned int z=0; z<depth; ++z)
 	{
-		while (!imageIterator.IsAtEndOfSlice())
+		imageOffset=0;
+		sprintf_s(curFileName,filenameTemplate,z+1);
+		if ((image=TIFFOpen(curFileName,"r"))==NULL)
 		{
-			while (!imageIterator.IsAtEndOfLine())
-			{
-				imageBuffers[channel][frame]->setPixelValue(x,y,z,imageIterator.Get());
-				++imageIterator;
-				++x;
-			}
-			imageIterator.NextLine();
-			++y;
-			x=0;
+			fprintf(stderr,"Could not open %s\n",curFileName);
+			continue;
 		}
-		imageIterator.NextSlice();
-		++z;
-		y=0;
-		x=0;
+
+		// Check that it is of a type that we support
+		if((TIFFGetField(image, TIFFTAG_BITSPERSAMPLE, &bps) == 0) || (bps != 8)){
+			fprintf(stderr, "Either undefined or unsupported number of bits per sample\n");
+		}
+		if((TIFFGetField(image, TIFFTAG_SAMPLESPERPIXEL, &spp) == 0) || (spp != 1)){
+			fprintf(stderr, "Either undefined or unsupported number of samples per pixel\n");
+			exit(42);
+		}
+		if (stripSize==0 && stripCount==0)
+		{
+			stripSize = TIFFStripSize (image);
+			stripCount = TIFFNumberOfStrips (image);
+			TIFFGetField(image,TIFFTAG_IMAGEWIDTH,&width);
+			TIFFGetField(image,TIFFTAG_IMAGELENGTH,&height);
+			imageBuffers[channel][frame] = new ImageContainer(width,height,depth);
+			imageBuffer = imageBuffers[channel][frame]->getMemoryPointer();
+		}
+		else if (stripSize!=TIFFStripSize(image) || stripCount!=TIFFNumberOfStrips(image))
+		{
+			fprintf(stderr,"Image %s does not have the same dimension (%d,%d)!=(%d,%d)\n",curFileName,TIFFStripSize(image),
+				TIFFNumberOfStrips(image),stripSize,stripCount);
+			if(imageBuffer!=NULL)
+			{
+				delete imageBuffer;
+				imageBuffer = NULL;
+			}
+		}
+		for (unsigned int y=0; y<stripCount; ++y)
+		{
+			if ((result=TIFFReadEncodedStrip(image,y,imageBuffer+imageOffset+z*width*height,stripSize))==-1)
+			{
+				fprintf(stderr,"Read error on input strip number %d on image %s\n",y,curFileName);
+				delete imageBuffer;
+				imageBuffer = NULL;
+			}
+
+			imageOffset += result;
+		}
+		TIFFClose(image);
 	}
+
+	imageBuffers[channel][frame]->setName(this->datasetName);
 }
 
 void writeImage(const ImageContainer* image, std::string fileName)
 {
-	typedef itk::Image<pixelType,3> CharImageVolumeType;
-	typedef itk::TIFFImageIO UnsignedCharTIFF_IOType;
-	typedef itk::ImageSliceIteratorWithIndex<CharImageVolumeType> cellIteratorType;
-	typedef itk::ImageFileWriter<CharImageVolumeType> WriterType;
-	WriterType::Pointer writer = WriterType::New();
-	itk::TIFFImageIO::Pointer iO = itk::TIFFImageIO::New();
-	CharImageVolumeType::Pointer outputImage = CharImageVolumeType::New();
-	
-	CharImageVolumeType::RegionType region;
-	region.SetIndex(0,0);
-	region.SetIndex(1,0);
-	region.SetIndex(2,0);
-	region.SetSize(0,image->getWidth());
-	region.SetSize(1,image->getHeight());
-	region.SetSize(2,image->getDepth());
-	outputImage->SetRegions(region);
-
-	//double spaceing[3] = {xPixelPhysicalSize,yPixelPhysicalSize,zPixelPhysicalSize};
-	//outputImage->SetSpacing(spaceing);
-
-	outputImage->Allocate();
-
-	cellIteratorType imageIterator = itk::ImageSliceIteratorWithIndex<CharImageVolumeType>(outputImage, outputImage->GetLargestPossibleRegion());
-	imageIterator.SetFirstDirection(0);
-	imageIterator.SetSecondDirection(1);
-	imageIterator.GoToBegin();
-
-	unsigned int x=0, y=0, z=0;
-
-	while (!imageIterator.IsAtEnd())
-	{
-		while (!imageIterator.IsAtEndOfSlice())
-		{
-			while (!imageIterator.IsAtEndOfLine())
-			{
-				imageIterator.Set(image->getPixelValue(x,y,z));
-				++imageIterator;
-				++x;
-			}
-			imageIterator.NextLine();
-			++y;
-			x=0;
-		}
-		imageIterator.NextSlice();
-		++z;
-		y=0;
-		x=0;
-	}
-
-	writer->SetInput(outputImage);
-	writer->SetImageIO(iO);
-	writer->SetFileName(fileName.c_str());
-	writer->Update();
+	writeImage(image->getConstMemoryPointer(),image->getWidth(),image->getHeight(),image->getDepth(),fileName);
 }
 
-void writeImage(const pixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
+void writeImage(const float* floatImage, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
 {
-	typedef itk::Image<pixelType,3> CharImageVolumeType;
-	typedef itk::TIFFImageIO UnsignedCharTIFF_IOType;
-	typedef itk::ImageSliceIteratorWithIndex<CharImageVolumeType> cellIteratorType;
-	typedef itk::ImageFileWriter<CharImageVolumeType> WriterType;
-	WriterType::Pointer writer = WriterType::New();
-	itk::TIFFImageIO::Pointer iO = itk::TIFFImageIO::New();
-	CharImageVolumeType::Pointer outputImage = CharImageVolumeType::New();
+	PixelType* image = new PixelType[width*height*depth];
 
-	CharImageVolumeType::RegionType region;
-	region.SetIndex(0,0);
-	region.SetIndex(1,0);
-	region.SetIndex(2,0);
-	region.SetSize(0,width);
-	region.SetSize(1,height);
-	region.SetSize(2,depth);
-	outputImage->SetRegions(region);
-
-	outputImage->Allocate();
-
-	cellIteratorType imageIterator = itk::ImageSliceIteratorWithIndex<CharImageVolumeType>(outputImage, outputImage->GetLargestPossibleRegion());
-	imageIterator.SetFirstDirection(0);
-	imageIterator.SetSecondDirection(1);
-	imageIterator.GoToBegin();
-
-	unsigned int x=0, y=0, z=0;
-
-	while (!imageIterator.IsAtEnd())
+	for (unsigned int z=0; z<depth; ++z)
 	{
-		while (!imageIterator.IsAtEndOfSlice())
+		for (unsigned int y=0; y<height; ++y)
 		{
-			while (!imageIterator.IsAtEndOfLine())
+			for (unsigned int x=0; x<width; ++x)
 			{
-				imageIterator.Set(image[x+y*width+z*height*width]);
-				++imageIterator;
-				++x;
+				image[x+y*width+z*height*width] = (PixelType)std::max(std::min(floatImage[x+y*width+z*height*width],255.0f),0.0f);
+				
 			}
-			imageIterator.NextLine();
-			++y;
-			x=0;
 		}
-		imageIterator.NextSlice();
-		++z;
-		y=0;
-		x=0;
 	}
 
-	writer->SetInput(outputImage);
-	writer->SetImageIO(iO);
-	writer->SetFileName(fileName.c_str());
-	writer->Update();
+	writeImage(image,width,height,depth,fileName);
+
+	delete image;
 }
 
-void writeImage(const float* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
+void writeImage(const PixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
 {
-	typedef itk::Image<pixelType,3> CharImageVolumeType;
-	typedef itk::TIFFImageIO UnsignedCharTIFF_IOType;
-	typedef itk::ImageSliceIteratorWithIndex<CharImageVolumeType> cellIteratorType;
-	typedef itk::ImageFileWriter<CharImageVolumeType> WriterType;
-	WriterType::Pointer writer = WriterType::New();
-	itk::TIFFImageIO::Pointer iO = itk::TIFFImageIO::New();
-	CharImageVolumeType::Pointer outputImage = CharImageVolumeType::New();
+	char curFileName[255];
+	TIFF* image;
 
-	CharImageVolumeType::RegionType region;
-	region.SetIndex(0,0);
-	region.SetIndex(1,0);
-	region.SetIndex(2,0);
-	region.SetSize(0,width);
-	region.SetSize(1,height);
-	region.SetSize(2,depth);
-	outputImage->SetRegions(region);
-
-	outputImage->Allocate();
-
-	cellIteratorType imageIterator = itk::ImageSliceIteratorWithIndex<CharImageVolumeType>(outputImage, outputImage->GetLargestPossibleRegion());
-	imageIterator.SetFirstDirection(0);
-	imageIterator.SetSecondDirection(1);
-	imageIterator.GoToBegin();
-
-	unsigned int x=0, y=0, z=0;
-	float minVal = std::numeric_limits<float>::max();
-	float maxVal = std::numeric_limits<float>::min();
-
-	while (!imageIterator.IsAtEnd())
+	printf("Writing:%s\n",fileName.c_str());
+	for (unsigned int z=0; z<depth; ++z)
 	{
-		while (!imageIterator.IsAtEndOfSlice())
-		{
-			while (!imageIterator.IsAtEndOfLine())
-			{
-				pixelType pixelVal = std::max(std::min(image[x+y*width+z*height*width],255.0f),0.0f);
-				imageIterator.Set(pixelVal);
-				++imageIterator;
-				++x;
-			}
-			imageIterator.NextLine();
-			++y;
-			x=0;
+		sprintf_s(curFileName,fileName.c_str(),z+1);
+		// Open the TIFF file
+		if((image = TIFFOpen(curFileName, "w")) == NULL){
+			printf("Could not open %s for writing\n",curFileName);
+			continue;
 		}
-		imageIterator.NextSlice();
-		++z;
-		y=0;
-		x=0;
-	}
 
-	writer->SetInput(outputImage);
-	writer->SetImageIO(iO);
-	writer->SetFileName(fileName.c_str());
-	writer->Update();
+		// We need to set some values for basic tags before we can add any data
+		TIFFSetField(image, TIFFTAG_IMAGEWIDTH, width);
+		TIFFSetField(image, TIFFTAG_IMAGELENGTH, height);
+		TIFFSetField(image, TIFFTAG_BITSPERSAMPLE, 8);
+		TIFFSetField(image, TIFFTAG_SAMPLESPERPIXEL, 1);
+		TIFFSetField(image, TIFFTAG_ROWSPERSTRIP, height);
+
+		TIFFSetField(image, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+		TIFFSetField(image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+		TIFFSetField(image, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
+		TIFFSetField(image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+
+		// Write the information to the file
+		TIFFWriteEncodedStrip(image, 0, (void*)(imageBuffer+z*width*height), width*height);
+
+		// Close the file
+		TIFFClose(image);
+	}
 }
 //////////////////////////////////////////////////////////////////////////
