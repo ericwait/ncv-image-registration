@@ -84,9 +84,9 @@ public:
 	std::string	getImagesPath() const {return imagesPath;}
 	unsigned char getNumberOfChannels() const {return numberOfChannels;}
 	unsigned int getNumberOfFrames() const {return numberOfFrames;}
-	unsigned int getXSize() const {return xSize;}
-	unsigned int getYSize() const {return ySize;}
-	unsigned int getZSize() const {return zSize;}
+	unsigned long long  getXSize() const {return xSize;}
+	unsigned long long  getYSize() const {return ySize;}
+	unsigned long long  getZSize() const {return zSize;}
 	float getXScale() const {return xScale;}
 	float getYScale() const {return yScale;}
 	float getZScale() const {return zScale;}
@@ -137,9 +137,9 @@ private:
 	unsigned char	numberOfChannels;
 	unsigned short	numberOfFrames;
 	float			timeBetweenFrames;
-	int				xSize;
-	int				ySize;
-	int				zSize;
+	unsigned long long xSize;
+	unsigned long long ySize;
+	unsigned long long zSize;
 	double			xPixelPhysicalSize;
 	double			yPixelPhysicalSize;
 	double			zPixelPhysicalSize;

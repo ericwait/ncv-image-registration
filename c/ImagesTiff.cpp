@@ -379,7 +379,7 @@ void ImagesTiff::setMetadata(std::map<std::string,std::string> metadata)
 
 void ImagesTiff::setScales()
 {
-	float maxDim = std::max(std::max(xSize,ySize),zSize);
+	float maxDim = MAX(MAX(xSize,ySize),zSize);
 	xScale = xSize/maxDim;
 	yScale = ySize/maxDim * (yPixelPhysicalSize/xPixelPhysicalSize);
 	zScale = zSize/maxDim * (zPixelPhysicalSize/xPixelPhysicalSize);
@@ -567,7 +567,7 @@ void ImagesTiff::reader(unsigned char channel, unsigned int frame)
 	sprintf_s(filenameTemplate,"%s\\%s_c%d_t%04d_z%s.tif",imagesPath.c_str(),datasetName.c_str(),CToMat(channel),CToMat(frame),"%04d");
 	printf("Reading:%s...\n",filenameTemplate);
 	TIFF* image;
-	unsigned int stripCount=0, stripSize=0, imageOffset=0, result=0, width=0, height=0, depth=0;
+	unsigned int stripCount=0, stripSize=0, imageOffset=0, result=0, width=0, height=0, depth=this->zSize;
 	unsigned short bps, spp;
 	PixelType* imageBuffer;
 
@@ -622,7 +622,7 @@ void ImagesTiff::reader(unsigned char channel, unsigned int frame)
 		TIFFClose(image);
 	}
 
-	imageBuffers[channel][frame]->setName(this->datasetName);
+	imageBuffers[channel][frame]->setName(this->datasetName.c_str());
 }
 
 void writeImage(const ImageContainer* image, std::string fileName)
@@ -640,7 +640,7 @@ void writeImage(const float* floatImage, unsigned int width, unsigned int height
 		{
 			for (unsigned int x=0; x<width; ++x)
 			{
-				image[x+y*width+z*height*width] = (PixelType)std::max(std::min(floatImage[x+y*width+z*height*width],255.0f),0.0f);
+				image[x+y*width+z*height*width] = (PixelType)MAX(MAX(floatImage[x+y*width+z*height*width],255.0f),0.0f);
 				
 			}
 		}
@@ -651,7 +651,7 @@ void writeImage(const float* floatImage, unsigned int width, unsigned int height
 	delete image;
 }
 
-void writeImage(const PixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
+void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
 {
 	char curFileName[255];
 	TIFF* image;

@@ -13,6 +13,6 @@ __global__ void getROI(const float* imageIn, int orgSizeX, int orgSizeY, int org
 	int startZ, int newWidth, int newHeight, int newDepth);
 __global__ void reduceArray(float* arrayIn, float* arrayOut, unsigned int n);
 __global__ void reduceImage(PixelType* imageIn, PixelType* imageOut, unsigned int inWidth, unsigned int inHeight,
-	unsigned int inDepth, unsigned int outWidth, unsigned int outHeight, unsigned int outDepth, unsigned int reduction)
+	unsigned int inDepth, unsigned int outWidth, unsigned int outHeight, unsigned int outDepth, unsigned int reduction);
 
 #endif
