@@ -89,7 +89,7 @@ void align()
  				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,omp_get_thread_num());
  #else
  				printf("\n(%d) %s <-- %s\n",1,gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
- 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,1);
+ 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,0);
  #endif
 				edge curEdge;
 				curEdge.deltas = deltas;
