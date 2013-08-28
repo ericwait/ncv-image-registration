@@ -5,6 +5,7 @@
 #include "device_launch_parameters.h"
 #include <time.h>
 #include "CudaUtilities.h"
+#include "Vec.h"
 
 unsigned int gMaxOverlapPixels = 0;
 

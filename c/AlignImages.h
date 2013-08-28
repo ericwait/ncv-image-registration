@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include "Vec.h"
 
 #define MARGIN (150)
 #define MIN_OVERLAP (25)
@@ -42,58 +43,6 @@ struct Overlap
 	int deltaZse;
 	int deltaZmax;
 	int deltaZmin;
-};
-
-template<typename T>
-struct Vec
-{
-	T x;
-	T y;
-	T z;
-	
-	Vec()
-	{
-		x=0;
-		y=0;
-		z=0;
-	}
-
-	Vec(T x, T y, T z)
-	{
-		this->x = x;
-		this->y = y;
-		this->z = z;
-	}
-
-	Vec<T> operator+ (Vec<T> other) const
-	{
-		Vec<T> outVec;
-		outVec.x = x + other.x;
-		outVec.y = y + other.y;
-		outVec.z = z + other.z;
-
-		return outVec;
-	}
-
-	Vec<T> operator- (Vec<T> other) const
-	{
-		Vec<T> outVec;
-		outVec.x = x - other.x;
-		outVec.y = y - other.y;
-		outVec.z = z - other.z;
-
-		return outVec;
-	}
-
-	Vec<T> operator- () const
-	{
-		Vec<T> outVec;
-		outVec.x = -x;
-		outVec.y = -y;
-		outVec.z = -z;
-
-		return outVec;
-	}
 };
 
 template<typename T>
