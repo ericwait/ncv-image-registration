@@ -14,6 +14,9 @@ struct  corrReport
 {
 	Vec<int> delta;
 	double correlation;
+	double staticSig;
+	double overlapSig;
+	unsigned int nVoxels;
 };
 
 void calcBlockThread(unsigned int n, cudaDeviceProp& prop, dim3& blocks, dim3& threads)
@@ -87,7 +90,9 @@ void calcBlockThread(unsigned int width, unsigned int height, unsigned int depth
 	}
 }
 
-double calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* deviceStaticROIimage, float* deviceStaticSum, float* deviceOverlapROIimage, float* deviceOverlapSum, float* staticSum, float* overlapSum, float* deviceMulImage)
+double calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* deviceStaticROIimage, float* deviceStaticSum,
+	float* deviceOverlapROIimage, float* deviceOverlapSum, float* staticSum, float* overlapSum, float* deviceMulImage,
+	double& staticSig, double& overlapSig)
 {
 #ifdef _DEBUG
 	assert(xSize*ySize*zSize<=gMaxOverlapPixels);
@@ -97,8 +102,8 @@ double calcCorr(int xSize, int ySize, int zSize, cudaDeviceProp prop, float* dev
 	dim3 threads;
 	double staticMean = 0.0;
 	double overlapMean = 0.0;
-	double staticSig = 0.0;
-	double overlapSig = 0.0;
+	staticSig = 0.0;
+	overlapSig = 0.0;
 	double numerator = 0.0;
 
 //////////////////////////////////////////////////////////////////////////
@@ -438,10 +443,15 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 					//}
 					////////////////////////////////////////////////////////////
 
-					float correlation = calcCorr(szs.x, szs.y, szs.z, prop, deviceStaticROIimage, deviceStaticSum, deviceOverlapROIimage, deviceOverlapSum, staticSum, overlapSum, deviceMulImage);
+					double staticSig, overlapSig;
+					float correlation = calcCorr(szs.x, szs.y, szs.z, prop, deviceStaticROIimage, deviceStaticSum, 
+						deviceOverlapROIimage, deviceOverlapSum, staticSum, overlapSum, deviceMulImage, staticSig, overlapSig);
 
 					report[reportInd.x + reportInd.y*deltaSizes.x + reportInd.z*deltaSizes.y*deltaSizes.x].delta = reportInd;
 					report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].correlation = correlation;
+					report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].staticSig = staticSig;
+					report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].overlapSig = overlapSig;
+					report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].nVoxels = szs.x*szs.y*szs.z;
 
 					if (correlation>maxCorrelation)
 					{
@@ -496,7 +506,8 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		fopen_s(&reportFile,fileName,"w");
 		for (int i=0; i<reportInd.product(); ++i)
 		{
-			fprintf(reportFile,"(%d,%d,%d):%lf\n",report[i].delta.x,report[i].delta.y,report[i].delta.z,report[i].correlation);
+			fprintf(reportFile,"(%d,%d,%d):%lf,%lf,%lf,%d\n",report[i].delta.x,report[i].delta.y,report[i].delta.z,
+				report[i].correlation,report[i].staticSig,report[i].overlapSig,report[i].nVoxels);
 		}
 		fclose(reportFile);
 	}

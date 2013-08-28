@@ -17,7 +17,7 @@ if ~isempty(fileList)
         
         cMap = [];
         while ~feof(fid)
-            C = textscan(fid,'(%d,%d,%d):%f');
+            C = textscan(fid,'(%d,%d,%d):%f,%f,%f,%d');
             cMap = [cMap;C];
         end
         
@@ -35,9 +35,15 @@ if ~isempty(fileList)
         sizeZ = maxZ - minZ +1;
         
         corrMap = zeros(sizeX,sizeY,sizeZ);
+        staticSigs = zeros(sizeX,sizeY,sizeZ);
+        overlapSigs = zeros(sizeX,sizeY,sizeZ);
+        numVoxels = zeros(sizeX,sizeY,sizeZ);
         
         for i=1:length(cMap{1})
             corrMap(cMap{1}(i)-minX+1,cMap{2}(i)-minY+1,cMap{3}(i)-minZ+1) = cMap{4}(i);
+            staticSigs(cMap{1}(i)-minX+1,cMap{2}(i)-minY+1,cMap{3}(i)-minZ+1) = cMap{5}(i);
+            overlapSigs(cMap{1}(i)-minX+1,cMap{2}(i)-minY+1,cMap{3}(i)-minZ+1) = cMap{6}(i);
+            numVoxels(cMap{1}(i)-minX+1,cMap{2}(i)-minY+1,cMap{3}(i)-minZ+1) = cMap{7}(i);
         end
         
         corMax = max(corrMap(:));
