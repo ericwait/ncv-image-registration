@@ -84,12 +84,14 @@ void align()
 				Vec<int> deltas;
 				double maxCorr;
 				unsigned int bestN;
+				char buffer[255];
+				sprintf_s(buffer,"%s_%s_report.txt",gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
 #ifdef _USE_OMP
  				printf("(%d) %s <-- %s\n",omp_get_thread_num(),gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
- 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,omp_get_thread_num());
+ 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,omp_get_thread_num(),buffer);
  #else
  				printf("\n(%d) %s <-- %s\n",1,gImageTiffs[staticImageInd]->getDatasetName().c_str(),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
- 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,0);
+ 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,0,buffer);
  #endif
 				edge curEdge;
 				curEdge.deltas = deltas;
