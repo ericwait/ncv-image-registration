@@ -1,12 +1,10 @@
 function combineImages()
 global imageDatasets rootDir MARGIN newImage outImage datasetName
 
-% root = 'B:\Users\eric_000\Documents\Programming\Chris\';
-datasetName = '22mo SVZ';
+datasetName = 'DAPI AcTub-647 Laminin-488 VCAM-546';
 readMetaData();
 
 readDeltaData(rootDir);
-
 
 MARGIN = 5;
 
@@ -22,9 +20,9 @@ minZPos = min([imageDatasets(:).zMinPos]);
 maxXPos = max([imageDatasets(:).xMaxPos]);
 maxYPos = max([imageDatasets(:).yMaxPos]);
 maxZPos = max([imageDatasets(:).zMaxPos]);
-minXvoxelSize = min([imageDatasets(:).xVoxelSize]);
-minYvoxelSize = min([imageDatasets(:).yVoxelSize]);
-minZvoxelSize = min([imageDatasets(:).zVoxelSize]);
+minXvoxelSize = min([imageDatasets([imageDatasets.zVoxelSize]>0).xVoxelSize]);
+minYvoxelSize = min([imageDatasets([imageDatasets.zVoxelSize]>0).yVoxelSize]);
+minZvoxelSize = min([imageDatasets([imageDatasets.zVoxelSize]>0).zVoxelSize]);
 imageWidth = round((maxXPos-minXPos)/minXvoxelSize +1);
 imageHeight = round((maxYPos-minYPos)/minYvoxelSize +1);
 imageDepth = round((maxZPos-minZPos)/minZvoxelSize +1);
@@ -59,9 +57,9 @@ for c=1:min([imageDatasets(:).NumberOfChannels])
         for im=1:length(imageDatasets)
             fprintf('.');
             for z=1:imageDatasets(im).zDim
-                startXind = round((imageDatasets(im).xMinPos-minXPos) / imageDatasets(im).xVoxelSize +1);
-                startYind = round((imageDatasets(im).yMinPos-minYPos) / imageDatasets(im).yVoxelSize +1);
-                startZind = round((imageDatasets(im).zMinPos-minZPos) / imageDatasets(im).zVoxelSize +1);
+                startXind = round((imageDatasets(im).xMinPos-minXPos) / minXvoxelSize +1);
+                startYind = round((imageDatasets(im).yMinPos-minYPos) / minYvoxelSize +1);
+                startZind = round((imageDatasets(im).zMinPos-minZPos) / minZvoxelSize +1);
                 outImage(startXind:startXind+imageDatasets(im).xDim-1,startYind:startYind+imageDatasets(im).yDim-1,startZind+z-1)...
                     = newImage{im}(:,:,z);
             end
