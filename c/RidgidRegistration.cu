@@ -447,7 +447,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 					float correlation = calcCorr(szs.x, szs.y, szs.z, prop, deviceStaticROIimage, deviceStaticSum, 
 						deviceOverlapROIimage, deviceOverlapSum, staticSum, overlapSum, deviceMulImage, staticSig, overlapSig);
 
-					report[reportInd.x + reportInd.y*deltaSizes.x + reportInd.z*deltaSizes.y*deltaSizes.x].delta = reportInd;
+					report[reportInd.x + reportInd.y*deltaSizes.x + reportInd.z*deltaSizes.y*deltaSizes.x].delta = Vec<int>(deltaX,deltaY,deltaZ);
 					report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].correlation = correlation;
 					report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].staticSig = staticSig;
 					report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].overlapSig = overlapSig;
