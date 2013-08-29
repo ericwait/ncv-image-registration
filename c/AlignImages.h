@@ -6,9 +6,9 @@
 #include <vector>
 #include "Vec.h"
 
-#define MARGIN (150)
+#define MARGIN (100)
 #define MIN_OVERLAP (25)
-#define MIN_OVERLAP_Z (10)
+#define MIN_OVERLAP_Z (30)
 extern int scanChannel;
 
 struct Overlap

@@ -59,8 +59,8 @@ void align()
 				gImageTiffs[staticImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize();
 
 			ov.deltaZse = ov.deltaZss + (int)gImageTiffs[overlapImageInd]->getZSize()-1;
-			ov.deltaZmax = min(MARGIN, (int)gImageTiffs[staticImageInd]->getZSize() - MIN_OVERLAP_Z - ov.deltaZss);
-			ov.deltaZmin = max(-MARGIN, (MIN_OVERLAP_Z-1) - ov.deltaZse);
+			ov.deltaZmax = min(MARGIN-50, (int)gImageTiffs[staticImageInd]->getZSize() - MIN_OVERLAP_Z - ov.deltaZss);
+			ov.deltaZmin = max(-(MARGIN-50), (MIN_OVERLAP_Z-1) - ov.deltaZse);
 
 			if (ov.deltaXmax-ov.deltaXmin>0 && ov.deltaYmax-ov.deltaYmin>0)
 			{
