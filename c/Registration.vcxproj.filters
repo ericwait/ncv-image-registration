@@ -11,14 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="CudaUtilities.h">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="cudaKernals.h">
-      <Filter>Header Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -29,6 +21,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AlignImages.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RidgidRegistration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -51,12 +46,18 @@
     <ClInclude Include="RidgidRegistration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Vec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RidgidRegistration.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-    <CudaCompile Include="cudaKernals.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

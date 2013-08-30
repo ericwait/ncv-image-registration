@@ -170,16 +170,16 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaLink>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="cudaKernals.h" />
-    <None Include="CudaUtilities.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="AlignImages.cpp" />
     <ClCompile Include="ImagesTiff.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RidgidRegistration.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h" />
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Defines.h" />
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Vec.h" />
     <ClInclude Include="AlignImages.h" />
     <ClInclude Include="ImagesTiff.h" />
     <ClInclude Include="main.h" />
@@ -188,7 +188,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="winHead.h" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="cudaKernals.cu" />
     <CudaCompile Include="RidgidRegistration.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
