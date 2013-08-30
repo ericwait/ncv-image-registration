@@ -19,28 +19,36 @@ class ImageContainer
 {
 public:
 	ImageContainer(unsigned int width, unsigned int height, unsigned int depth);
+	ImageContainer(Vec<unsigned int> dims);
 	ImageContainer(const ImageContainer& image){copy(image);}
 	~ImageContainer(){clear();}
 	ImageContainer& operator=(const ImageContainer& image){copy(image);}
 
 	std::string getName() const {return name;}
 	PixelType getPixelValue(unsigned int x, unsigned int y, unsigned int z) const;
+	PixelType getPixelValue(Vec<unsigned int> coordinate) const;
 	const PixelType* getConstMemoryPointer() const {return image;}
-	const PixelType* getConstROIData (unsigned int minX, unsigned int maxX, unsigned int minY, unsigned int maxY, unsigned int minZ, unsigned int sizeZ) const;
-	const float* getConstFloatROIData (unsigned int minX, unsigned int maxX, unsigned int minY, unsigned int maxY, unsigned int minZ, unsigned int sizeZ) const;
-	PixelType* getMemoryPointer(){return image;}
-	unsigned int getWidth() const {return width;}
-	unsigned int getHeight() const {return height;}
-	unsigned int getDepth() const {return depth;}
-	float getXPosition() const {return xPosition;}
-	float getYPosition() const {return yPosition;}
-	float getZPosition() const {return zPosition;}
+	const PixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned int sizeX, unsigned int minY,
+		unsigned int sizeY, unsigned int minZ, unsigned int sizeZ) const;
 
-	void setPixelValue(unsigned int x, unsigned int y, unsigned int z,PixelType val);
-	void setExtents(unsigned int width, unsigned int height, unsigned int depth);
-	void setWidth(unsigned int width){this->width=width;}
-	void setHeight(unsigned int height){this->height=height;}
-	void setDepth(unsigned int depth){this->depth=depth;}
+	template<typename ImagePixelType>
+	const ImagePixelType* getConstROIData (Vec<unsigned int> startIndex, Vec<unsigned int> size) const;
+	PixelType* getMemoryPointer(){return image;}
+	Vec<unsigned int> getDims() const {return dims;}
+	unsigned int getWidth() const {return dims.x;}
+	unsigned int getHeight() const {return dims.y;}
+	unsigned int getDepth() const {return dims.z;}
+	Vec<double> getPositions() const {return positions;}
+	double getXPosition() const {return positions.x;}
+	double getYPosition() const {return positions.y;}
+	double getZPosition() const {return positions.z;}
+
+	void setPixelValue(unsigned int x, unsigned int y, unsigned int z, unsigned char val);
+	void setPixelValue(Vec<unsigned int> coordinate,PixelType val);
+	void setExtents(Vec<unsigned int> dims){this->dims=dims;}
+	void setWidth(unsigned int width){dims.x=width;}
+	void setHeight(unsigned int height){dims.y=height;}
+	void setDepth(unsigned int depth){dims.z=depth;}
 	void setName(std::string name){this->name=name;}
 
 private:
@@ -50,21 +58,13 @@ private:
 	void defaults() 
 	{
 		name		= "";
-		width		= -1;
-		height		= -1;
-		depth		= -1;
-		xPosition	= 0.0;
-		yPosition	= 0.0;
-		zPosition	= 0.0;
+		dims = Vec<unsigned int>(-1,-1,-1);
+		positions = Vec<double>(0.0,0.0,0.0);
 	}
 
 	std::string		name;
-	unsigned int	width;
-	unsigned int	height;
-	unsigned int	depth;
-	double			xPosition;
-	double			yPosition;
-	double			zPosition;
+	Vec<unsigned int> dims;
+	Vec<double> positions;
 
 	PixelType*	image;
 };
@@ -84,19 +84,24 @@ public:
 	std::string	getImagesPath() const {return imagesPath;}
 	unsigned char getNumberOfChannels() const {return numberOfChannels;}
 	unsigned int getNumberOfFrames() const {return numberOfFrames;}
-	unsigned long long  getXSize() const {return xSize;}
-	unsigned long long  getYSize() const {return ySize;}
-	unsigned long long  getZSize() const {return zSize;}
-	float getXScale() const {return xScale;}
-	float getYScale() const {return yScale;}
-	float getZScale() const {return zScale;}
-	float getXPixelPhysicalSize() const {return xPixelPhysicalSize;}
-	float getYPixelPhysicalSize() const {return yPixelPhysicalSize;}
-	float getZPixelPhysicalSize() const {return zPixelPhysicalSize;}
-	float getXPosition() const {return xPosition;}
-	float getYPosition() const {return yPosition;}
-	float getZPosition() const {return zPosition;}
+	Vec<unsigned long long> getSizes() const {return sizes;}
+	unsigned long long  getXSize() const {return sizes.x;}
+	unsigned long long  getYSize() const {return sizes.y;}
+	unsigned long long  getZSize() const {return sizes.z;}
+	Vec<double> getScales() const {return scales;}
+	double getXScale() const {return scales.x;}
+	double getYScale() const {return scales.y;}
+	double getZScale() const {return scales.z;}
+	Vec<double> getPixelPhysicalSizes() const {return pixelPhysicalSizes;}
+	double getXPixelPhysicalSize() const {return pixelPhysicalSizes.x;}
+	double getYPixelPhysicalSize() const {return pixelPhysicalSizes.y;}
+	double getZPixelPhysicalSize() const {return pixelPhysicalSizes.z;}
+	Vec<double> getPositions() const {return positions;}
+	double getXPosition() const {return positions.x;}
+	double getYPosition() const {return positions.y;}
+	double getZPosition() const {return positions.z;}
 	PixelType getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const;
+	PixelType getPixel(unsigned char channel, unsigned int frame, Vec<unsigned int> coordinate) const;
 	bool isAlligned(){return alligned;}
 	Vec<int> getDeltas(){return deltas;}
 
@@ -106,9 +111,10 @@ public:
 	void setDatasetName(std::string datasetName){this->datasetName=datasetName;}
 	void setNumberOfChannels(unsigned char numberOfChannels){this->numberOfChannels=numberOfChannels;}
 	void setNumberOfFrames(unsigned int numberOfFrames){this->numberOfFrames=numberOfFrames;}
-	void setXPixelPhysicalSize(float xPixelPhysicalSize){this->xPixelPhysicalSize=xPixelPhysicalSize;}
-	void setYPixelPhysicalSize(float yPixelPhysicalSize){this->yPixelPhysicalSize=yPixelPhysicalSize;}
-	void setZPixelPhysicalSize(float zPixelPhysicalSize){this->zPixelPhysicalSize=zPixelPhysicalSize;}
+	void setPixelPhysicalSizes(Vec<double> pixelPhysicalSizes){this->pixelPhysicalSizes=pixelPhysicalSizes;}
+	void setXPixelPhysicalSize(double xPixelPhysicalSize){this->pixelPhysicalSizes.x=xPixelPhysicalSize;}
+	void setYPixelPhysicalSize(double yPixelPhysicalSize){this->pixelPhysicalSizes.y=yPixelPhysicalSize;}
+	void setZPixelPhysicalSize(double zPixelPhysicalSize){this->pixelPhysicalSizes.z=zPixelPhysicalSize;}
 	void setAlligned(bool isAlligned){this->alligned = isAlligned;}
 	void setDeltas(Vec<int> bestDeltas){deltas = bestDeltas;}
 
@@ -137,18 +143,10 @@ private:
 	unsigned char	numberOfChannels;
 	unsigned short	numberOfFrames;
 	float			timeBetweenFrames;
-	unsigned long long xSize;
-	unsigned long long ySize;
-	unsigned long long zSize;
-	double			xPixelPhysicalSize;
-	double			yPixelPhysicalSize;
-	double			zPixelPhysicalSize;
-	double			xScale;
-	double			yScale;
-	double			zScale;
-	double			xPosition;
-	double			yPosition;
-	double			zPosition;
+	Vec<unsigned long long> sizes;
+	Vec<double>		pixelPhysicalSizes;
+	Vec<double>		scales;
+	Vec<double>		positions;
 
 	unsigned int	maxThreads;
 	bool			alligned;
