@@ -220,9 +220,9 @@ bool pathCreate(std::string path)
 //	return hr;
 //}
 
-// bool fileExists(const char* filename){
-// 	std::ifstream ifile(filename);
-// 	bool rtn = ifile.good();
-// 	ifile.close();
-// 	return rtn;
-// }
+ bool fileExists(const char* filename){
+ 	std::ifstream ifile(filename);
+ 	bool rtn = ifile.good();
+ 	ifile.close();
+ 	return rtn;
+ }
