@@ -46,13 +46,13 @@
     <ClInclude Include="RidgidRegistration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Defines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Vec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -60,5 +60,19 @@
     <CudaCompile Include="RidgidRegistration.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.cuh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.h">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaUtilities.h">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

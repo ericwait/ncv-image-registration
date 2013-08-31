@@ -1,4 +1,4 @@
-#include "RidgidRegistration.h"
+/*#include "RidgidRegistration.h"
 #include "cudaKernals.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
@@ -566,3 +566,4 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	printf("(%d) Delta (%d,%d,%d) max:%f totalTime:%f\n\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrelation,mainSec);
 	maxCorrOut = maxCorrelation;
 }
+*/

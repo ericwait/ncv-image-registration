@@ -95,7 +95,7 @@ void ImageContainer::setPixelValue(Vec<unsigned int> coordinate, unsigned char v
 #endif
 	assert(coordinate<dims);
 
-	image[dims.at(coordinate)] = val;
+	image[dims.linearAddressAt(coordinate)] = val;
 }
 
 const PixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned int sizeX, unsigned int minY,
@@ -115,7 +115,7 @@ const ImagePixelType* ImageContainer::getConstROIData (Vec<unsigned int> startIn
 	for (unsigned int z=startIndex.z; z<size.z; ++z)
 		for (unsigned int y=startIndex.y; y<size.y; ++y)
 			for (unsigned int x=startIndex.x; x<size.x+1; ++x)		
-				image[i] = (ImagePixelType*)getPixelValue(x,y,z);
+				image[i] = (ImagePixelType)getPixelValue(x,y,z);
 
 	return image;
 }
@@ -278,9 +278,9 @@ void ImagesTiff::setMetadata(std::map<std::string,std::string> metadata)
 
 void ImagesTiff::setScales()
 {
-	scales.x = sizes.x/sizes.max();
-	scales.y = sizes.y/sizes.max() * (pixelPhysicalSizes.y/pixelPhysicalSizes.x);
-	scales.z = sizes.z/sizes.max() * (pixelPhysicalSizes.z/pixelPhysicalSizes.x);
+	scales.x = sizes.x/sizes.maxValue();
+	scales.y = sizes.y/sizes.maxValue() * (pixelPhysicalSizes.y/pixelPhysicalSizes.x);
+	scales.z = sizes.z/sizes.maxValue() * (pixelPhysicalSizes.z/pixelPhysicalSizes.x);
 }
 
 ImageContainer* ImagesTiff::getImage(unsigned char channel, unsigned int frame)
@@ -387,7 +387,7 @@ void ImagesTiff::reader(unsigned char channel, unsigned int frame)
 	sprintf_s(filenameTemplate,"%s\\%s_c%d_t%04d_z%s.tif",imagesPath.c_str(),datasetName.c_str(),CToMat(channel),CToMat(frame),"%04d");
 	printf("Reading:%s...\n",filenameTemplate);
 	TIFF* image;
-	unsigned int stripCount=0, stripSize=0, imageOffset=0, result=0, width=0, height=0, depth=this->zSize;
+	unsigned int stripCount=0, stripSize=0, imageOffset=0, result=0, width=0, height=0, depth=this->sizes.z;
 	unsigned short bps, spp;
 	PixelType* imageBuffer;
 

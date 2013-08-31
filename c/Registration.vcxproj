@@ -177,7 +177,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h" />
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CHelpers.h" />
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h" />
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.h" />
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaUtilities.h" />
     <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Defines.h" />
     <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Vec.h" />
     <ClInclude Include="AlignImages.h" />
@@ -189,6 +192,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RidgidRegistration.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
