@@ -22,7 +22,7 @@ public:
 	ImageContainer(Vec<unsigned int> dims);
 	ImageContainer(const ImageContainer& image){copy(image);}
 	~ImageContainer(){clear();}
-	ImageContainer& operator=(const ImageContainer& image){copy(image);}
+	ImageContainer& operator=(const ImageContainer& image){copy(image); return *this;}
 
 	std::string getName() const {return name;}
 	PixelType getPixelValue(unsigned int x, unsigned int y, unsigned int z) const;
@@ -30,9 +30,9 @@ public:
 	const PixelType* getConstMemoryPointer() const {return image;}
 	const PixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned int sizeX, unsigned int minY,
 		unsigned int sizeY, unsigned int minZ, unsigned int sizeZ) const;
-
-	template<typename ImagePixelType>
-	const ImagePixelType* getConstROIData (Vec<unsigned int> startIndex, Vec<unsigned int> size) const;
+	const PixelType* getConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const;
+	const float* getFloatConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const;
+	const double* getDoubleConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const;
 	PixelType* getMemoryPointer(){return image;}
 	Vec<unsigned int> getDims() const {return dims;}
 	unsigned int getWidth() const {return dims.x;}
@@ -58,7 +58,7 @@ private:
 	void defaults() 
 	{
 		name		= "";
-		dims = Vec<unsigned int>(-1,-1,-1);
+		dims = Vec<unsigned int>((unsigned int)-1,(unsigned int)-1,(unsigned int)-1);
 		positions = Vec<double>(0.0,0.0,0.0);
 	}
 
