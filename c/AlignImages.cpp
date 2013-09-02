@@ -41,22 +41,22 @@ void align()
 		for (int overlapImageInd = staticImageInd+1; overlapImageInd < gImageTiffs.size() ; overlapImageInd++)
 		{
 			Overlap ov;
-			ov.deltaXss = gImageTiffs[overlapImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize() - 
-				gImageTiffs[staticImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize();
+			ov.deltaXss = (int)(gImageTiffs[overlapImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize() - 
+				gImageTiffs[staticImageInd]->getXPosition()/gImageTiffs[staticImageInd]->getXPixelPhysicalSize());
 
 			ov.deltaXse = ov.deltaXss + (int)gImageTiffs[overlapImageInd]->getXSize()-1;
 			ov.deltaXmax = min(MARGIN, (int)gImageTiffs[staticImageInd]->getXSize() - MIN_OVERLAP - ov.deltaXss);
 			ov.deltaXmin = max(-MARGIN, (MIN_OVERLAP-1) - ov.deltaXse);
 
-			ov.deltaYss = gImageTiffs[overlapImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize() - 
-				gImageTiffs[staticImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize();
+			ov.deltaYss = (int)(gImageTiffs[overlapImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize() - 
+				gImageTiffs[staticImageInd]->getYPosition()/gImageTiffs[staticImageInd]->getYPixelPhysicalSize());
 
 			ov.deltaYse = ov.deltaYss + (int)gImageTiffs[overlapImageInd]->getYSize()-1;
 			ov.deltaYmax = min(MARGIN, (int)gImageTiffs[staticImageInd]->getYSize() - MIN_OVERLAP - ov.deltaYss);
 			ov.deltaYmin = max(-MARGIN, (MIN_OVERLAP-1) - ov.deltaYse);
 
-			ov.deltaZss = gImageTiffs[overlapImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize() - 
-				gImageTiffs[staticImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize();
+			ov.deltaZss = (int)(gImageTiffs[overlapImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize() - 
+				gImageTiffs[staticImageInd]->getZPosition()/gImageTiffs[staticImageInd]->getZPixelPhysicalSize());
 
 			ov.deltaZse = ov.deltaZss + (int)gImageTiffs[overlapImageInd]->getZSize()-1;
 			ov.deltaZmax = min(MARGIN-50, (int)gImageTiffs[staticImageInd]->getZSize() - MIN_OVERLAP_Z - ov.deltaZss);
