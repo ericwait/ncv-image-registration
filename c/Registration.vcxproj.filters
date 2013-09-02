@@ -11,19 +11,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ImagesTiff.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AlignImages.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RidgidRegistration.cpp">
+    <ClCompile Include="AlignImages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -55,6 +52,15 @@
     <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RidgidRegistration.cu">
@@ -62,17 +68,6 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.cuh">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.h">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaUtilities.h">
-      <Filter>Header Files</Filter>
-    </None>
+    <None Include="oldReg.txt" />
   </ItemGroup>
 </Project>
