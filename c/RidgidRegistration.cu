@@ -1,5 +1,46 @@
 #include "RidgidRegistration.h"
-#include "CudaImageBuffer.h"
+#include "CudaImageBuffer.cuh"
+
+struct  corrReport
+{
+	Vec<int> delta;
+	double correlation;
+	double staticSig;
+	double overlapSig;
+	unsigned int nVoxels;
+};
+
+double calcCorrelation(CudaImageBuffer<float>& staticIm, CudaImageBuffer<float>& overlapIm, double& staticSigma, double& overlapSigma)
+{
+	double staticSum = 0.0;
+	double overlapSum = 0.0;
+
+	staticIm.sumArray(staticSum);
+	overlapIm.sumArray(overlapSum);
+
+	double staticMean = staticSum/staticIm.getDimension().product();
+	double overlapMean = overlapSum/overlapIm.getDimension().product();
+
+	staticIm.addConstant(-staticMean);
+	overlapIm.addConstant(-overlapMean);
+
+	CudaImageBuffer<float> multIm = staticIm;
+	multIm.multiplyImageWith(&overlapIm);
+
+	staticIm.pow(2.0f);
+	overlapIm.pow(2.0f);
+
+	staticIm.sumArray(staticSum);
+	overlapIm.sumArray(overlapSum);
+
+	staticSigma = sqrt(staticSum/staticIm.getDimension().product());
+	overlapSigma = sqrt(overlapSum/overlapIm.getDimension().product());
+
+	double multSum = 0.0;
+	multIm.sumArray(multSum);
+
+	return multSum/(staticSigma*overlapSigma);
+}
 
 void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<unsigned int>& imStarts,
 	comparedImages<unsigned int>& imSizes, Vec<int>& maxOverlapSize)
@@ -71,7 +112,7 @@ void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<u
 }
 
 void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap,
-	Vec<int>& bestDelta, double& maxCorrOut, unsigned int& bestN, int deviceNum, const char* filename)
+	Vec<int>& bestDelta, double& maxCorrOut, unsigned int& bestN, int deviceNum, const char* fileName)
 {
 	comparedImages<unsigned int> imStarts, imSizes;
 	Vec<int> maxOverlapSize;
@@ -79,10 +120,200 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 
 	calcMaxROIs(overlap,staticImageExtents,imStarts,imSizes,maxOverlapSize);
 
-	const float* staticMaxRoi = staticImage->getFloatConstROIData(imStarts.staticIm,imSizes.staticIm);
-	const float* overlapMaxRoi = overlapImage->getFloatConstROIData(imStarts.staticIm,imSizes.staticIm);
+	time_t mainStart, mainEnd, mipStart, mipEnd, xStart, xEnd;//, yStart, yEnd, zStart, zEnd;
+	double mainSec=0, mipSec=0, xSec=0;//, ySec=0, zSec=0;
+	Vec<int> deltaMins(overlap.deltaXmin,overlap.deltaYmin,overlap.deltaZmin);
+	Vec<int> deltaMaxs(overlap.deltaXmax,overlap.deltaYmax,overlap.deltaZmax);
+	double maxCorrelation = -std::numeric_limits<double>::infinity();
 
-	CudaImageBuffer<float> staticCudaIm(imSizes.staticIm,deviceNum);
-	CudaImageBuffer<float> overlabCudaIm(imSizes.overlapIm,deviceNum);
+	time(&mainStart);
+
+	unsigned int iterations = std::max<int>(1,(deltaMaxs.x-deltaMins.x)*(deltaMaxs.y-deltaMins.y));
+	unsigned int curIter = 0;
+	Vec<int> deltaSizes((deltaMaxs.x-deltaMins.x),(deltaMaxs.y-deltaMins.y),(deltaMaxs.z-deltaMins.z));
+
+	corrReport* report = new corrReport[deltaSizes.product()];
+	Vec<int> reportInd(0,0,0);
+
+	comparedImages<unsigned int> starts;
+	comparedImages<unsigned int> szs;
+
+	time(&mipStart);
+	for (int deltaX=deltaMins.x; deltaX<deltaMaxs.x; ++deltaX, ++reportInd.x)
+	{
+		reportInd.y = 0;
+		time(&xStart);
+		for (int deltaY=deltaMins.y; deltaY<deltaMaxs.y; ++deltaY, ++reportInd.y)
+		{
+			starts.staticIm.x = (unsigned int)std::max<int>(0,overlap.deltaXss+deltaX-imStarts.staticIm.x);
+			starts.overlapIm.x = (unsigned int)std::max<int>(0,-(overlap.deltaXss+deltaX)-imStarts.overlapIm.x);
+			szs.staticIm.x = szs.overlapIm.x = (unsigned int)std::min<int>(imSizes.staticIm.x,overlap.deltaXse+deltaX+1) - starts.staticIm.x;
+
+			starts.staticIm.y = (unsigned int)std::max<int>(0,overlap.deltaYss+deltaY-imStarts.staticIm.y);
+			starts.overlapIm.y = (unsigned int)std::max<int>(0,-(overlap.deltaYss+deltaY)-imStarts.overlapIm.y);
+			szs.staticIm.y = szs.overlapIm.y = (unsigned int)std::min<int>(imSizes.staticIm.y,overlap.deltaYse+deltaY+1) - starts.staticIm.y;
+			szs.staticIm.z = staticImage->getDepth();
+			szs.overlapIm.z = overlapImage->getDepth();
+
+			const float* staticRoi = staticImage->getFloatConstROIData(starts.staticIm,szs.staticIm);
+			const float* overlapRoi = overlapImage->getFloatConstROIData(starts.overlapIm,szs.overlapIm);
+
+			CudaImageBuffer<float> staticCudaIm(szs.staticIm,deviceNum);
+			CudaImageBuffer<float> overlapCudaIm(szs.overlapIm,deviceNum);
+
+			staticCudaIm.loadImage(staticRoi);
+			overlapCudaIm.loadImage(overlapRoi);
+
+			staticCudaIm.maximumIntensityProjection();
+			overlapCudaIm.maximumIntensityProjection();
+
+			double staticSigma, overlapSigma;
+			double curCorr = calcCorrelation(staticCudaIm,overlapCudaIm,staticSigma,overlapSigma);
+
+			report[reportInd.x + reportInd.y*deltaSizes.x + reportInd.z*deltaSizes.y*deltaSizes.x].delta = Vec<int>(deltaX,deltaY,0);
+			report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].correlation = curCorr;
+			report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].staticSig = staticSigma;
+			report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].overlapSig = overlapSigma;
+			report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].nVoxels = szs.staticIm.x*szs.staticIm.y;
+
+			if (curCorr>maxCorrelation)
+			{
+				maxCorrelation = curCorr;
+				bestDelta.x = deltaX;
+				bestDelta.y = deltaY;
+				bestDelta.z = 0;
+				bestN = szs.staticIm.x*szs.staticIm.y;
+			}
+			++curIter;
+			//  				time(&zEnd);
+			//  				zSec = difftime(zEnd,zStart);
+			//  			time(&yEnd);
+			//  			ySec = difftime(yEnd,yStart);
+		}
+
+		if (0==deltaX%5)
+		{
+			time(&xEnd);
+			xSec = difftime(xEnd,xStart);
+
+			printf("\t(%d)  BestCorr:%6.4f(%4d,%4d,%3d)",
+				deviceNum, maxCorrelation, bestDelta.x, bestDelta.y, bestDelta.z);
+
+			printf("  Done:%5.2f%% (%4d:%4d,%4d,%2d)",
+				(float)curIter/iterations*100.0, deltaX, overlap.deltaXmax, overlap.deltaYmax,overlap.deltaZmax);
+
+			printf("  X:%6.2f avgY:%5.3f avgZ:%6.4f Est(min):%6.2f\n",
+				xSec, xSec/(overlap.deltaYmax-overlap.deltaYmin),
+				xSec/((overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin)),
+				(iterations-curIter)*(xSec/((overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin)))/60.0);
+		}
+	}
+	time(&mipEnd);
+	mipSec = difftime(mipEnd,mipStart);
+
+	Vec<double> offsets;
+	offsets.x = ((deltaMaxs.x-deltaMins.x)/3.0)/2.0;
+	offsets.y = ((deltaMaxs.y-deltaMins.y)/3.0)/2.0;
+	offsets.z = ((deltaMaxs.z-deltaMins.z)/3.0)/2.0;
+
+	deltaMins.x = std::max<int>(overlap.deltaXmin, (int)round((double)bestDelta.x - offsets.x));
+	deltaMaxs.x = std::min<int>(overlap.deltaXmax, (int)round((double)bestDelta.x + offsets.x));
+	deltaMins.y = std::max<int>(overlap.deltaYmin, (int)round((double)bestDelta.y - offsets.y));
+	deltaMaxs.y = std::min<int>(overlap.deltaYmax, (int)round((double)bestDelta.y + offsets.y));
+	deltaMins.z = std::max<int>(overlap.deltaZmin, (int)round((double)bestDelta.z - offsets.z));
+	deltaMaxs.z = std::min<int>(overlap.deltaZmax, (int)round((double)bestDelta.z + offsets.z));
+
+	printf("   (%d) Delta (%d,%d,%d) max:%f mipsTotalTime:%f avgTime:%f\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrelation,mipSec,mipSec/iterations);
+
+	iterations = deltaMaxs.z-deltaMins.z;
+	reportInd.z = 0;
+	//time(&yStart);
+	starts.staticIm.x = (unsigned int)std::max<int>(0,overlap.deltaXss+bestDelta.x-imStarts.staticIm.x);
+	starts.overlapIm.x = (unsigned int)std::max<int>(0,-(overlap.deltaXss+bestDelta.x)-imStarts.overlapIm.x);
+	szs.staticIm.x = szs.overlapIm.x = (unsigned int)std::min<int>(imSizes.staticIm.x,overlap.deltaXse+bestDelta.x+1) - starts.staticIm.x;
+
+	starts.staticIm.y = (unsigned int)std::max<int>(0,overlap.deltaYss+bestDelta.y-imStarts.staticIm.y);
+	starts.overlapIm.y = (unsigned int)std::max<int>(0,-(overlap.deltaYss+bestDelta.y)-imStarts.overlapIm.y);
+	szs.staticIm.y =szs.overlapIm.y = (unsigned int)std::min<int>(imSizes.staticIm.y,overlap.deltaYse+bestDelta.y+1) - starts.staticIm.y;
+
+	for (int deltaZ=deltaMins.z; deltaZ<deltaMaxs.z; ++deltaZ, ++reportInd.z)
+	{
+		starts.staticIm.z = (unsigned int)std::max<int>(0,overlap.deltaZss+deltaZ-imStarts.staticIm.z);
+		starts.overlapIm.z = (unsigned int)std::max<int>(0,-(overlap.deltaZss+deltaZ)-imStarts.overlapIm.z);
+		szs.staticIm.z = szs.overlapIm.z = (unsigned int)std::min<int>(imSizes.staticIm.z,overlap.deltaZse+deltaZ+1) - starts.staticIm.z;
+
+		const float* staticRoi = staticImage->getFloatConstROIData(starts.staticIm,szs.staticIm);
+		const float* overlapRoi = overlapImage->getFloatConstROIData(starts.overlapIm,szs.overlapIm);
+
+		CudaImageBuffer<float> staticCudaIm(szs.staticIm,deviceNum);
+		CudaImageBuffer<float> overlapCudaIm(szs.overlapIm,deviceNum);
+
+		staticCudaIm.loadImage(staticRoi);
+		overlapCudaIm.loadImage(overlapRoi);
+
+		double staticSigma, overlapSigma;
+		double curCorr = calcCorrelation(staticCudaIm,overlapCudaIm,staticSigma,overlapSigma);
+
+		report[reportInd.x + reportInd.y*deltaSizes.x + reportInd.z*deltaSizes.y*deltaSizes.x].delta = Vec<int>(bestDelta.x,bestDelta.y,deltaZ);
+		report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].correlation = curCorr;
+		report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].staticSig = staticSigma;
+		report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].overlapSig = overlapSigma;
+		report[reportInd.x+reportInd.y*deltaSizes.x+reportInd.z*deltaSizes.y*deltaSizes.x].nVoxels = (unsigned int)szs.staticIm.product();
+
+		if (curCorr>maxCorrelation)
+		{
+			maxCorrelation = curCorr;
+			bestDelta.z = deltaZ;
+			bestN = (unsigned int)szs.staticIm.product();
+		}
+		++curIter;
+
+		//time(&zStart);
+
+		// 	int deltaX = 0;
+		// 	int deltaY = 0;
+		// 	int deltaZ = 0;
+		// 	
+		// 	
+		if (0==deltaZ%5)
+		{
+			time(&xEnd);
+			xSec = difftime(xEnd,xStart);
+
+			printf("\t(%d)  BestCorr:%6.4f(%4d,%4d,%3d)",
+				deviceNum, maxCorrelation, bestDelta.x, bestDelta.y, bestDelta.z);
+
+			printf("  Done:%5.2f%% (%4d:%4d,%4d,%2d)",
+				(float)curIter/iterations*100.0, bestDelta.x, overlap.deltaXmax, overlap.deltaYmax,overlap.deltaZmax);
+
+			printf("  X:%6.2f avgY:%5.3f avgZ:%6.4f Est(min):%6.2f\n",
+				xSec, xSec/(overlap.deltaYmax-overlap.deltaYmin),
+				xSec/((overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin)),
+				(iterations-curIter)*(xSec/((overlap.deltaYmax-overlap.deltaYmin)*(overlap.deltaZmax-overlap.deltaZmin)))/60.0);
+		}
+	}
+	time(&mainEnd);
+	mainSec = difftime(mainEnd,mainStart);
+
+	offsets.x = ((deltaMaxs.x-deltaMins.x)/3.0)/2.0;
+	offsets.y = ((deltaMaxs.y-deltaMins.y)/3.0)/2.0;
+	offsets.z = ((deltaMaxs.z-deltaMins.z)/3.0)/2.0;
+
+	deltaMins.x = std::max<int>(overlap.deltaXmin, (int)round((double)bestDelta.x - offsets.x));
+	deltaMaxs.x = std::min<int>(overlap.deltaXmax, (int)round((double)bestDelta.x + offsets.x));
+	deltaMins.y = std::max<int>(overlap.deltaYmin, (int)round((double)bestDelta.y - offsets.y));
+	deltaMaxs.y = std::min<int>(overlap.deltaYmax, (int)round((double)bestDelta.y + offsets.y));
+	deltaMins.z = std::max<int>(overlap.deltaZmin, (int)round((double)bestDelta.z - offsets.z));
+	deltaMaxs.z = std::min<int>(overlap.deltaZmax, (int)round((double)bestDelta.z + offsets.z));
+
+	printf("   (%d) Delta (%d,%d,%d) max:%f totalTime:%f\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrelation,mainSec);
+	FILE* reportFile;
+	fopen_s(&reportFile,fileName,"w");
+	for (int i=0; i<reportInd.product(); ++i)
+	{
+		fprintf(reportFile,"(%d,%d,%d):%lf,%lf,%lf,%d\n",report[i].delta.x,report[i].delta.y,report[i].delta.z,
+			report[i].correlation,report[i].staticSig,report[i].overlapSig,report[i].nVoxels);
+	}
+	fclose(reportFile);
 
 }
