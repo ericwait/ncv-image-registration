@@ -480,32 +480,42 @@ void writeImage(const ImageContainer* image, std::string fileName)
 
 void writeImage(const float* floatImage, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
 {
-	PixelType* image = new PixelType[width*height*depth];
+	writeImage(floatImage,Vec<unsigned int>(width,height,depth), fileName);
+}
 
-	for (unsigned int z=0; z<depth; ++z)
+void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileName)
+{
+	PixelType* image = new PixelType[dims.product()];
+
+	for (unsigned int z=0; z<dims.z; ++z)
 	{
-		for (unsigned int y=0; y<height; ++y)
+		for (unsigned int y=0; y<dims.y; ++y)
 		{
-			for (unsigned int x=0; x<width; ++x)
+			for (unsigned int x=0; x<dims.z; ++x)
 			{
-				image[x+y*width+z*height*width] = (PixelType)(MAX(MAX(floatImage[x+y*width+z*height*width],255.0f),0.0f));
+				image[x+y*dims.x+z*dims.y*dims.x] = (PixelType)(MAX(MAX(floatImage[x+y*dims.x+z*dims.y*dims.x],255.0f),0.0f));
 				
 			}
 		}
 	}
 
-	writeImage(image,width,height,depth,fileName);
+	writeImage(image,dims,fileName);
 
 	delete image;
 }
 
 void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
 {
+	writeImage(imageBuffer,Vec<unsigned int>(width,height,depth),fileName);
+}
+
+void writeImage(const PixelType* imageBuffer, Vec<unsigned int> dims, std::string fileName)
+{
 	char curFileName[255];
 	TIFF* image;
 
 	printf("Writing:%s\n",fileName.c_str());
-	for (unsigned int z=0; z<depth; ++z)
+	for (unsigned int z=0; z<dims.z; ++z)
 	{
 		sprintf_s(curFileName,fileName.c_str(),z+1);
 		// Open the TIFF file
@@ -515,11 +525,11 @@ void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int h
 		}
 
 		// We need to set some values for basic tags before we can add any data
-		TIFFSetField(image, TIFFTAG_IMAGEWIDTH, width);
-		TIFFSetField(image, TIFFTAG_IMAGELENGTH, height);
+		TIFFSetField(image, TIFFTAG_IMAGEWIDTH, dims.x);
+		TIFFSetField(image, TIFFTAG_IMAGELENGTH, dims.y);
 		TIFFSetField(image, TIFFTAG_BITSPERSAMPLE, 8);
 		TIFFSetField(image, TIFFTAG_SAMPLESPERPIXEL, 1);
-		TIFFSetField(image, TIFFTAG_ROWSPERSTRIP, height);
+		TIFFSetField(image, TIFFTAG_ROWSPERSTRIP, dims.y);
 
 		TIFFSetField(image, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 		TIFFSetField(image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
@@ -527,7 +537,7 @@ void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int h
 		TIFFSetField(image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
 		// Write the information to the file
-		TIFFWriteEncodedStrip(image, 0, (void*)(imageBuffer+z*width*height), width*height);
+		TIFFWriteEncodedStrip(image, 0, (void*)(imageBuffer+z*dims.x*dims.y), dims.x*dims.y);
 
 		// Close the file
 		TIFFClose(image);

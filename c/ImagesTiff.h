@@ -15,6 +15,8 @@ bool fileExists(const char* filename);
 DWORD WINAPI processingThread(LPVOID lpParam);
 void writeImage(const PixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName);
 void writeImage(const float* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName);
+void writeImage(const PixelType* imageBuffer, Vec<unsigned int> dims, std::string fileName);
+void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileName);
 
 class ImageContainer
 {
