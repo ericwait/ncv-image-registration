@@ -91,7 +91,7 @@ void ImageContainer::setPixelValue(Vec<unsigned int> coordinate, unsigned char v
 #ifdef _DEBUG
 	assert(coordinate<Vec<unsigned int>(-1,-1,-1));
 #endif
-	assert(coordinate<dims);
+	assert(coordinate<=dims);
 
 	image[dims.linearAddressAt(coordinate)] = val;
 }
@@ -104,7 +104,7 @@ const PixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned in
 
 const PixelType* ImageContainer::getConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const
 {
-	assert(size-startIndex<dims);
+	assert(startIndex+size<=dims);
 
 	PixelType* image = new PixelType[size.product()];
 
@@ -119,7 +119,7 @@ const PixelType* ImageContainer::getConstROIData(Vec<unsigned int> startIndex, V
 
 const float* ImageContainer::getFloatConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const
 {
-	assert(size-startIndex<dims);
+	assert(startIndex+size<=dims);
 
 	float* image = new float[size.product()];
 
@@ -134,7 +134,7 @@ const float* ImageContainer::getFloatConstROIData(Vec<unsigned int> startIndex, 
 
 const double* ImageContainer::getDoubleConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const
 {
-	assert(size-startIndex<dims);
+	assert(startIndex+size<=dims);
 
 	double* image = new double[size.product()];
 
