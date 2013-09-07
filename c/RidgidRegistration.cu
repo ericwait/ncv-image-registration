@@ -164,6 +164,15 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 			staticCudaIm.loadImage(staticRoi);
 			overlapCudaIm.loadImage(overlapRoi);
 
+			float* staticPrintF = new float[staticCudaIm.getDimension().product()];
+			float* overlapPrintf = new float[overlapCudaIm.getDimension().product()];
+			staticCudaIm.retrieveImage(staticPrintF);
+			overlapCudaIm.retrieveImage(overlapPrintf);
+
+			writeImage(staticPrintF,staticCudaIm.getDimension(),"static_z%d.tif");
+			writeImage(overlapPrintf,overlapCudaIm.getDimension(),"overlap_z%d.tif");
+
+
 			staticCudaIm.maximumIntensityProjection();
 			overlapCudaIm.maximumIntensityProjection();
 
@@ -189,6 +198,9 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 			//  				zSec = difftime(zEnd,zStart);
 			//  			time(&yEnd);
 			//  			ySec = difftime(yEnd,yStart);
+			//  			
+			delete[] staticRoi;
+			delete[] overlapRoi;
 		}
 
 		if (0==deltaX%5)
@@ -274,7 +286,10 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		// 	int deltaY = 0;
 		// 	int deltaZ = 0;
 		// 	
-		// 	
+		
+		delete[] staticRoi;
+		delete[] overlapRoi;
+
 		if (0==deltaZ%5)
 		{
 			time(&xEnd);
