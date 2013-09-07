@@ -4,6 +4,7 @@
 #include "winHead.h"
 #include "Utility.h"
 #include "AlignImages.h"
+#include "Vec.h"
 
 #define MAX_CHANNELS (6) //Make sure that this is synced with the .fx file
 #define DIMENSION (3)

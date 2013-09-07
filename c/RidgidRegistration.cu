@@ -27,37 +27,37 @@ void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<u
 				comparedImages<unsigned int> mins;
 				Vec<int> szs;
 
-				mins.staticIm.x = max(0,overlap.deltaXss+deltaX);
-				mins.overlapIm.x = max(0,-(overlap.deltaXss+deltaX));
-				szs.x = min(imageExtents.x,overlap.deltaXse+deltaX+1) - mins.staticIm.x;
+				mins.staticIm.x = (unsigned int)std::max<int>(0,overlap.deltaXss+deltaX);
+				mins.overlapIm.x = (unsigned int)std::max<int>(0,-(overlap.deltaXss+deltaX));
+				szs.x = std::min<int>(imageExtents.x,overlap.deltaXse+deltaX+1) - mins.staticIm.x;
 
-				mins.staticIm.y = max(0,overlap.deltaYss+deltaY);
-				mins.overlapIm.y = max(0,-(overlap.deltaYss+deltaY));
-				szs.y = min(imageExtents.x,overlap.deltaYse+deltaY+1) - mins.staticIm.y;
+				mins.staticIm.y = (unsigned int)std::max<int>(0,overlap.deltaYss+deltaY);
+				mins.overlapIm.y = (unsigned int)std::max<int>(0,-(overlap.deltaYss+deltaY));
+				szs.y = std::min<int>(imageExtents.x,overlap.deltaYse+deltaY+1) - mins.staticIm.y;
 
-				mins.staticIm.z = max(0,overlap.deltaZss+deltaZ);
-				mins.overlapIm.z = max(0,-(overlap.deltaZss+deltaZ));
-				szs.z = min(imageExtents.z,overlap.deltaZse+deltaZ+1) - mins.staticIm.z;
+				mins.staticIm.z = (unsigned int)std::max<int>(0,overlap.deltaZss+deltaZ);
+				mins.overlapIm.z = (unsigned int)std::max<int>(0,-(overlap.deltaZss+deltaZ));
+				szs.z = std::min<int>(imageExtents.z,overlap.deltaZse+deltaZ+1) - mins.staticIm.z;
 
-				imStarts.staticIm.x = min(imStarts.staticIm.x,mins.staticIm.x);
-				imStarts.staticIm.y = min(imStarts.staticIm.y,mins.staticIm.y);
-				imStarts.staticIm.z = min(imStarts.staticIm.z,mins.staticIm.z);
+				imStarts.staticIm.x = (unsigned int)std::min<int>(imStarts.staticIm.x,mins.staticIm.x);
+				imStarts.staticIm.y = (unsigned int)std::min<int>(imStarts.staticIm.y,mins.staticIm.y);
+				imStarts.staticIm.z = (unsigned int)std::min<int>(imStarts.staticIm.z,mins.staticIm.z);
 
-				imSizes.staticIm.x = max(imSizes.staticIm.x,mins.staticIm.x+szs.x);
-				imSizes.staticIm.y = max(imSizes.staticIm.y,mins.staticIm.y+szs.y);
-				imSizes.staticIm.z = max(imSizes.staticIm.z,mins.staticIm.z+szs.z);
+				imSizes.staticIm.x = (unsigned int)std::max<int>(imSizes.staticIm.x,mins.staticIm.x+szs.x);
+				imSizes.staticIm.y = (unsigned int)std::max<int>(imSizes.staticIm.y,mins.staticIm.y+szs.y);
+				imSizes.staticIm.z = (unsigned int)std::max<int>(imSizes.staticIm.z,mins.staticIm.z+szs.z);
 
-				imStarts.overlapIm.x = min(imStarts.overlapIm.x,mins.overlapIm.x);
-				imStarts.overlapIm.y = min(imStarts.overlapIm.y,mins.overlapIm.y);
-				imStarts.overlapIm.z = min(imStarts.overlapIm.z,mins.overlapIm.z);
+				imStarts.overlapIm.x = (unsigned int)std::min<int>(imStarts.overlapIm.x,mins.overlapIm.x);
+				imStarts.overlapIm.y = (unsigned int)std::min<int>(imStarts.overlapIm.y,mins.overlapIm.y);
+				imStarts.overlapIm.z = (unsigned int)std::min<int>(imStarts.overlapIm.z,mins.overlapIm.z);
 
-				imSizes.overlapIm.x = max(imSizes.overlapIm.x,mins.overlapIm.x+szs.x);
-				imSizes.overlapIm.y = max(imSizes.overlapIm.y,mins.overlapIm.y+szs.y);
-				imSizes.overlapIm.z = max(imSizes.overlapIm.z,mins.overlapIm.z+szs.z);
+				imSizes.overlapIm.x = (unsigned int)std::max<int>(imSizes.overlapIm.x,mins.overlapIm.x+szs.x);
+				imSizes.overlapIm.y = (unsigned int)std::max<int>(imSizes.overlapIm.y,mins.overlapIm.y+szs.y);
+				imSizes.overlapIm.z = (unsigned int)std::max<int>(imSizes.overlapIm.z,mins.overlapIm.z+szs.z);
 
-				maxOverlapSize.x = max(maxOverlapSize.x,szs.x);
-				maxOverlapSize.y = max(maxOverlapSize.y,szs.y);
-				maxOverlapSize.z = max(maxOverlapSize.z,szs.z);
+				maxOverlapSize.x = std::max<int>(maxOverlapSize.x,szs.x);
+				maxOverlapSize.y = std::max<int>(maxOverlapSize.y,szs.y);
+				maxOverlapSize.z = std::max<int>(maxOverlapSize.z,szs.z);
 			}
 		}
 	}
