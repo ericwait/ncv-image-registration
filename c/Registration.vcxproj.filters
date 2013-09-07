@@ -3,7 +3,7 @@
   <ItemGroup>
     <Filter Include="Header Files">
       <UniqueIdentifier>{8b42dd0e-f302-42ae-a647-6d4fbeff2690}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>.cuh;h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{ffee4f5d-83a1-4c41-926b-ae6d17f4d01e}</UniqueIdentifier>
@@ -43,22 +43,22 @@
     <ClInclude Include="RidgidRegistration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Defines.h">
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaImageBuffer.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Vec.h">
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaKernals.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CHelpers.h">
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaUtilities.cuh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.h">
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CHelpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaUtilities.h">
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Defines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h">
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Vec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
