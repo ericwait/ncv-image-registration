@@ -67,14 +67,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(CUDA_PATH)include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <IncludePath>B:\Users\Eric\Documents\Programming\CudaKernalsLib\src\c\Common;$(CUDA_PATH)include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(CUDA_PATH)include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <IncludePath>B:\Users\Eric\Documents\Programming\CudaKernalsLib\src\c\Common;$(CUDA_PATH)include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,7 +97,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\CudaKernalsLib\src\c\CudaImageProccessing;$(LIBTIFF_DIR)\include%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBTIFF_DIR)\include%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -114,6 +114,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35;</CodeGeneration>
       <PtxAsOptionV>false</PtxAsOptionV>
+      <Keep>false</Keep>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\</AdditionalLibraryDirectories>
@@ -146,7 +147,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..\CudaKernalsLib\src\c\CudaImageProccessing;$(LIBTIFF_DIR)\include%(AdditionalIncludeDirectories);$(LIBTIFF_DIR)\include%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBTIFF_DIR)\include%(AdditionalIncludeDirectories);$(LIBTIFF_DIR)\include%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -168,6 +169,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <PtxAsOptionV>false</PtxAsOptionV>
       <Include>
       </Include>
+      <Keep>false</Keep>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\</AdditionalLibraryDirectories>
@@ -180,12 +182,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CHelpers.h" />
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaImageBuffer.h" />
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaKernals.h" />
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\CudaUtilities.h" />
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Defines.h" />
-    <ClInclude Include="..\..\CudaKernalsLib\src\c\CudaImageProccessing\Vec.h" />
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CHelpers.h" />
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Defines.h" />
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Vec.h" />
     <ClInclude Include="AlignImages.h" />
     <ClInclude Include="ImagesTiff.h" />
     <ClInclude Include="main.h" />
@@ -197,6 +196,15 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="RidgidRegistration.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaImageBuffer.cuh">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaKernals.cuh">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaUtilities.cuh">
+      <FileType>Document</FileType>
+    </ClInclude>
     <None Include="oldReg.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
