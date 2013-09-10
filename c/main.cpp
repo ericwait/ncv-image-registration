@@ -1,6 +1,7 @@
 #include "main.h"
 #include "Utility.h"
 #include "AlignImages.h"
+#include <iostream>
 
 std::vector<ImagesTiff*> gImageTiffs;
 
@@ -10,11 +11,16 @@ int main(int argc, char* argv[])
 
 	HRESULT hr = S_FALSE;
 
+	char q;
+
 	if (argc<3)
 	{
 		printf("Usage: %s listfile.txt channel\n",argv[0]);
+		std::cin >> q;
 		return 1;
 	}
+
+	printf("Running Param: %s %d...\n",argv[1], argv[2]);
 
 	fileListLocation = argv[1];
 	scanChannel = atoi(argv[2])-1;
@@ -23,6 +29,7 @@ int main(int argc, char* argv[])
 	if (!fileExists(fileListLocation.c_str()))
 	{
 		printf("%s does not exist!\n",fileListLocation.c_str());
+		std::cin >> q;
 		return 1;
 	}
 
@@ -43,6 +50,7 @@ int main(int argc, char* argv[])
 	}else
 	{
 		printf("Cannot open %s!\n",fileListLocation.c_str());
+		std::cin >> q;
 		return 1;
 	}
 
@@ -68,6 +76,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < gImageTiffs.size() ; i++)
 		delete gImageTiffs[i];
 
-
+	printf("\nDONE\n");
+	std::cin >> q;
 	return 0;
 }
