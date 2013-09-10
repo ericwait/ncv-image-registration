@@ -124,11 +124,18 @@ const float* ImageContainer::getFloatConstROIData(Vec<unsigned int> startIndex, 
 	float* image = new float[size.product()];
 
 	unsigned int i=0;
-	for (unsigned int z=startIndex.z; z<size.z; ++z)
-		for (unsigned int y=startIndex.y; y<size.y; ++y)
-			for (unsigned int x=startIndex.x; x<size.x+1; ++x)		
-				image[i] = (float)getPixelValue(x,y,z);
-
+	for (unsigned int z=startIndex.z; z<startIndex.z+size.z; ++z)
+	{
+		for (unsigned int y=startIndex.y; y<startIndex.y+size.y; ++y)
+		{
+			for (unsigned int x=startIndex.x; x<startIndex.x+size.x; ++x)		
+			{
+				PixelType val = getPixelValue(x,y,z);
+				image[i] = (float)val;
+				++i;
+			}
+		}
+	}
 	return image;
 }
 
@@ -473,17 +480,22 @@ void ImagesTiff::reader(unsigned char channel, unsigned int frame)
 	imageBuffers[channel][frame]->setName(this->datasetName.c_str());
 }
 
-void writeImage(const ImageContainer* image, std::string fileName)
+void writeImage(const ImageContainer* image, std::string fileNamePrefix)
 {
-	writeImage(image->getConstMemoryPointer(),image->getWidth(),image->getHeight(),image->getDepth(),fileName);
+	writeImage(image->getConstMemoryPointer(),image->getDims(),fileNamePrefix);
 }
 
-void writeImage(const float* floatImage, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
+void writeImage(const float* floatImage, unsigned int width, unsigned int height, unsigned int depth, std::string fileNamePrefix)
 {
-	writeImage(floatImage,Vec<unsigned int>(width,height,depth), fileName);
+	writeImage(floatImage,Vec<unsigned int>(width,height,depth), fileNamePrefix);
 }
 
-void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileName)
+/*
+ *	This will write out a series of tif images where the passed in prefix is used to name the z stack written.
+ *	Use printf syntax for this string.
+ *	e.g. "image_z%d" will give you a image image_z1.tif or "image_z%04d" will give you image_z0001.tif
+ */
+void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileNamePrefix)
 {
 	PixelType* image = new PixelType[dims.product()];
 
@@ -491,33 +503,36 @@ void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fil
 	{
 		for (unsigned int y=0; y<dims.y; ++y)
 		{
-			for (unsigned int x=0; x<dims.z; ++x)
+			for (unsigned int x=0; x<dims.x; ++x)
 			{
-				image[x+y*dims.x+z*dims.y*dims.x] = (PixelType)(MAX(MAX(floatImage[x+y*dims.x+z*dims.y*dims.x],255.0f),0.0f));
+				image[x+y*dims.x+z*dims.y*dims.x] = (PixelType)(std::max<float>(std::min<float>
+					(floatImage[x+y*dims.x+z*dims.y*dims.x],255.0f),0.0f));
 				
 			}
 		}
 	}
 
-	writeImage(image,dims,fileName);
+	writeImage(image,dims,fileNamePrefix);
 
 	delete image;
 }
 
-void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
+void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int height, unsigned int depth, std::string fileNamePrefix)
 {
-	writeImage(imageBuffer,Vec<unsigned int>(width,height,depth),fileName);
+	writeImage(imageBuffer,Vec<unsigned int>(width,height,depth),fileNamePrefix);
 }
 
-void writeImage(const PixelType* imageBuffer, Vec<unsigned int> dims, std::string fileName)
+void writeImage(const PixelType* imageBuffer, Vec<unsigned int> dims, std::string fileNamePrefix)
 {
+	char curFile[255];
 	char curFileName[255];
 	TIFF* image;
 
-	printf("Writing:%s\n",fileName.c_str());
+	printf("Writing:%s\n",fileNamePrefix.c_str());
 	for (unsigned int z=0; z<dims.z; ++z)
 	{
-		sprintf_s(curFileName,fileName.c_str(),z+1);
+		sprintf_s(curFile,fileNamePrefix.c_str(),z+1);
+		sprintf_s(curFileName,"%s.tif",curFile);
 		// Open the TIFF file
 		if((image = TIFFOpen(curFileName, "w")) == NULL){
 			printf("Could not open %s for writing\n",curFileName);

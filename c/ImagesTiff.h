@@ -13,10 +13,34 @@ typedef unsigned char PixelType;
 
 bool fileExists(const char* filename);
 DWORD WINAPI processingThread(LPVOID lpParam);
-void writeImage(const PixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName);
-void writeImage(const float* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileName);
-void writeImage(const PixelType* imageBuffer, Vec<unsigned int> dims, std::string fileName);
-void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileName);
+
+/*
+ *	This will write out a series of tif images where the passed in prefix is used to name the z stack written.
+ *	Use printf syntax for this string.
+ *	e.g. "image_z%d" will give you a image image_z1.tif or "image_z%04d" will give you image_z0001.tif
+ */
+void writeImage(const PixelType* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileNamePrefix);
+
+/*
+ *	This will write out a series of tif images where the passed in prefix is used to name the z stack written.
+ *	Use printf syntax for this string.
+ *	e.g. "image_z%d" will give you a image image_z1.tif or "image_z%04d" will give you image_z0001.tif
+ */
+void writeImage(const float* image, unsigned int width, unsigned int height, unsigned int depth, std::string fileNamePrefix);
+
+/*
+ *	This will write out a series of tif images where the passed in prefix is used to name the z stack written.
+ *	Use printf syntax for this string.
+ *	e.g. "image_z%d" will give you a image image_z1.tif or "image_z%04d" will give you image_z0001.tif
+ */
+void writeImage(const PixelType* imageBuffer, Vec<unsigned int> dims, std::string fileNamePrefix);
+
+/*
+ *	This will write out a series of tif images where the passed in prefix is used to name the z stack written.
+ *	Use printf syntax for this string.
+ *	e.g. "image_z%d" will give you a image image_z1.tif or "image_z%04d" will give you image_z0001.tif
+ */
+void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileNamePrefix);
 
 class ImageContainer
 {
