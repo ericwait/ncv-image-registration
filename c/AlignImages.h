@@ -6,9 +6,10 @@
 #include <vector>
 #include "Vec.h"
 
-#define MARGIN (100)
+#define MARGIN (150)
+#define LOCAL_REGION (15)
 #define MIN_OVERLAP (25)
-#define MIN_OVERLAP_Z (30)
+#define MIN_OVERLAP_Z (20)
 extern int scanChannel;
 
 struct Overlap
@@ -60,5 +61,5 @@ struct edge
 	double maxCorr;
 };
 
-void align();
+void align(std::string rootFolder, const int numberOfGPUs=1);
 #endif

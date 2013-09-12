@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 
 	if (argc<3)
 	{
-		printf("Usage: %s listfile.txt channel\n",argv[0]);
+		printf("Usage: %s listfile.txt channel numberOfGPUs\n",argv[0]);
 		std::cin >> q;
 		return 1;
 	}
@@ -71,7 +71,10 @@ int main(int argc, char* argv[])
 		gImageTiffs[i] = im;
 	}
 
-	align();
+	if (argc>=4)
+		align(root,atoi(argv[3]));
+	else
+		align(root);
 
 	for (int i = 0; i < gImageTiffs.size() ; i++)
 		delete gImageTiffs[i];
