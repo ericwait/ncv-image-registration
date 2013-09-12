@@ -297,10 +297,16 @@ void ImagesTiff::setMetadata(std::map<std::string,std::string> metadata)
 		this->setXPixelPhysicalSize(atof(metadata["XPixelPhysicalSize"].c_str()));
 
 	if (metadata.count("XPosition")!=0)
-		this->positions.x = atof(metadata["XPosition"].c_str()) * 1e6;
+	{
+		//THIS is flipped for a reason!  Do not touch
+		this->positions.x = atof(metadata["YPosition"].c_str()) * 1e6;
+	}
 
 	if (metadata.count("YPosition")!=0)
-		this->positions.y = atof(metadata["YPosition"].c_str()) * 1e6;
+	{
+		//THIS is flipped for a reason!  Do not touch
+		this->positions.y = atof(metadata["XPosition"].c_str()) * 1e6;
+	}
 
 	if (metadata.count("ZPosition")!=0)
 		this->positions.z = atof(metadata["ZPosition"].c_str()) * 1e6;
@@ -498,16 +504,16 @@ void writeImage(const float* floatImage, unsigned int width, unsigned int height
 void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileNamePrefix)
 {
 	PixelType* image = new PixelType[dims.product()];
+	Vec<unsigned int> coordinate(0,0,0);
 
-	for (unsigned int z=0; z<dims.z; ++z)
+	for (coordinate.z=0; coordinate.z<dims.z; ++coordinate.z)
 	{
-		for (unsigned int y=0; y<dims.y; ++y)
+		for (coordinate.y=0; coordinate.y<dims.y; ++coordinate.y)
 		{
-			for (unsigned int x=0; x<dims.x; ++x)
+			for (coordinate.x=0; coordinate.x<dims.x; ++coordinate.x)
 			{
-				image[x+y*dims.x+z*dims.y*dims.x] = (PixelType)(std::max<float>(std::min<float>
-					(floatImage[x+y*dims.x+z*dims.y*dims.x],255.0f),0.0f));
-				
+				image[dims.linearAddressAt(coordinate)] = (PixelType)(std::max<float>(std::min<float>
+					(floatImage[dims.linearAddressAt(coordinate)],255.0f),0.0f));
 			}
 		}
 	}
