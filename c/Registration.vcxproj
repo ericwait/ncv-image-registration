@@ -114,6 +114,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35;</CodeGeneration>
       <PtxAsOptionV>false</PtxAsOptionV>
+      <Keep>false</Keep>
+      <GPUDebugInfo>true</GPUDebugInfo>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CUDA_PATH)lib\x64\</AdditionalLibraryDirectories>
@@ -183,6 +185,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CHelpers.h" />
     <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Defines.h" />
     <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Vec.h" />
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\VecFuncs.h" />
     <ClInclude Include="AlignImages.h" />
     <ClInclude Include="ImagesTiff.h" />
     <ClInclude Include="main.h" />

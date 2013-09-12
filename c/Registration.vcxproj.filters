@@ -61,6 +61,9 @@
     <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Vec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\VecFuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RidgidRegistration.cu">
