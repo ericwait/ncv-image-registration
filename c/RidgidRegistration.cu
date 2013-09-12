@@ -27,23 +27,23 @@ double calcCorrelation(CudaImageBuffer<float>& staticIm, CudaImageBuffer<float>&
 
 	multiplyIm.copyImage(overlapIm);
 
+	// 	float* staticPrintF = new float[staticIm.getDimension().product()];
+	// 	float* overlapPrintf = new float[overlapIm.getDimension().product()];
+	// 	float* mulPrintF = new float[multiplyIm.getDimension().product()];
+	// 	staticIm.retrieveImage(staticPrintF);
+	// 	overlapIm.retrieveImage(overlapPrintf);
+	// 	multiplyIm.retrieveImage(mulPrintF);
+	// 	writeImage(staticPrintF,staticIm.getDimension(),"staticPrintF_z%03d");
+	// 	writeImage(overlapPrintf,overlapIm.getDimension(),"overlapPrintF_z%03d");
+	// 	writeImage(mulPrintF,multiplyIm.getDimension(),"mulPrintF_z%03d");
+	// 	delete[] staticPrintF;
+	// 	delete[] overlapPrintf;
+	// 	delete[] mulPrintF;
+
 	multiplyIm.multiplyImageWith(&staticIm);
 
 	staticIm.pow(2.0f);
 	overlapIm.pow(2.0f);
-
-	float* staticPrintF = new float[staticIm.getDimension().product()];
-	float* overlapPrintf = new float[overlapIm.getDimension().product()];
-	float* mulPrintF = new float[multiplyIm.getDimension().product()];
-	staticIm.retrieveImage(staticPrintF);
-	overlapIm.retrieveImage(overlapPrintf);
-	multiplyIm.retrieveImage(mulPrintF);
-	writeImage(staticPrintF,staticIm.getDimension(),"staticPrintF_z%03d");
-	writeImage(overlapPrintf,multiplyIm.getDimension(),"overlapPrintF_z%03d");
-	writeImage(mulPrintF,multiplyIm.getDimension(),"mulPrintF_z%03d");
-	delete[] staticPrintF;
-	delete[] overlapPrintf;
-	delete[] mulPrintF;
 
 	staticIm.sumArray(staticSum);
 	overlapIm.sumArray(overlapSum);
