@@ -10,7 +10,7 @@ int scanChannel = 0;
 
 //#pragma optimize("",off)
 
-void addEdge(Vec<int> deltas, int curNode, int parentNode, double maxCorr)
+void addEdge(Vec<int> deltas, int curNode, int parentNode, double maxCorr, std::string rootFolder)
 {
 	std::map<int,edge>::iterator it = edges[curNode].begin();
 	for (; it!=edges[curNode].end(); ++it)
@@ -147,6 +147,6 @@ void align(std::string rootFolder, const int numberOfGPUs)
 	// Travers tree to set final registration metadata
 	//////////////////////////////////////////////////////////////////////////
 	Vec<int> nullDeltas(0,0,0);
-	addEdge(nullDeltas,0,0,0.0);
+	addEdge(nullDeltas,0,0,0.0,rootFolder);
 	//////////////////////////////////////////////////////////////////////////
 }
