@@ -76,44 +76,48 @@ void align(std::string rootFolder, const int numberOfGPUs)
 	// Calculate the best overlap 
 	//////////////////////////////////////////////////////////////////////////
 	unsigned int curEdgeNum = 0;
+#pragma omp parallel for default(none) shared(overlaps,gImageTiffs,scanChannel,edgeList,totalEdges,curEdgeNum,rootFolder) num_threads(numberOfGPUs)
 	for (int staticImageInd=0; staticImageInd<overlaps.size(); ++staticImageInd)
 	{
- 		#pragma omp parallel for default(none) shared(overlaps,staticImageInd,gImageTiffs,scanChannel,edgeList,totalEdges,curEdgeNum,rootFolder) num_threads(numberOfGPUs)
 		for (int overlapImageInd=0; overlapImageInd<overlaps[staticImageInd].size(); ++overlapImageInd)
 		{
 			int deviceNum =0;
 			deviceNum = omp_get_thread_num();
-				Vec<int> deltas;
-				double maxCorr;
-				unsigned int bestN;
-				char buffer[255];
+			Vec<int> deltas;
+			double maxCorr;
+			unsigned int bestN;
+			char buffer[255];
 
-				sprintf_s(buffer,"%s\\%s_%s_report.txt",rootFolder.c_str(),gImageTiffs[staticImageInd]->getDatasetName().c_str(),
-					gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
+			sprintf_s(buffer,"%s\\%s_%s_report.txt",rootFolder.c_str(),gImageTiffs[staticImageInd]->getDatasetName().c_str(),
+				gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str());
 
- 				printf("\n(%d) %s <-- %s Done: %3.1f%% %d of %d\n",deviceNum,gImageTiffs[staticImageInd]->getDatasetName().c_str(),
-					gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str(),
-					(float)curEdgeNum/totalEdges*100.0,curEdgeNum,totalEdges);
+			printf("\n(%d) %s <-- %s Done: %3.1f%% %d of %d\n",deviceNum,gImageTiffs[staticImageInd]->getDatasetName().c_str(),
+				gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str(),
+				(float)curEdgeNum/totalEdges*100.0,curEdgeNum,totalEdges);
 
- 				ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),
-					gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),
-					overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,deviceNum,buffer);
+			ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),
+				gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),
+				overlaps[staticImageInd][overlapImageInd],deltas,maxCorr,bestN,deviceNum,buffer);
 
-				edge curEdge;
-				curEdge.deltas = deltas;
-				curEdge.node1 = staticImageInd;
-				curEdge.node2 = overlaps[staticImageInd][overlapImageInd].ind;
-				curEdge.maxCorr = maxCorr;
+			edge curEdge;
+			curEdge.deltas = deltas;
+			curEdge.node1 = staticImageInd;
+			curEdge.node2 = overlaps[staticImageInd][overlapImageInd].ind;
+			curEdge.maxCorr = maxCorr;
 
-				#pragma omp critical
-				{
-					edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
-					curEdge.node1 = curEdge.node2;
-					curEdge.node2 = staticImageInd;
-					curEdge.deltas = -curEdge.deltas;
-					edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
-					++curEdgeNum;
-				}
+#pragma omp critical
+			{
+				edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
+			}
+			curEdge.node1 = curEdge.node2;
+			curEdge.node2 = staticImageInd;
+			curEdge.deltas = -curEdge.deltas;
+
+#pragma omp critical
+			{
+				edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
+				++curEdgeNum;
+			}
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
