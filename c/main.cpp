@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 	size_t ind = fileListLocation.find_last_of("\\");
 	std::string root = fileListLocation.substr(0,ind);
 	//printf("%s\n",root.c_str());
-	gImageTiffs.resize(metadataFiles.size());
+	gImageTiffs.reserve(metadataFiles.size());
 	for (int i=0; i<metadataFiles.size(); ++i)
 	{
 		std::string mf = root;
@@ -68,7 +68,10 @@ int main(int argc, char* argv[])
 		mf += ".txt";
 		printf("%s\n",mf.c_str());
 		ImagesTiff* im = new ImagesTiff(mf);
-		gImageTiffs[i] = im;
+		if (im->getDatasetName()!="" && im->getNumberOfChannels()!=0 && im->getNumberOfFrames()!=0)
+			gImageTiffs.push_back(im);
+		else
+			delete im;
 	}
 
 	if (argc>=4)

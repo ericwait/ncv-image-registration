@@ -15,12 +15,12 @@ void addEdge(Vec<int> deltas, int curNode, int parentNode, double maxCorr, std::
 	std::map<int,edge>::iterator it = edges[curNode].begin();
 	for (; it!=edges[curNode].end(); ++it)
 	{
-			Vec<int> newDelta = deltas + it->second.deltas;
-			addEdge(newDelta,it->second.node2,it->second.node1,it->second.maxCorr);
+		Vec<int> newDelta = deltas + it->second.deltas;
+		addEdge(newDelta,it->second.node2,it->second.node1,it->second.maxCorr, rootFolder);
 	}
 
 	char buffer[255];
-	sprintf(buffer,"%s_corrResults.txt",gImageTiffs[curNode]->getDatasetName().c_str());
+	sprintf(buffer,"%s%s_corrResults.txt",rootFolder,gImageTiffs[curNode]->getDatasetName().c_str());
 
 	FILE* f = fopen(buffer,"wt");
 	fprintf(f,"deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%lf\nParent:%s\n",
