@@ -1,5 +1,5 @@
 function readDeltaData(root)
-global imageDatasets
+global imageDatasets DeltasPresent
 
 if ~exist('root','var')
     rootDir = uigetdir('');
@@ -7,6 +7,7 @@ if ~exist('root','var')
 else
     rootDir = root;
 end
+DeltasPresent = 0;
 names = {imageDatasets(:).DatasetName};
 names = cellfun(@(x)([x '.']),names,'uniformOutput',0);
 for i=1:length(imageDatasets)
@@ -16,6 +17,7 @@ for i=1:length(imageDatasets)
         continue
     end
 
+    DeltasPresent = 1;
     fid = fopen(filename,'rt');
     data = fscanf(fid,'deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%f\n');
     deltaParent = [strtrim(fscanf(fid,'Parent:%255c\n')) '.'];

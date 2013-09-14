@@ -1,15 +1,17 @@
 function readMetaData(root)
-global imageDatasets rootDir
+global imageDatasets rootDir datasetName
 
 if ~exist('root','var')
     rootDir = uigetdir('');
-    if rootDir==0, return, end
+    if rootDir==0,
+        return
+    end
 else
     rootDir = root;
 end
 
 imageDatasets = [];
-dlist = dir(rootDir);
+dlist = dir(fullfile(rootDir,[datasetName '*']));
 dlist = dlist(3:end);
 
 for i=1:length(dlist)
@@ -17,6 +19,11 @@ for i=1:length(dlist)
     if isempty(dSublist), continue, end
     
     for j=1:length(dSublist)
+        corr = strfind(dlist(i).name,'_corrResults.txt');
+        if ~isempty(corr)
+            continue;
+        end
+        
         fileHandle = fopen(fullfile(rootDir,dlist(i).name,dSublist(j).name));
         if fileHandle<=0, continue, end
         data = textscan(fileHandle,'%s', 'delimiter',':','whitespace','\n');

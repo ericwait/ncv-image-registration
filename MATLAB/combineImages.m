@@ -1,17 +1,23 @@
 function combineImages()
-global imageDatasets rootDir MARGIN newImage outImage datasetName
+global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent
 
-datasetName = 'DAPI AcTub-647 Laminin-488 VCAM-546';
+datasetName = 'Itga9WT1Deep';
 readMetaData();
 
 readDeltaData(rootDir);
 
 MARGIN = 5;
 
+if DeltasPresent==1
+    prefix = 'Mosiac_wDelta';
+else
+    prefix = 'Mosiac';
+end
+
 % %% make mosiac
 % %create a dirctory for the new images
-if ~isdir(fullfile(rootDir,'Mosiac'))
-    mkdir(rootDir,'Mosiac');
+if ~isdir(fullfile(rootDir,prefix))
+    mkdir(rootDir,prefix);
 end
 
 minXPos = min([imageDatasets(:).xMinPos]);
@@ -28,6 +34,7 @@ imageHeight = round((maxYPos-minYPos)/minYvoxelSize +1);
 imageDepth = round((maxZPos-minZPos)/minZvoxelSize +1);
 
 newImage = cell(length(imageDatasets),1);
+
 % outImage = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
 for c=1:min([imageDatasets(:).NumberOfChannels])
     outImage = zeros(imageWidth,imageHeight,imageDepth,'uint8');
@@ -64,9 +71,9 @@ for c=1:min([imageDatasets(:).NumberOfChannels])
                     = newImage{im}(:,:,z);
             end
         end
-        imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, 'Mosiac', ['_' datasetName sprintf('_c%d_t%04d.tif',c,t)]),'tif');
+        imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',c,t)]),'tif');
         for z=1:size(outImage,3)
-            imwrite(outImage(:,:,z),fullfile(rootDir, 'Mosiac', [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif');
+            imwrite(outImage(:,:,z),fullfile(rootDir, prefix, [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif');
         end
     end
     fprintf('\n');
