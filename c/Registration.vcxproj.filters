@@ -3,7 +3,7 @@
   <ItemGroup>
     <Filter Include="Header Files">
       <UniqueIdentifier>{8b42dd0e-f302-42ae-a647-6d4fbeff2690}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+      <Extensions>.cuh;h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{ffee4f5d-83a1-4c41-926b-ae6d17f4d01e}</UniqueIdentifier>
@@ -11,21 +11,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="CudaUtilities.h">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="cudaKernals.h">
-      <Filter>Header Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ImagesTiff.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AlignImages.cpp">
@@ -51,13 +43,34 @@
     <ClInclude Include="RidgidRegistration.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaImageBuffer.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaKernals.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CudaUtilities.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Vec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\VecFuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RidgidRegistration.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="cudaKernals.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="oldReg.txt" />
   </ItemGroup>
 </Project>

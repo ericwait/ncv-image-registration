@@ -5,18 +5,11 @@
 #include "tiffio.h"
 #include "tiff.h"
 
-#define MAX_THREAD_USAGE (0.5)
 #define CToMat(x) ((x)+1)
 
 //extern CRITICAL_SECTION gProcessingCritical;
-CRITICAL_SECTION gSegmentationCritical;
+//CRITICAL_SECTION gSegmentationCritical;
 
-bool fileExists(const char* filename){
-	std::ifstream ifile(filename);
-	bool rtn = ifile.good();
-	ifile.close();
-	return rtn;
-}
 
 LPCWSTR s2lp (const std::string& s)
 {
@@ -32,110 +25,36 @@ void updateWindowTitle(std::string msg)
 	printf("%s\n",msg.c_str());
 }
 
-DWORD WINAPI processingThread(LPVOID lpParam)
-{
-	//EnterCriticalSection(&gProcessingCritical);
-
-	//char buffer[255];
-	//paramPassing* param = (paramPassing*)lpParam;
-	//if (param->functionToCall.compare("backgroundSubstract")==0)
-	//{
-	//	sprintf_s(buffer," *Background Subtraction running on channel:%d",CToMat(param->channel));
-	//	gWindowSuffix = buffer;
-	//	updateWindowTitle("");
-	//	gImagesTiff->backgroundSubtraction(param->channel);
-	//}
-	//else if (param->functionToCall.compare("MFRdenoise")==0)
-	//{
-	//	sprintf_s(buffer," *MRF Denoise running on channel:%d",CToMat(param->channel));
-	//	gWindowSuffix = buffer;
-	//	updateWindowTitle("");
-	//	gImagesTiff->MRFdenoise(param->channel);
-	//}
-	//else if (param->functionToCall.compare("medianFilter")==0)
-	//{
-	//	sprintf_s(buffer," *Median Denoise running on channel:%d",CToMat(param->channel));
-	//	gWindowSuffix = buffer;
-	//	updateWindowTitle("");
-	//	gImagesTiff->medianFilter(param->channel);
-	//}
-	//else if (param->functionToCall.compare("resetChannel")==0)
-	//{
-	//	gImagesTiff->resetImagesToOrg(param->channel);
-	//}
-	//else if (param->functionToCall.compare("Segment")==0)
-	//{
-	//	InitializeCriticalSection(&gSegmentationCritical);
-	//	sprintf_s(buffer," *Segmenting channel:%d",CToMat(param->channel));
-	//	gWindowSuffix = buffer;
-	//	updateWindowTitle("");
-	//	gImagesTiff->segment(param->channel);
-	//	DeleteCriticalSection(&gSegmentationCritical);
-
-	//	sprintf_s(buffer," *Tracking channel:%d",CToMat(param->channel));
-	//	gWindowSuffix = buffer;
-	//	updateWindowTitle("");
-
-	//	trackHulls();
-
-	//	for (int i=0; i<gHulls.size(); ++i)
-	//	{
-	//		gHulls[i].initBuffers();
-	//	}
-
-	//	g_bRender = false;
-	//	GetTrackLists();
-
-	//	char buffer[255];
-	//	sprintf_s(buffer,".\\data\\%s\\%s.lvr",gImagesTiff->getDatasetName(),gImagesTiff->getDatasetName());
-	//	gSavePath = buffer;
-	//	SaveData();
-
-	//	gSegment = true;
-	//	g_drawHulls = true;
-	//	gAllHulls = true;
-
-	//	g_bRender = true;
-	//}
-
-	//delete param;
-
-// 	g_state = REFRESH;
-// 	gWindowSuffix = "";
-// 
-// 	updateWindowTitle("");
-
-	//LeaveCriticalSection(&gProcessingCritical);
-
-	return S_OK;
-}
-
 //////////////////////////////////////////////////////////////////////////
 //ImageBuffer
 //////////////////////////////////////////////////////////////////////////
 ImageContainer::ImageContainer(unsigned int width, unsigned int height, unsigned int depth)
 {
 	defaults();
-	this->width = width;
-	this->height = height;
-	this->depth = depth;
+	dims.x = width;
+	dims.y = height;
+	dims.z = depth;
 
-	image = new PixelType[width*height*depth];
+	image = new PixelType[dims.product()];
+}
+
+ImageContainer::ImageContainer(Vec<unsigned int> dimsIn)
+{
+	defaults();
+	dims = dimsIn;
+
+	image = new PixelType[dims.product()];
 }
 
 void ImageContainer::copy(const ImageContainer& im)
 {
 	clear();
 	name = im.getName();
-	width = im.getWidth();
-	height = im.getHeight();
-	depth = im.getDepth();
-	xPosition = im.getXPosition();
-	yPosition = im.getYPosition();
-	zPosition = im.getZPosition();
+	dims = im.getDims();
+	positions = im.getPositions();
 
-	image = new PixelType[width*height*depth];
-	memcpy((void*)image,(void*)(im.getConstMemoryPointer()),sizeof(PixelType)*width*height*depth);
+	image = new PixelType[dims.product()];
+	memcpy((void*)image,(void*)(im.getConstMemoryPointer()),sizeof(PixelType)*dims.product());
 }
 
 void ImageContainer::clear()
@@ -151,66 +70,86 @@ void ImageContainer::clear()
 
 PixelType ImageContainer::getPixelValue(unsigned int x, unsigned int y, unsigned int z) const
 {
+	return getPixelValue(Vec<unsigned int>(x,y,z));
+}
+
+PixelType ImageContainer::getPixelValue(Vec<unsigned int> coordinate) const
+{
 #ifdef _DEBUG
-	assert(width!=-1 && x<width);
-	assert(height!=-1 && y<height);
-	assert(depth!=-1 && z<depth);
+	assert(coordinate<dims);
 #endif
-	return image[x+y*width+z*height*width];
+	return image[dims.linearAddressAt(coordinate)];
 }
 
 void ImageContainer::setPixelValue(unsigned int x, unsigned int y, unsigned int z, unsigned char val)
 {
-#ifdef _DEBUG
-	assert(width!=-1 && x<width);
-	assert(height!=-1 && y<height);
-	assert(depth!=-1 && z<depth);
-#endif
-	if (x>width || y>height || z>depth)
-		return;
-
-	image[x+y*width+z*height*width] = val;
+	setPixelValue(Vec<unsigned int>(x,y,z),val);
 }
 
-const PixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned int sizeX, unsigned int minY, unsigned int sizeY, unsigned int minZ, unsigned int sizeZ) const
+void ImageContainer::setPixelValue(Vec<unsigned int> coordinate, unsigned char val)
 {
-	assert(sizeX<=width);
-	assert(sizeY<=height);
-	assert(sizeZ<=depth);
+#ifdef _DEBUG
+	assert(coordinate<Vec<unsigned int>(-1,-1,-1));
+#endif
+	assert(coordinate<=dims);
 
-	PixelType* image = new PixelType[sizeX*sizeY*sizeZ];
+	image[dims.linearAddressAt(coordinate)] = val;
+}
+
+const PixelType* ImageContainer::getConstROIData (unsigned int minX, unsigned int sizeX, unsigned int minY,
+	unsigned int sizeY, unsigned int minZ, unsigned int sizeZ) const
+{
+	return getConstROIData(Vec<unsigned int>(minX,minY,minZ), Vec<unsigned int>(sizeX,sizeY,sizeZ));
+}
+
+const PixelType* ImageContainer::getConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const
+{
+	assert(startIndex+size<=dims);
+
+	PixelType* image = new PixelType[size.product()];
 
 	unsigned int i=0;
-	for (unsigned int z=0; z<sizeZ; ++z)
-		for (unsigned int y=minY; y<sizeY; ++y)
-			for (unsigned int x=minX; x<sizeX+1; ++x)		
-				image[i] = (float)getPixelValue(x,y,z);
+	for (unsigned int z=startIndex.z; z<size.z; ++z)
+		for (unsigned int y=startIndex.y; y<size.y; ++y)
+			for (unsigned int x=startIndex.x; x<size.x+1; ++x)		
+				image[i] = getPixelValue(x,y,z);
 
 	return image;
 }
 
-const float* ImageContainer::getConstFloatROIData (unsigned int minX, unsigned int sizeX, unsigned int minY, unsigned int sizeY, unsigned int minZ, unsigned int sizeZ) const
+const float* ImageContainer::getFloatConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const
 {
-	assert(sizeX<=minX+width);
-	assert(sizeY<=minY+height);
-	assert(sizeZ<=minZ+depth);
+	assert(startIndex+size<=dims);
 
-	float* image = new float[sizeX*sizeY*sizeZ];
+	float* image = new float[size.product()];
 
 	unsigned int i=0;
-	for (unsigned int z=minZ; z<minZ+sizeZ; ++z)
+	for (unsigned int z=startIndex.z; z<startIndex.z+size.z; ++z)
 	{
-		for (unsigned int y=minY; y<minY+sizeY; ++y)
+		for (unsigned int y=startIndex.y; y<startIndex.y+size.y; ++y)
 		{
-			for (unsigned int x=minX; x<minX+sizeX; ++x)		
+			for (unsigned int x=startIndex.x; x<startIndex.x+size.x; ++x)		
 			{
-				image[i] = (float)getPixelValue(x,y,z);
+				PixelType val = getPixelValue(x,y,z);
+				image[i] = (float)val;
 				++i;
 			}
 		}
 	}
-	if (i<sizeX*sizeY*sizeZ)
-		int m = sizeX*sizeY*sizeZ;
+	return image;
+}
+
+const double* ImageContainer::getDoubleConstROIData(Vec<unsigned int> startIndex, Vec<unsigned int> size) const
+{
+	assert(startIndex+size<=dims);
+
+	double* image = new double[size.product()];
+
+	unsigned int i=0;
+	for (unsigned int z=startIndex.z; z<size.z; ++z)
+		for (unsigned int y=startIndex.y; y<size.y; ++y)
+			for (unsigned int x=startIndex.x; x<size.x+1; ++x)		
+				image[i] = (double)getPixelValue(x,y,z);
 
 	return image;
 }
@@ -222,9 +161,6 @@ const float* ImageContainer::getConstFloatROIData (unsigned int minX, unsigned i
 //////////////////////////////////////////////////////////////////////////
 ImagesTiff::ImagesTiff(const std::string metaDataFile)
 {
-// 	if (gImagesTiff==NULL)
-// 		gImagesTiff = this;
-
 	size_t separator = 0;
 	clear();
 
@@ -253,15 +189,9 @@ void ImagesTiff::reset()
 	numberOfChannels = 1;
 	numberOfFrames = 1;
 	timeBetweenFrames = 1;
-	xSize = 0.0f;
-	ySize = 0.0f;
-	zSize = 0.0f;
-	xPixelPhysicalSize = 1.0;
-	yPixelPhysicalSize = 1.0;
-	zPixelPhysicalSize = 1.0;
-	xPosition = 0.0;
-	yPosition = 0.0;
-	zPosition = 0.0;
+	sizes = Vec<unsigned long long>(0,0,0);
+	pixelPhysicalSizes = Vec<double>(1.0,1.0,1.0);
+	positions = Vec<double>(0.0,0.0,0.0);
 	alligned = false;
 }
 
@@ -346,13 +276,13 @@ void ImagesTiff::setMetadata(std::map<std::string,std::string> metadata)
 		this->setNumberOfFrames(atoi(metadata["NumberOfFrames"].c_str()));
 
 	if (metadata.count("XDimension")!=0)
-		this->xSize = atoi(metadata["XDimension"].c_str());
+		this->sizes.x = atoi(metadata["XDimension"].c_str());
 
 	if (metadata.count("YDimension")!=0)
-		this->ySize = atoi(metadata["YDimension"].c_str());
+		this->sizes.y = atoi(metadata["YDimension"].c_str());
 
 	if (metadata.count("ZDimension")!=0)
-		this->zSize = atoi(metadata["ZDimension"].c_str());
+		this->sizes.z = atoi(metadata["ZDimension"].c_str());
 
 	if (metadata.count("XPixelPhysicalSize")!=0)
 		this->setXPixelPhysicalSize(atof(metadata["XPixelPhysicalSize"].c_str()));
@@ -367,10 +297,19 @@ void ImagesTiff::setMetadata(std::map<std::string,std::string> metadata)
 		this->setXPixelPhysicalSize(atof(metadata["XPixelPhysicalSize"].c_str()));
 
 	if (metadata.count("XPosition")!=0)
-		this->yPosition = atof(metadata["XPosition"].c_str()) * 1e6;
+	{
+		//THIS is flipped for a reason!  Do not touch
+		this->positions.x = atof(metadata["YPosition"].c_str()) * 1e6;
+	}
 
 	if (metadata.count("YPosition")!=0)
-		this->xPosition = atof(metadata["YPosition"].c_str()) * 1e6;
+	{
+		//THIS is flipped for a reason!  Do not touch
+		this->positions.y = atof(metadata["XPosition"].c_str()) * 1e6;
+	}
+
+	if (metadata.count("ZPosition")!=0)
+		this->positions.z = atof(metadata["ZPosition"].c_str()) * 1e6;
 
 	setScales();
 
@@ -379,10 +318,9 @@ void ImagesTiff::setMetadata(std::map<std::string,std::string> metadata)
 
 void ImagesTiff::setScales()
 {
-	float maxDim = MAX(MAX(xSize,ySize),zSize);
-	xScale = xSize/maxDim;
-	yScale = ySize/maxDim * (yPixelPhysicalSize/xPixelPhysicalSize);
-	zScale = zSize/maxDim * (zPixelPhysicalSize/xPixelPhysicalSize);
+	scales.x = (double)(sizes.x/sizes.maxValue());
+	scales.y = (double)(sizes.y/sizes.maxValue() * (pixelPhysicalSizes.y/pixelPhysicalSizes.x));
+	scales.z = (double)(sizes.z/sizes.maxValue() * (pixelPhysicalSizes.z/pixelPhysicalSizes.x));
 }
 
 ImageContainer* ImagesTiff::getImage(unsigned char channel, unsigned int frame)
@@ -425,16 +363,10 @@ void ImagesTiff::clear ()
 	this->numberOfChannels = 0;
 	this->numberOfFrames = 0;
 	this->timeBetweenFrames = 0.0;
-	this->xPixelPhysicalSize = 0.0;
-	this->yPixelPhysicalSize = 0.0;
-	this->zPixelPhysicalSize = 0.0;
-	xPosition = 0.0;
-	yPosition = 0.0;
-	zPosition = 0.0;
+	this->pixelPhysicalSizes = Vec<double>(0.0,0.0,0.0);
+	this->positions = Vec<double>(0.0,0.0,0.0);
 	this->alligned = false;
-	deltas.x = 0;
-	deltas.y = 0;
-	deltas.z = 0;
+	this->deltas = Vec<int>(0,0,0);
 }
 
 void ImagesTiff::setImage(ImageContainer& image, unsigned char channel, unsigned int frame)
@@ -451,104 +383,32 @@ void ImagesTiff::setImage(ImageContainer& image, unsigned char channel, unsigned
 
 PixelType ImagesTiff::getPixel(unsigned char channel, unsigned int frame, unsigned int x, unsigned int y, unsigned int z) const
 {
+	return getPixel(channel,frame,Vec<unsigned int>(x,y,z));
+}
+
+PixelType ImagesTiff::getPixel(unsigned char channel, unsigned int frame, Vec<unsigned int> coordinate) const
+{
 #ifdef _DEBUG
 	assert(channel<numberOfChannels);
 	assert(frame<numberOfFrames);
 #endif
-	return imageBuffers[channel][frame]->getPixelValue(x,y,z);
+	return imageBuffers[channel][frame]->getPixelValue(coordinate);
 }
-
-void ImagesTiff::segment(const unsigned char CHANNEL)
-{
-	//if (CHANNEL>=numberOfChannels)
-	//	return;
-
-	//gHashedHulls.resize(numberOfFrames);
-	//int nThreads = maxThreads*MAX_THREAD_USAGE;
-
-	//int numFrames = numberOfFrames;
-	//++numberOfChannels;
-	//imagesChar.resize(numberOfChannels);
-	//imagesChar[numberOfChannels-1].resize(numberOfFrames);
-
-	//#pragma omp parallel for default(none) shared(numFrames,CHANNEL) num_threads(nThreads)
-	//for (int frame=0; frame<numFrames; ++frame)
-	//{
-	//	SegmentFrame(frame,CHANNEL);
-	//}
-
-	//system("del outfile*.txt errfile*.txt && exit");
-}
-
-void ImagesTiff::medianFilter(const unsigned char CHANNEL)
-{
-	//if (CHANNEL>=numberOfChannels || CHANNEL<0)
-	//	return;
-
-	//int nThreads = maxThreads*MAX_THREAD_USAGE;
-	//#pragma omp parallel for default(none) shared(CHANNEL) num_threads(nThreads)
-	//for (int frame=0; frame<numberOfFrames; ++frame)
-	//{
-	//	CharImageVolumeType::Pointer newImage = medianDenoise(this->getImage(CHANNEL,frame));
-	//	this->setImage(newImage,CHANNEL,frame);
-	//}
-}
-
-void ImagesTiff::backgroundSubtraction(const unsigned char CHANNEL)
-{
-	//if (CHANNEL>=numberOfChannels || CHANNEL<0)
-	//	return;
-
-	//int nThreads = maxThreads*MAX_THREAD_USAGE;
-	//#pragma omp parallel for default(none) shared(CHANNEL) num_threads(nThreads)
-	//for (int frame=0; frame<numberOfFrames; ++frame)
-	//{
-	//	CharImageVolumeType::Pointer newImage = subtractBackground(this->getImage(CHANNEL,frame));
-	//	this->setImage(newImage,CHANNEL,frame);
-	//}
-}
-//
-//void ImagesTiff::MRFdenoise(const unsigned char CHANNEL)
-//{
-//	if (CHANNEL>=numberOfChannels || CHANNEL<0)
-//		return;
-//
-//	int nThreads = maxThreads*MAX_THREAD_USAGE;
-//	#pragma omp parallel for default(none) shared(CHANNEL) num_threads(nThreads)
-//	for (int frame=0; frame<numberOfFrames; ++frame)
-//	{
-//		CharImageVolumeType::Pointer newImage = markovDenoise(this->getImage(CHANNEL,frame));
-//		this->setImage(newImage,CHANNEL,frame);
-//	}
-//}
-
-//void ImagesTiff::resetImagesToOrg(const unsigned char CHANNEL)
-//{
-//	//if (CHANNEL>=numberOfChannels || CHANNEL<0)
-//	//	return;
-//
-//	//for (unsigned int frame=0; frame<numberOfFrames; ++frame)
-//	//	imagesChar[CHANNEL][frame] = imagesCharOrg[CHANNEL][frame];
-//
-//	//g_state = REFRESH;
-//}
 //////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////
-//ITK
+//Image I/O
 //////////////////////////////////////////////////////////////////////////
 void ImagesTiff::setupCharReader()
 {
 #ifdef _DEBUG
 	assert(this->getNumberOfChannels()>0);
 	assert(this->getNumberOfFrames()>0);
-	assert(this->xPixelPhysicalSize>0);
-	assert(this->yPixelPhysicalSize>0);
-	assert(this->zPixelPhysicalSize>0);
+	assert(pixelPhysicalSizes>Vec<double>(0.0,0.0,0.0));
 #endif
 	char buffer[255];
 
-	for (int frame=0; frame<this->getNumberOfFrames(); ++frame)
+	for (unsigned int frame=0; frame<this->getNumberOfFrames(); ++frame)
 	{
 // 		for (int chan=0; chan<this->getNumberOfChannels(); ++chan)
 // 		{
@@ -567,7 +427,8 @@ void ImagesTiff::reader(unsigned char channel, unsigned int frame)
 	sprintf_s(filenameTemplate,"%s\\%s_c%d_t%04d_z%s.tif",imagesPath.c_str(),datasetName.c_str(),CToMat(channel),CToMat(frame),"%04d");
 	printf("Reading:%s...\n",filenameTemplate);
 	TIFF* image;
-	unsigned int stripCount=0, stripSize=0, imageOffset=0, result=0, width=0, height=0, depth=this->zSize;
+	unsigned int stripCount=0, width=0, height=0, depth=(unsigned int)(this->sizes.z);
+	tmsize_t stripSize=0, result=0, imageOffset=0;
 	unsigned short bps, spp;
 	PixelType* imageBuffer;
 
@@ -625,41 +486,59 @@ void ImagesTiff::reader(unsigned char channel, unsigned int frame)
 	imageBuffers[channel][frame]->setName(this->datasetName.c_str());
 }
 
-void writeImage(const ImageContainer* image, std::string fileName)
+void writeImage(const ImageContainer* image, std::string fileNamePrefix)
 {
-	writeImage(image->getConstMemoryPointer(),image->getWidth(),image->getHeight(),image->getDepth(),fileName);
+	writeImage(image->getConstMemoryPointer(),image->getDims(),fileNamePrefix);
 }
 
-void writeImage(const float* floatImage, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
+void writeImage(const float* floatImage, unsigned int width, unsigned int height, unsigned int depth, std::string fileNamePrefix)
 {
-	PixelType* image = new PixelType[width*height*depth];
+	writeImage(floatImage,Vec<unsigned int>(width,height,depth), fileNamePrefix);
+}
 
-	for (unsigned int z=0; z<depth; ++z)
+/*
+ *	This will write out a series of tif images where the passed in prefix is used to name the z stack written.
+ *	Use printf syntax for this string.
+ *	e.g. "image_z%d" will give you a image image_z1.tif or "image_z%04d" will give you image_z0001.tif
+ */
+void writeImage(const float* floatImage, Vec<unsigned int> dims, std::string fileNamePrefix)
+{
+	PixelType* image = new PixelType[dims.product()];
+	Vec<unsigned int> coordinate(0,0,0);
+
+	for (coordinate.z=0; coordinate.z<dims.z; ++coordinate.z)
 	{
-		for (unsigned int y=0; y<height; ++y)
+		for (coordinate.y=0; coordinate.y<dims.y; ++coordinate.y)
 		{
-			for (unsigned int x=0; x<width; ++x)
+			for (coordinate.x=0; coordinate.x<dims.x; ++coordinate.x)
 			{
-				image[x+y*width+z*height*width] = (PixelType)MAX(MAX(floatImage[x+y*width+z*height*width],255.0f),0.0f);
-				
+				image[dims.linearAddressAt(coordinate)] = (PixelType)(std::max<float>(std::min<float>
+					(floatImage[dims.linearAddressAt(coordinate)],255.0f),0.0f));
 			}
 		}
 	}
 
-	writeImage(image,width,height,depth,fileName);
+	writeImage(image,dims,fileNamePrefix);
 
 	delete image;
 }
 
-void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int height, unsigned int depth, std::string fileName)
+void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int height, unsigned int depth, std::string fileNamePrefix)
 {
+	writeImage(imageBuffer,Vec<unsigned int>(width,height,depth),fileNamePrefix);
+}
+
+void writeImage(const PixelType* imageBuffer, Vec<unsigned int> dims, std::string fileNamePrefix)
+{
+	char curFile[255];
 	char curFileName[255];
 	TIFF* image;
 
-	printf("Writing:%s\n",fileName.c_str());
-	for (unsigned int z=0; z<depth; ++z)
+	printf("Writing:%s\n",fileNamePrefix.c_str());
+	for (unsigned int z=0; z<dims.z; ++z)
 	{
-		sprintf_s(curFileName,fileName.c_str(),z+1);
+		sprintf_s(curFile,fileNamePrefix.c_str(),z+1);
+		sprintf_s(curFileName,"%s.tif",curFile);
 		// Open the TIFF file
 		if((image = TIFFOpen(curFileName, "w")) == NULL){
 			printf("Could not open %s for writing\n",curFileName);
@@ -667,11 +546,11 @@ void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int h
 		}
 
 		// We need to set some values for basic tags before we can add any data
-		TIFFSetField(image, TIFFTAG_IMAGEWIDTH, width);
-		TIFFSetField(image, TIFFTAG_IMAGELENGTH, height);
+		TIFFSetField(image, TIFFTAG_IMAGEWIDTH, dims.x);
+		TIFFSetField(image, TIFFTAG_IMAGELENGTH, dims.y);
 		TIFFSetField(image, TIFFTAG_BITSPERSAMPLE, 8);
 		TIFFSetField(image, TIFFTAG_SAMPLESPERPIXEL, 1);
-		TIFFSetField(image, TIFFTAG_ROWSPERSTRIP, height);
+		TIFFSetField(image, TIFFTAG_ROWSPERSTRIP, dims.y);
 
 		TIFFSetField(image, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
 		TIFFSetField(image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
@@ -679,7 +558,7 @@ void writeImage(const PixelType* imageBuffer, unsigned int width, unsigned int h
 		TIFFSetField(image, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
 		// Write the information to the file
-		TIFFWriteEncodedStrip(image, 0, (void*)(imageBuffer+z*width*height), width*height);
+		TIFFWriteEncodedStrip(image, 0, (void*)(imageBuffer+z*dims.x*dims.y), dims.x*dims.y);
 
 		// Close the file
 		TIFFClose(image);

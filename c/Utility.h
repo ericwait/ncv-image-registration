@@ -6,8 +6,7 @@
 
 bool pathCreate(std::string path);
 //HRESULT openFileDialog(std::string& txtFilePath);
-//bool fileExists(const char* filename);
+bool fileExists(const char* filename);
 // 
-#define MAX(x,y) (x>y)?(x):(y)
 
 #endif

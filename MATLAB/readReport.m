@@ -2,6 +2,8 @@ reportDir = uigetdir();
 fileList = dir(fullfile(reportDir,'*_report.txt'));
 
 stepSize = 3;
+limsX = [-150 150];
+limsY = [-150 150];
 if ~isempty(fileList)
     fprintf('%d:',size(fileList,1));
     for i=1:size(fileList,1)
@@ -71,10 +73,10 @@ if ~isempty(fileList)
         f = figure('Renderer','zbuffer','Position',[130 130 1920 1080]);
         %Correlation Static
         subplot(1,3,2,'Position',[.35 .03 .3 .9]);
-        surf(minY:3:maxY,minX:3:maxX,staticCorr(1:3:end,1:3:end,1));
-        title({reportFile(1:end-4);sprintf('Z=%d',z)},'Interpreter','none');
-        xlim([-100 100]);
-        ylim([-100 100]);
+        surf(minY:3:maxY,minX:3:maxX,staticCorr(1:3:end,1:3:end,end));
+        title({reportFile(1:end-4);sprintf('Z=%d',0)},'Interpreter','none');
+        xlim(limsX);
+        ylim(limsY);
         zlim([-0.2 1.0].*maxStaticSig);
         caxis([-0.2 1.0].*maxStaticSig);
         xlabel('Delta X');
@@ -85,8 +87,8 @@ if ~isempty(fileList)
         %Correlation Overlap
         subplot(1,3,3,'Position',[.68 .03 .3 .9]);
         surf(minY:3:maxY,minX:3:maxX,overlapCorr(1:3:end,1:3:end,1));
-        xlim([-100 100]);
-        ylim([-100 100]);
+        xlim(limsX);
+        ylim(limsY);
         zlim([-0.2 1.0].*maxOverlapSig);
         caxis([-0.2 1.0].*maxOverlapSig);
         xlabel('Delta X');
@@ -97,8 +99,8 @@ if ~isempty(fileList)
         %Correlation Straight
         subplot(1,3,1,'Position',[.02 .03 .3 .9]);
         surf(minY:3:maxY,minX:3:maxX,corrMap(1:3:end,1:3:end,1));
-        xlim([-100 100]);
-        ylim([-100 100]);
+        xlim(limsX);
+        ylim(limsY);
         zlim([-0.2 1.0]);
         caxis([-0.2 1.0]);
         xlabel('Delta X');
@@ -107,7 +109,7 @@ if ~isempty(fileList)
         set(gca,'NextPlot','replaceChildren');
         
         writer = VideoWriter(aviName,'Uncompressed AVI');
-        writer.FrameRate = 15;
+        writer.FrameRate = 2;
         %writer.Quality = 100;
         
         open(writer);
@@ -117,8 +119,8 @@ if ~isempty(fileList)
             subplot(1,3,2,'Position',[.35 .03 .3 .9]);
             surf(minY:3:maxY,minX:3:maxX,staticCorr(1:3:end,1:3:end,z));
             title({reportFile(1:end-4);sprintf('Z=%d',z)},'Interpreter','none');
-            xlim([-100 100]);
-            ylim([-100 100]);
+            xlim(limsX);
+            ylim(limsY);
             zlim([-0.2 1.0].*maxStaticSig);
             caxis([-0.2 1.0].*maxStaticSig);
             xlabel('Delta X');
@@ -128,8 +130,8 @@ if ~isempty(fileList)
             %Correlation Overlap
             subplot(1,3,3,'Position',[.68 .03 .3 .9]);
             surf(minY:3:maxY,minX:3:maxX,overlapCorr(1:3:end,1:3:end,z));
-            xlim([-100 100]);
-            ylim([-100 100]);
+            xlim(limsX);
+            ylim(limsY);
             zlim([-0.2 1.0].*maxOverlapSig);
             caxis([-0.2 1.0].*maxOverlapSig);
             xlabel('Delta X');
@@ -139,8 +141,8 @@ if ~isempty(fileList)
             %Correlation Straight
             subplot(1,3,1,'Position',[.02 .03 .3 .9]);
             surf(minY:3:maxY,minX:3:maxX,corrMap(1:3:end,1:3:end,z));
-            xlim([-100 100]);
-            ylim([-100 100]);
+            xlim(limsX);
+            ylim(limsY);
             zlim([-0.2 1.0]);
             caxis([-0.2 1.0]);
             xlabel('Delta X');
