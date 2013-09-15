@@ -301,9 +301,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 					starts.staticIm.z = (unsigned int)std::max<int>(0,overlap.deltaZss+deltaZ-imStarts.staticIm.z);
 					starts.overlapIm.z = (unsigned int)std::max<int>(0,-(overlap.deltaZss+deltaZ)-imStarts.overlapIm.z);
 					szs.staticIm.z = szs.overlapIm.z = (unsigned int)std::min<int>(imSizes.staticIm.z,overlap.deltaZse+deltaZ+1) - starts.staticIm.z;
-					printf("roi,");
 					staticCudaIm.copyROI(staticMaxRoiCuda,starts.staticIm,szs.staticIm);
-					printf("roi,");
 					overlapCudaIm.copyROI(overlapMaxRoiCuda,starts.overlapIm,szs.overlapIm);
 
 					double staticSigma, overlapSigma;
