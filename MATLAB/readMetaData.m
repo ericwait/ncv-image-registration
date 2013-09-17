@@ -23,6 +23,10 @@ for i=1:length(dlist)
         if ~isempty(corr)
             continue;
         end
+        rep = strfind(dlist(i).name,'_report.txt');
+        if ~isempty(rep)
+            continue;
+        end
         
         fileHandle = fopen(fullfile(rootDir,dlist(i).name,dSublist(j).name));
         if fileHandle<=0, continue, end
