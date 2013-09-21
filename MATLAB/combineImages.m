@@ -9,9 +9,9 @@ readDeltaData(rootDir);
 MARGIN = 5;
 
 if DeltasPresent==1
-    prefix = 'Mosiac_wDelta';
+    prefix = [datasetName '_Mosiac_wDelta'];
 else
-    prefix = 'Mosiac';
+    prefix = [datasetName '_Mosiac'];
 end
 
 % %% make mosiac
@@ -41,11 +41,11 @@ for c=1:min([imageDatasets(:).NumberOfChannels])
     fprintf('Read Chan:%d',c);
     for t=1:min([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
-            fprintf('.');
             newImage{im} = zeros(imageDatasets(im).xDim,imageDatasets(im).yDim,imageDatasets(im).zDim,'uint8');
             for z=1:imageDatasets(im).zDim
                 newImage{im}(:,:,z) = imread(fullfile(rootDir,imageDatasets(im).DatasetName,sprintf('%s_c%d_t%04d_z%04d.tif',imageDatasets(im).DatasetName,c,t,z)));
             end
+            fprintf('.');
         end
     end
     fprintf('\n');
@@ -62,7 +62,6 @@ for c=1:min([imageDatasets(:).NumberOfChannels])
     fprintf('Write Chan:%d',c);
     for t=1:min([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
-            fprintf('.');
             for z=1:imageDatasets(im).zDim
                 startXind = round((imageDatasets(im).xMinPos-minXPos) / minXvoxelSize +1);
                 startYind = round((imageDatasets(im).yMinPos-minYPos) / minYvoxelSize +1);
@@ -71,9 +70,14 @@ for c=1:min([imageDatasets(:).NumberOfChannels])
                     = newImage{im}(:,:,z);
             end
         end
-        imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',c,t)]),'tif');
+        imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',c,t)]),'tif','Compression','lzw');
+        fprintf('.');
+        modZ = ceil(size(outImage,3)/length(imageDatasets));
         for z=1:size(outImage,3)
-            imwrite(outImage(:,:,z),fullfile(rootDir, prefix, [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif');
+            imwrite(outImage(:,:,z),fullfile(rootDir, prefix, [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif','Compression','lzw');
+            if (mod(z,modZ)==0)
+                fprintf('.');
+            end
         end
     end
     fprintf('\n');
