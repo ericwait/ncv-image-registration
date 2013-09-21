@@ -1,6 +1,8 @@
 function readMetaData(root)
 global imageDatasets rootDir datasetName
 
+imageDatasets = [];
+
 if ~exist('root','var')
     rootDir = uigetdir('');
     if rootDir==0,
@@ -10,12 +12,13 @@ else
     rootDir = root;
 end
 
-imageDatasets = [];
 dlist = dir(fullfile(rootDir,[datasetName '*']));
-dlist = dlist(3:end);
 
 for i=1:length(dlist)
+    if (strcmp(dlist(i).name,'.') || strcmp(dlist(i).name,'..')),continue,end
+    
     dSublist = dir(fullfile(rootDir,dlist(i).name,'*.txt'));
+    
     if isempty(dSublist), continue, end
     
     for j=1:length(dSublist)
