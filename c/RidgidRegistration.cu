@@ -142,6 +142,10 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	Vec<int> staticImageExtents(staticImage->getWidth(),staticImage->getHeight(),staticImage->getDepth());
 
 	calcMaxROIs(overlap,staticImageExtents,imStarts,imSizes,maxOverlapSize);
+	if (imSizes.staticIm>=staticImage->getDims())
+		fprintf(stderr,"Using Total Static Image Size!\n");
+	if (imSizes.overlapIm>=overlapImage->getDims())
+		fprintf(stderr,"Using Total Overlap Image Size!\n");
 
 	time_t mainStart, mainEnd, mipStart, mipEnd, xStart, xEnd, zStart, zEnd;
 	double mainSec=0, mipSec=0, xSec=0, xSecTotal=0.0, zSec=0, zSecTotal=0.0;
