@@ -26,11 +26,12 @@ for i=1:length(imageDatasets)
     imageDatasets(i).xDelta = data(2);
     imageDatasets(i).yDelta = data(1);
     imageDatasets(i).zDelta = data(3);
-    imageDatasets(i).xMinPos = data(2)*imageDatasets(i).xVoxelSize + imageDatasets(i).xMinPos;
+    
+    imageDatasets(i).xMinPos = imageDatasets(i).xDelta*imageDatasets(i).xVoxelSize + imageDatasets(i).xMinPos;
     imageDatasets(i).xMaxPos = imageDatasets(i).xMinPos+ imageDatasets(i).xDim*imageDatasets(i).xVoxelSize;
-    imageDatasets(i).yMinPos = data(1)*imageDatasets(i).yVoxelSize + imageDatasets(i).yMinPos;
+    imageDatasets(i).yMinPos = imageDatasets(i).yDelta*imageDatasets(i).yVoxelSize + imageDatasets(i).yMinPos;
     imageDatasets(i).yMaxPos = imageDatasets(i).yMinPos+ imageDatasets(i).yDim*imageDatasets(i).yVoxelSize;
-    imageDatasets(i).zMinPos =  data(3)*imageDatasets(i).zVoxelSize;
+    imageDatasets(i).zMinPos = imageDatasets(i).zDelta*imageDatasets(i).zVoxelSize;
     imageDatasets(i).zMaxPos = imageDatasets(i).zMinPos+ imageDatasets(i).zDim*imageDatasets(i).zVoxelSize;
     imageDatasets(i).ParentDelta = find(cellfun(@(x)(~isempty(x)),strfind(names,deltaParent)));
     if isempty(imageDatasets(i).ParentDelta)
