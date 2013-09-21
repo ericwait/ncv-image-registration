@@ -20,7 +20,7 @@ void addEdge(Vec<int> deltas, int curNode, int parentNode, double maxCorr, std::
 	}
 
 	char buffer[255];
-	sprintf(buffer,"%s%s_corrResults.txt",rootFolder.c_str(),gImageTiffs[curNode]->getDatasetName().c_str());
+	sprintf(buffer,"%s\\%s_corrResults.txt",rootFolder.c_str(),gImageTiffs[curNode]->getDatasetName().c_str());
 
 	FILE* f = fopen(buffer,"wt");
 	fprintf(f,"deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%lf\nParent:%s\n",
