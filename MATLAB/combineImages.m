@@ -4,6 +4,10 @@ global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent
 datasetName = 'Itga9WT1Deep';
 readMetaData();
 
+if (isempty(imageDatasets))
+    error('No images for dataset %s\n',datasetName);
+end
+
 readDeltaData(rootDir);
 
 MARGIN = 5;
