@@ -13,9 +13,9 @@ readDeltaData(rootDir);
 MARGIN = 5;
 
 if DeltasPresent==1
-    prefix = [datasetName '_Mosiac_wDelta'];
+    prefix = [datasetName '_Montage_wDelta'];
 else
-    prefix = [datasetName '_Mosiac'];
+    prefix = [datasetName '_Montage'];
 end
 
 % %% make mosiac
