@@ -111,7 +111,7 @@ const PixelType* ImageContainer::getConstROIData(Vec<unsigned int> startIndex, V
 	unsigned int i=0;
 	for (unsigned int z=startIndex.z; z<size.z; ++z)
 		for (unsigned int y=startIndex.y; y<size.y; ++y)
-			for (unsigned int x=startIndex.x; x<size.x+1; ++x)		
+			for (unsigned int x=startIndex.x; x<size.x; ++x)		
 				image[i] = getPixelValue(x,y,z);
 
 	return image;
