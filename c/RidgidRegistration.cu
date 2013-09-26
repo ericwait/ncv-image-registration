@@ -239,8 +239,10 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 
 				printf("(%d)  BestCorr:%6.4f(%4d,%4d,%3d)", deviceNum, maxCorrOut, bestDelta.x, bestDelta.y, bestDelta.z);
 				printf(" Done:%5.2f%% deltaX= %+03d", (float)curIter/iterations*100.0, deltaX);
-				double est = (iterations-curIter)*(xSecTotal/(deltaSizes.y*(abs(deltaMins.x-deltaX)+1)));
-				printf(" X(sec):%4.1f avgY(sec):%5.3f Est(min):%d:%02d\n", xSec, xSec/deltaSizes.y, floor(est/60.0),(int)est%60);
+				double est = (iterations-curIter)*(xSecTotal/curIter);
+				int estMin = (int)floor(est/60.0);
+				int estSec = (int)floor(est)%60;
+				printf(" X(sec):%4.1f avgY(sec):%5.3f Est(min):%d:%02d\n", xSec, xSec/deltaSizes.y, estMin, estSec);
 			}
 		}
 
@@ -340,11 +342,10 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 
 				printf("(%d)  BestCorr:%6.4f(%4d,%4d,%3d)", deviceNum, maxCorrOut, bestDelta.x, bestDelta.y, bestDelta.z);
 				printf(" Done:%5.2f%% deltaZ= %+02d", (float)curIter/iterations*100.0, deltaZ);
-				double iterationsLeft = iterations-curIter;
-				double currentZiterations = (deltaZ-deltaMins.z)+1;
-				double numOfinnerIterations = SQR(LOCAL_REGION*2.0+1.0);
-				double est = iterationsLeft*(zSecTotal/(currentZiterations*numOfinnerIterations));
-				printf(" Z(sec):%4.1f avgX(sec):%5.3f avgY(sec):%5.3f Est(min):%d:%02d\n", zSec, zSec/(2*LOCAL_REGION +1),zSec/SQR(2*LOCAL_REGION+1), floor(est/60.0),(int)est%60);
+				double est = (iterations-curIter)*(zSecTotal/curIter);
+				int estMin = (int)floor(est/60.0);
+				int estSec = (int)floor(est)%60;
+				printf(" Z(sec):%4.1f avgX(sec):%5.3f avgY(sec):%5.3f Est(min):%d:%02d\n", zSec, zSec/(2*LOCAL_REGION +1), zSecTotal/curIter, estMin, estSec);
 			}
 		}
 		delete[] staticMaxRoi;
@@ -354,6 +355,8 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	time(&mainEnd);
 	mainSec = difftime(mainEnd,mainStart);
 
+	int totMin = (int)floor(mainSec/60.0);
+	int totSec = (int)floor(mainSec)%60;
 	printf("  (%d) Delta (%d,%d,%d) max:%5.5f totalTime(min):%d:%02d\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrOut,floor(mainSec/60.0),(int)mainSec%60);
 // 	FILE* reportFile;
 // 	fopen_s(&reportFile,fileName,"w");
