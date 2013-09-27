@@ -6,5 +6,5 @@
 #include "Vec.h"
 
 void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap,
-	Vec<int>& bestDelta, float& maxCorrOut, unsigned int& bestN, int deviceNum, const char* filename);
+	Vec<int>& bestDelta, double& maxCorrOut, unsigned int& bestN, int deviceNum, const char* filename);
 #endif

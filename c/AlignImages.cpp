@@ -3,14 +3,14 @@
 #include "RidgidRegistration.h"
 #include <omp.h>
 
-std::multimap<float,edge> edgeList;
+std::multimap<double,edge> edgeList;
 std::set<int> visitedNodes;
 std::vector<std::map<int,edge>> edges;
 int scanChannel = 0;
 
 //#pragma optimize("",off)
 
-void addEdge(Vec<int> deltas, int curNode, int parentNode, float maxCorr, std::string rootFolder)
+void addEdge(Vec<int> deltas, int curNode, int parentNode, double maxCorr, std::string rootFolder)
 {
 	std::map<int,edge>::iterator it = edges[curNode].begin();
 	for (; it!=edges[curNode].end(); ++it)
@@ -84,7 +84,7 @@ void align(std::string rootFolder, const int numberOfGPUs)
 			int deviceNum =0;
 			deviceNum = omp_get_thread_num();
 			Vec<int> deltas;
-			float maxCorr;
+			double maxCorr;
 			unsigned int bestN;
 			char buffer[255];
 
@@ -107,7 +107,7 @@ void align(std::string rootFolder, const int numberOfGPUs)
 
 #pragma omp critical
 			{
-				edgeList.insert(std::pair<float,edge>(-maxCorr*bestN,curEdge));
+				edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
 			}
 			curEdge.node1 = curEdge.node2;
 			curEdge.node2 = staticImageInd;
@@ -115,7 +115,7 @@ void align(std::string rootFolder, const int numberOfGPUs)
 
 #pragma omp critical
 			{
-				edgeList.insert(std::pair<float,edge>(-maxCorr*bestN,curEdge));
+				edgeList.insert(std::pair<double,edge>(-maxCorr*bestN,curEdge));
 				++curEdgeNum;
 			}
 		}
@@ -129,7 +129,7 @@ void align(std::string rootFolder, const int numberOfGPUs)
 	visitedNodes.insert(0);
 	while(visitedNodes.size()<gImageTiffs.size())
 	{
-		std::multimap<float,edge>::iterator best = edgeList.begin();
+		std::multimap<double,edge>::iterator best = edgeList.begin();
 		for (; best!=edgeList.end(); ++best)
 		{
 			if (visitedNodes.count(best->second.node1)==1 && visitedNodes.count(best->second.node2)==0)

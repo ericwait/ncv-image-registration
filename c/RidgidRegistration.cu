@@ -4,23 +4,23 @@
 struct  corrReport
 {
 	Vec<int> delta;
-	float correlation;
-	float staticSig;
-	float overlapSig;
+	double correlation;
+	double staticSig;
+	double overlapSig;
 	unsigned int nVoxels;
 };
 
 float calcCorrelation(CudaImageBuffer<float>& staticIm, CudaImageBuffer<float>& overlapIm, CudaImageBuffer<float>& multiplyIm,
-	float& staticSigma, float& overlapSigma)
+	double& staticSigma, double& overlapSigma)
 {
-	float staticSum = 0;
-	float overlapSum = 0;
+	double staticSum = 0;
+	double overlapSum = 0;
 
 	staticIm.sumArray(staticSum);
 	overlapIm.sumArray(overlapSum);
 
-	float staticMean = staticSum/staticIm.getDimension().product();
-	float overlapMean = overlapSum/overlapIm.getDimension().product();
+	double staticMean = staticSum/staticIm.getDimension().product();
+	double overlapMean = overlapSum/overlapIm.getDimension().product();
 
 	staticIm.addConstant(-staticMean);
 	overlapIm.addConstant(-overlapMean);
@@ -37,7 +37,7 @@ float calcCorrelation(CudaImageBuffer<float>& staticIm, CudaImageBuffer<float>& 
 	staticSigma = sqrt(staticSum/staticIm.getDimension().product());
 	overlapSigma = sqrt(overlapSum/overlapIm.getDimension().product());
 
-	float multSum = 0.0;
+	double multSum = 0.0;
 	multiplyIm.sumArray(multSum);
 
 	return multSum/(staticSigma*overlapSigma) / staticIm.getDimension().product();
@@ -128,10 +128,10 @@ void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<u
 }
 
 void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap,
-	Vec<int>& bestDelta, float& maxCorrOut, unsigned int& bestN, int deviceNum, const char* fileName)
+	Vec<int>& bestDelta, double& maxCorrOut, unsigned int& bestN, int deviceNum, const char* fileName)
 {
 	bestDelta = Vec<int>(0,0,0);
-	maxCorrOut = std::numeric_limits<float>::min();
+	maxCorrOut = std::numeric_limits<double>::min();
 	bestN = 0;
 
 	if (staticImage==NULL || overlapImage==NULL)
@@ -206,8 +206,8 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 				staticCudaIm.copyROI(staticMaxRoiCuda,starts.staticIm,szs.staticIm);
 				overlapCudaIm.copyROI(overlapMaxRoiCuda,starts.overlapIm,szs.overlapIm);
 
-				float staticSigma, overlapSigma;
-				float curCorr = calcCorrelation(staticCudaIm,overlapCudaIm,multiplyCudaIm,staticSigma,overlapSigma);
+				double staticSigma, overlapSigma;
+				double curCorr = calcCorrelation(staticCudaIm,overlapCudaIm,multiplyCudaIm,staticSigma,overlapSigma);
 
 // 				report[deltaSizes.linearAddressAt(reportInd)].delta = Vec<int>(deltaX,deltaY,0);
 // 				report[deltaSizes.linearAddressAt(reportInd)].correlation = curCorr;
@@ -310,8 +310,8 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 					staticCudaIm.copyROI(staticMaxRoiCuda,starts.staticIm,szs.staticIm);
 					overlapCudaIm.copyROI(overlapMaxRoiCuda,starts.overlapIm,szs.overlapIm);
 
-					float staticSigma, overlapSigma;
-					float curCorr = calcCorrelation(staticCudaIm,overlapCudaIm,multiplyCudaIm,staticSigma,overlapSigma);
+					double staticSigma, overlapSigma;
+					double curCorr = calcCorrelation(staticCudaIm,overlapCudaIm,multiplyCudaIm,staticSigma,overlapSigma);
 
 // 					report[deltaSizes.linearAddressAt(reportInd)].delta = Vec<int>(deltaX,deltaY,deltaZ);
 // 					report[deltaSizes.linearAddressAt(reportInd)].correlation = curCorr;
