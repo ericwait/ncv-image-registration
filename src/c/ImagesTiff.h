@@ -1,7 +1,6 @@
 #ifndef IMAGES_TIFF_H
 #define IMAGES_TIFF_H
 
-#include "winHead.h"
 #include "Utility.h"
 #include "AlignImages.h"
 #include "Vec.h"

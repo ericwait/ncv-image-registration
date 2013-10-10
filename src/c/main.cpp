@@ -2,6 +2,7 @@
 #include "Utility.h"
 #include "AlignImages.h"
 #include <iostream>
+#include <fstream>
 
 std::vector<ImagesTiff*> gImageTiffs;
 

@@ -1,6 +1,7 @@
 function orgImages()
 root = uigetdir('','Select root dir');
 fileList = dir(fullfile(root,'*.tif'));
+
 while ~isempty(fileList)
     tifName = fileList(1).name;
     tokenInd = strfind(tifName,'_');
@@ -25,7 +26,7 @@ while ~isempty(fileList)
     tifNamePatternFix([root '\' volumeName]);
     fileList = dir(fullfile(root,'*.tif'));
 end
-cmd = sprintf('dir /B %s > %s/list.txt', root, root);
+cmd = sprintf('dir /B /ON %s > %s/list.txt', root, root);
 system(cmd);
 fprintf('\nDone\n');
 end

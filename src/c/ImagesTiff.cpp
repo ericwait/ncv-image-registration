@@ -5,6 +5,10 @@
 #include "tiffio.h"
 #include "tiff.h"
 
+#include <assert.h>
+#include <iostream>
+#include <fstream>
+
 #define CToMat(x) ((x)+1)
 
 //extern CRITICAL_SECTION gProcessingCritical;

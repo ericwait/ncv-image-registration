@@ -28,8 +28,8 @@ float calcCorrelation(CudaImageBuffer<float>& staticIm, CudaImageBuffer<float>& 
 	multiplyIm.copyImage(overlapIm);
 	multiplyIm.multiplyImageWith(&staticIm);
 
-	staticIm.pow(2);
-	overlapIm.pow(2);
+	staticIm.imagePow(2);
+	overlapIm.imagePow(2);
 
 	staticIm.sumArray(staticSum);
 	overlapIm.sumArray(overlapSum);
@@ -40,7 +40,7 @@ float calcCorrelation(CudaImageBuffer<float>& staticIm, CudaImageBuffer<float>& 
 	double multSum = 0.0;
 	multiplyIm.sumArray(multSum);
 
-	return multSum/(staticSigma*overlapSigma) / staticIm.getDimension().product();
+	return (float)(multSum/(staticSigma*overlapSigma) / staticIm.getDimension().product());
 }
 
 void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<unsigned int>& imStarts,
@@ -231,6 +231,8 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 
 #ifndef _DEBUG
 			if (0==deltaX%20)
+#else
+			if (0==deltaX%10)
 #endif // _DEBUG
 			{
 				printf("\t");
@@ -332,9 +334,9 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 			zSec = difftime(zEnd,zStart);
 			zSecTotal += zSec;
 
-//#ifndef _DEBUG
+#ifndef _DEBUG
 			if (0==deltaZ%4)
-//#endif
+#endif
 			{
 				printf("\t");
 				for (int i=0; i<deviceNum; ++i)

@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header">
+      <UniqueIdentifier>{49a64a4f-8e9f-462e-a132-0e6d7a1f27da}</UniqueIdentifier>
+      <Extensions>.cuh;h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{f02ed683-93e2-4705-a4ab-01ba4b0d156f}</UniqueIdentifier>
+      <Extensions>cu;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx;</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AlignImages.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ImagesTiff.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="RidgidRegistration.cu">
+      <Filter>Source</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AlignImages.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="ImagesTiff.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="main.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="RidgidRegistration.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="winHead.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\CHelpers.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Defines.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\Vec.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\CudaKernalsLib\src\c\Common\VecFuncs.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\CudaKernalsLib\src\c\Common\CudaImageBuffer.cuh">
+      <Filter>Header</Filter>
+    </None>
+    <None Include="..\..\CudaKernalsLib\src\c\Common\CudaKernals.cuh">
+      <Filter>Header</Filter>
+    </None>
+    <None Include="..\..\CudaKernalsLib\src\c\Common\CudaUtilities.cuh">
+      <Filter>Header</Filter>
+    </None>
+  </ItemGroup>
+</Project>
