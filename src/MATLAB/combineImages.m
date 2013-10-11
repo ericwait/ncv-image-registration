@@ -40,16 +40,18 @@ imageDepth = round((maxZPos-minZPos)/minZvoxelSize +1);
 newImage = cell(length(imageDatasets),1);
 
 % outImage = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
-for c=1:min([imageDatasets(:).NumberOfChannels])
+for c=1:max([imageDatasets(:).NumberOfChannels])
     outImage = zeros(imageWidth,imageHeight,imageDepth,'uint8');
     fprintf('Read Chan:%d',c);
     for t=1:min([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
-            newImage{im} = zeros(imageDatasets(im).xDim,imageDatasets(im).yDim,imageDatasets(im).zDim,'uint8');
-            for z=1:imageDatasets(im).zDim
-                newImage{im}(:,:,z) = imread(fullfile(rootDir,imageDatasets(im).DatasetName,sprintf('%s_c%d_t%04d_z%04d.tif',imageDatasets(im).DatasetName,c,t,z)));
+            if (imageDatasets(im).NumberOfChannels>=c)
+                newImage{im} = zeros(imageDatasets(im).xDim,imageDatasets(im).yDim,imageDatasets(im).zDim,'uint8');
+                for z=1:imageDatasets(im).zDim
+                    newImage{im}(:,:,z) = imread(fullfile(rootDir,imageDatasets(im).DatasetName,sprintf('%s_c%d_t%04d_z%04d.tif',imageDatasets(im).DatasetName,c,t,z)));
+                end
+                fprintf('.');
             end
-            fprintf('.');
         end
     end
     fprintf('\n');
@@ -66,12 +68,14 @@ for c=1:min([imageDatasets(:).NumberOfChannels])
     fprintf('Write Chan:%d',c);
     for t=1:min([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
-            for z=1:imageDatasets(im).zDim
-                startXind = round((imageDatasets(im).xMinPos-minXPos) / minXvoxelSize +1);
-                startYind = round((imageDatasets(im).yMinPos-minYPos) / minYvoxelSize +1);
-                startZind = round((imageDatasets(im).zMinPos-minZPos) / minZvoxelSize +1);
-                outImage(startXind:startXind+imageDatasets(im).xDim-1,startYind:startYind+imageDatasets(im).yDim-1,startZind+z-1)...
-                    = newImage{im}(:,:,z);
+            if (imageDatasets(im).NumberOfChannels>=c)
+                for z=1:imageDatasets(im).zDim
+                    startXind = round((imageDatasets(im).xMinPos-minXPos) / minXvoxelSize +1);
+                    startYind = round((imageDatasets(im).yMinPos-minYPos) / minYvoxelSize +1);
+                    startZind = round((imageDatasets(im).zMinPos-minZPos) / minZvoxelSize +1);
+                    outImage(startXind:startXind+imageDatasets(im).xDim-1,startYind:startYind+imageDatasets(im).yDim-1,startZind+z-1)...
+                        = newImage{im}(:,:,z);
+                end
             end
         end
         imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',c,t)]),'tif','Compression','lzw');
