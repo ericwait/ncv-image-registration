@@ -359,7 +359,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 
 	int totMin = (int)floor(mainSec/60.0);
 	int totSec = (int)floor(mainSec)%60;
-	printf("  (%d) Delta (%d,%d,%d) max:%5.5f totalTime(min):%d:%02d\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrOut,floor(mainSec/60.0),(int)mainSec%60);
+	printf("  (%d) Delta (%d,%d,%d) max:%5.5f totalTime(min):%d:%02d\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrOut,totMin,totSec);
 // 	FILE* reportFile;
 // 	fopen_s(&reportFile,fileName,"w");
 // 	for (int i=0; i<reportInd.product(); ++i)

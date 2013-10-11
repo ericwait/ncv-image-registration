@@ -2,6 +2,7 @@
 #include "main.h"
 #include "RidgidRegistration.h"
 #include <omp.h>
+#include <time.h>
 
 std::multimap<double,edge> edgeList;
 std::set<int> visitedNodes;
@@ -76,11 +77,13 @@ void align(std::string rootFolder, const int numberOfGPUs)
 	// Calculate the best overlap 
 	//////////////////////////////////////////////////////////////////////////
 	unsigned int curEdgeNum = 0;
+	time_t totalStart, totalEnd;
 #pragma omp parallel for default(none) shared(overlaps,gImageTiffs,scanChannel,edgeList,totalEdges,curEdgeNum,rootFolder) num_threads(numberOfGPUs)
 	for (int staticImageInd=0; staticImageInd<overlaps.size(); ++staticImageInd)
 	{
 		for (int overlapImageInd=0; overlapImageInd<overlaps[staticImageInd].size(); ++overlapImageInd)
 		{
+			time_t curTime = time(NULL);
 			int deviceNum =0;
 			deviceNum = omp_get_thread_num();
 			Vec<int> deltas;
@@ -93,7 +96,7 @@ void align(std::string rootFolder, const int numberOfGPUs)
 
 			printf("\n(%d) %s <-- %s Done: %3.1f%% %d of %d\n",deviceNum,gImageTiffs[staticImageInd]->getDatasetName().c_str(),
 				gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getDatasetName().c_str(),
-				(float)curEdgeNum/totalEdges*100.0,curEdgeNum,totalEdges);
+				(float)(curEdgeNum+deviceNum)/totalEdges*100.0,curEdgeNum,totalEdges);
 
 			ridgidRegistration(gImageTiffs[staticImageInd]->getImage(scanChannel,0),
 				gImageTiffs[overlaps[staticImageInd][overlapImageInd].ind]->getImage(scanChannel,0),
