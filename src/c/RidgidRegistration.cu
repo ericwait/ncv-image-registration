@@ -297,7 +297,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 // 					writeImage(staticTemp,szs.staticIm,buff);
 // 					delete[] staticTemp;
 
-					float curCorr = staticCudaIm.normalizedCovariance(&overlapCudaIm);
+					double curCorr = staticCudaIm.normalizedCovariance(&overlapCudaIm);
 
 					if (curCorr>maxCorrOut)
 					{
