@@ -11,7 +11,7 @@ struct  corrReport
 };
 
 void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<unsigned int>& imStarts,
-	comparedImages<unsigned int>& imSizes, Vec<int>& maxOverlapSize)
+	comparedImages<unsigned int>& imSizes, Vec<unsigned int>& maxOverlapSize)
 {
 	comparedImages<int> localStarts;
 	comparedImages<int> localSizes;
@@ -105,7 +105,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		return;
 
 	comparedImages<unsigned int> imStarts, imSizes;
-	Vec<int> maxOverlapSize;
+	Vec<unsigned int> maxOverlapSize;
 	Vec<int> staticImageExtents(staticImage->getWidth(),staticImage->getHeight(),staticImage->getDepth());
 
 	calcMaxROIs(overlap,staticImageExtents,imStarts,imSizes,maxOverlapSize);
@@ -137,9 +137,11 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		const float* staticMaxRoi = staticImage->getFloatConstROIData(imStarts.staticIm,imSizes.staticIm);
 		const float* overlapMaxRoi = overlapImage->getFloatConstROIData(imStarts.overlapIm,imSizes.overlapIm);
 
+		Vec<unsigned int> mipSizes(maxOverlapSize.x,maxOverlapSize.y,1);
+
 		CudaImageBuffer<float> staticMaxRoiCuda(imSizes.staticIm,false,deviceNum);
 		const size_t MAX_MEM = staticMaxRoiCuda.getGlobalMemoryAvailable();
-		if (imSizes.staticIm.product()*imSizes.overlapIm.product()*2*sizeof(float)>MAX_MEM)
+		if (imSizes.staticIm.product()+imSizes.overlapIm.product()+2*mipSizes.product()*sizeof(float)>MAX_MEM)
 		{
 			printf("Overlap Too Large!\n");
 			return;
@@ -153,8 +155,8 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		staticMaxRoiCuda.maximumIntensityProjection();
 		overlapMaxRoiCuda.maximumIntensityProjection();
 
-		CudaImageBuffer<float> staticCudaIm(staticMaxRoiCuda.getDimension(),false,deviceNum);
-		CudaImageBuffer<float> overlapCudaIm(overlapMaxRoiCuda.getDimension(),false,deviceNum);
+		CudaImageBuffer<float> staticCudaIm(mipSizes,false,deviceNum);
+		CudaImageBuffer<float> overlapCudaIm(mipSizes,false,deviceNum);
 
 		size_t memUsed = staticMaxRoiCuda.getMemoryUsed() + overlapMaxRoiCuda.getMemoryUsed() + staticCudaIm.getMemoryUsed() + overlapCudaIm.getMemoryUsed();
 
@@ -176,21 +178,12 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 				szs.staticIm.z = 1;
 				szs.overlapIm.z = 1;
 
-				staticCudaIm.copyROI(staticMaxRoiCuda,starts.staticIm,szs.staticIm);
-				overlapCudaIm.copyROI(overlapMaxRoiCuda,starts.overlapIm,szs.overlapIm);
+				staticCudaIm.copyROI(staticMaxRoiCuda,Vec<unsigned int>(starts.staticIm.x,starts.staticIm.y,0),
+					Vec<unsigned int>(szs.staticIm.x,szs.staticIm.y,1));
+				overlapCudaIm.copyROI(overlapMaxRoiCuda,Vec<unsigned int>(starts.overlapIm.x,starts.overlapIm.y,0),
+					Vec<unsigned int>(szs.overlapIm.x,szs.overlapIm.y,1));
 
-// 				float* overlapTemp = overlapCudaIm.retrieveImage();
-// 				char buff[255];
-// 				sprintf_s(buff,"overlap_x%03d_y%03d",deltaX,deltaY);
-// 				writeImage(overlapTemp,szs.overlapIm,buff);
-// 				delete[] overlapTemp;
-// 
-// 				float* staticTemp = staticCudaIm.retrieveImage();
-// 				sprintf_s(buff,"static_%03d_y%03d",deltaX,deltaY);
-// 				writeImage(staticTemp,szs.staticIm,buff);
-// 				delete[] staticTemp;
-
-				double curCorr = staticCudaIm.normalizeCovariance(&overlapCudaIm);
+				double curCorr = staticCudaIm.normalizedCovariance(&overlapCudaIm);
 
 				if (curCorr>maxCorrOut)
 				{
@@ -261,8 +254,8 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 		staticMaxRoiCuda.loadImage(staticMaxRoi,imSizes.staticIm);
 		overlapMaxRoiCuda.loadImage(overlapMaxRoi,imSizes.overlapIm);
 
-		CudaImageBuffer<float> staticCudaIm(staticMaxRoiCuda.getDimension(),false,deviceNum);
-		CudaImageBuffer<float> overlapCudaIm(overlapMaxRoiCuda.getDimension(),false,deviceNum);
+		CudaImageBuffer<float> staticCudaIm(maxOverlapSize,false,deviceNum);
+		CudaImageBuffer<float> overlapCudaIm(maxOverlapSize,false,deviceNum);
 
 		const size_t MAX_MEM = staticMaxRoiCuda.getGlobalMemoryAvailable();
 		size_t memUsed = staticMaxRoiCuda.getMemoryUsed() + overlapMaxRoiCuda.getMemoryUsed() + staticCudaIm.getMemoryUsed() + overlapCudaIm.getMemoryUsed();
@@ -304,7 +297,7 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 // 					writeImage(staticTemp,szs.staticIm,buff);
 // 					delete[] staticTemp;
 
-					float curCorr = staticCudaIm.normalizeCovariance(&overlapCudaIm);
+					float curCorr = staticCudaIm.normalizedCovariance(&overlapCudaIm);
 
 					if (curCorr>maxCorrOut)
 					{
