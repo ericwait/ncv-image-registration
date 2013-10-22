@@ -26,7 +26,7 @@ while ~isempty(fileList)
     tifNamePatternFix([root '\' volumeName]);
     fileList = dir(fullfile(root,'*.tif'));
 end
-cmd = sprintf('dir /B /ON %s > %s/list.txt', root, root);
+cmd = sprintf('dir /B /ON "%s" > "%s/list.txt"', root, root);
 system(cmd);
 fprintf('\nDone\n');
 end
