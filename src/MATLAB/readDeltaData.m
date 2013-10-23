@@ -36,6 +36,8 @@ for i=1:length(imageDatasets)
     imageDatasets(i).ParentDelta = find(cellfun(@(x)(~isempty(x)),strfind(names,deltaParent)));
     if isempty(imageDatasets(i).ParentDelta)
         imageDatasets(i).ParentDelta = i;
+    else
+        imageDatasets(imageDatasets(i).ParentDelta).Child = [imageDatasets(imageDatasets(i).ParentDelta).Child i];
     end
 end
 end
