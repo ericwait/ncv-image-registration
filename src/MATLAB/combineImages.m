@@ -1,7 +1,7 @@
 function combineImages()
 global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent
 
-datasetName = 'Itga9WT1Deep';
+datasetName = 'DAPI Olig2-514 GFAP-488 Dcx-647 Laminin-Cy3 Bcatenin-568';
 readMetaData();
 
 if (isempty(imageDatasets))
@@ -10,6 +10,7 @@ end
 
 readDeltaData(rootDir);
 
+%% save out
 MARGIN = 5;
 
 if DeltasPresent==1
@@ -65,7 +66,7 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
     
 %     imageMatch(A,1);
     
-    fprintf('Write Chan:%d',c);
+    fprintf('Making image:%d',c);
     for t=1:min([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
             if (imageDatasets(im).NumberOfChannels>=c)
@@ -78,6 +79,8 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
                 end
             end
         end
+        
+        fprintf('\nWrite Chan:%d',c);
         imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',c,t)]),'tif','Compression','lzw');
         fprintf('.');
         modZ = ceil(size(outImage,3)/length(imageDatasets));
