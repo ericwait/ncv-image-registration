@@ -1,8 +1,17 @@
-global imageDatasets outImage
+global imageDatasets outImage outImageColor
 figure
 hold off
-img = max(outImage(:,:,:),[],3);
-imagesc(img), colormap gray
+[img, colorIdx] = max(outImage(:,:,:),[],3);
+[r,c] = ndgrid(1:size(outImage,1),1:size(outImage,2));
+idx = sub2ind(size(outImage),r,c,colorIdx);
+pixelColors = outImageColor(idx);
+cmap = hsv(12);
+cmap = cmap(randi(12, max(double(pixelColors(:)))+1),:);
+alpha = cat(3, reshape(cmap(pixelColors+1,1),size(pixelColors)), reshape(cmap(pixelColors+1,2),size(pixelColors)), reshape(cmap(pixelColors+1,3),size(pixelColors)));
+imgC = alpha .* repmat(mat2gray(img),[1 1 3]);
+
+% imagesc(img), colormap gray
+image(imgC);
 hold on
 
 minXPos = min([imageDatasets(:).xMinPos]);

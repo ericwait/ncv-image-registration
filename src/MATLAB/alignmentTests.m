@@ -1,5 +1,5 @@
 function alignmentTests()
-global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent
+global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent outImageColor
 %% start
 datasetName = 'DAPI Olig2-514 GFAP-488 Dcx-647 Laminin-Cy3 Bcatenin-568';
 readMetaData();
@@ -32,6 +32,7 @@ newImage = cell(length(imageDatasets),1);
 % for c=2:max([imageDatasets(:).NumberOfChannels])
 c=2;
     outImage = zeros(imageWidth,imageHeight,imageDepth,'uint8');
+    outImageColor = zeros(imageWidth,imageHeight,imageDepth,'uint8');
     fprintf('Read Chan:%d',c);
     for t=1:min([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
@@ -66,6 +67,8 @@ c=2;
                     startZind = round((imageDatasets(im).zMinPos-minZPos) / minZvoxelSize +1);
                     outImage(startXind:startXind+imageDatasets(im).xDim-1,startYind:startYind+imageDatasets(im).yDim-1,...
                         startZind+z-1) = newImage{im}(:,:,z);
+                    outImageColor(startXind:startXind+imageDatasets(im).xDim-1,startYind:startYind+imageDatasets(im).yDim-1,...
+                        startZind+z-1) = im;
                 end
             end
         end        
