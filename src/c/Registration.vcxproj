@@ -167,6 +167,7 @@ copy /Y "$(OutDir)cudart*.dll" "$(SolutionDir)..\..\bin\."
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CHelpers.h" />
+    <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaStorageBuffer.cuh" />
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\Defines.h" />
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\Vec.h" />
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\VecFuncs.h" />
@@ -184,10 +185,11 @@ copy /Y "$(OutDir)cudart*.dll" "$(SolutionDir)..\..\bin\."
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="..\..\..\CudaKernalsLib\src\c\Common\CudaUtilities.cu" />
     <CudaCompile Include="RidgidRegistration.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaImageBuffer.cuh">
+    <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaProcessBuffer.cuh">
       <FileType>Document</FileType>
     </ClInclude>
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaKernals.cuh">

@@ -39,13 +39,16 @@
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\VecFuncs.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaImageBuffer.cuh">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaKernals.cuh">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaUtilities.cuh">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaStorageBuffer.cuh">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\CudaKernalsLib\src\c\Common\CudaProcessBuffer.cuh">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -65,6 +68,9 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="RidgidRegistration.cu">
+      <Filter>Source</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\..\CudaKernalsLib\src\c\Common\CudaUtilities.cu">
       <Filter>Source</Filter>
     </CudaCompile>
   </ItemGroup>
