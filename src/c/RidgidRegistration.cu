@@ -1,5 +1,6 @@
 #include "RidgidRegistration.h"
-#include "CudaImageBuffer.cuh"
+#include "CudaProcessBuffer.cuh"
+#include "CudaStorageBuffer.cuh"
 
 struct  corrReport
 {
@@ -94,6 +95,87 @@ void calcMaxROIs(const Overlap& overlap, Vec<int> imageExtents, comparedImages<u
 	imSizes.overlapIm.z = localSizes.overlapIm.z;
 }
 
+#pragma  optimize("",off)
+void findRegistration(CudaStorageBuffer<float> &staticMaxRoiCuda, CudaStorageBuffer<float> &overlapMaxRoiCuda,
+					  CudaProcessBuffer<float> &staticCudaIm, CudaProcessBuffer<float> &overlapCudaIm, int deviceNum,
+					  const Vec<int> deltaMins, const Vec<int> deltaMaxs, const Overlap overlap,
+					  const comparedImages<unsigned int> imStarts, const comparedImages<unsigned int> imSizes,
+					  /*returns*/ double &maxCorrOut, Vec<int> &bestDelta, unsigned int &bestN)
+{
+	volatile double xSecTotal=0;
+	unsigned int curIter=0;
+	comparedImages<unsigned int> starts, szs;
+	int iterations = (deltaMaxs-deltaMins).product();
+
+	Vec<int> curDeltas;
+	for (curDeltas.x=deltaMins.x; curDeltas.x<deltaMaxs.x; ++curDeltas.x)
+	{
+		time_t xStart, xEnd;
+		time(&xStart);
+		for (curDeltas.y=deltaMins.y; curDeltas.y<deltaMaxs.y; ++curDeltas.y)
+		{
+			for (curDeltas.z=deltaMins.z; curDeltas.z<deltaMaxs.z; ++curDeltas.z)
+			{
+				starts.staticIm.x = (unsigned int)std::max<int>(0,overlap.deltaXss+curDeltas.x-imStarts.staticIm.x);
+				starts.overlapIm.x = (unsigned int)std::max<int>(0,-(overlap.deltaXss+curDeltas.x)-imStarts.overlapIm.x);
+				szs.staticIm.x = szs.overlapIm.x = (unsigned int)std::min<int>(imSizes.staticIm.x,overlap.deltaXse+curDeltas.x+1) - starts.staticIm.x;
+
+				starts.staticIm.y = (unsigned int)std::max<int>(0,overlap.deltaYss+curDeltas.y-imStarts.staticIm.y);
+				starts.overlapIm.y = (unsigned int)std::max<int>(0,-(overlap.deltaYss+curDeltas.y)-imStarts.overlapIm.y);
+				szs.staticIm.y = szs.overlapIm.y = (unsigned int)std::min<int>(imSizes.staticIm.y,overlap.deltaYse+curDeltas.y+1) - starts.staticIm.y;
+
+				starts.staticIm.z = (unsigned int)std::max<int>(0,overlap.deltaZss+curDeltas.z-imStarts.staticIm.z);
+				starts.overlapIm.z = (unsigned int)std::max<int>(0,-(overlap.deltaZss+curDeltas.z)-imStarts.overlapIm.z);
+				szs.staticIm.z = szs.overlapIm.z = (unsigned int)std::min<int>(imSizes.staticIm.z,overlap.deltaZse+curDeltas.z+1) - starts.staticIm.z;
+
+				staticCudaIm.copyROI(&staticMaxRoiCuda,starts.staticIm,szs.staticIm);
+				overlapCudaIm.copyROI(&overlapMaxRoiCuda,starts.overlapIm,szs.overlapIm);
+
+				double curCorr = staticCudaIm.normalizedCovariance(&overlapCudaIm);
+				if (curCorr>1)
+				{
+					printf("Warning: Got a correlation greater than 1!\n");
+					curCorr = 0;
+				}else if (curCorr<-1)
+				{
+					printf("Warning: Got a correlation less than -1!\n");
+				}
+
+				if (curCorr>maxCorrOut)
+				{
+					maxCorrOut = curCorr;
+					bestDelta.x = curDeltas.x;
+					bestDelta.y = curDeltas.y;
+					bestDelta.z = curDeltas.z;
+					bestN = szs.staticIm.x*szs.staticIm.y;
+				}
+				++curIter; 		
+
+				float progress = (float)curIter/iterations*100.0f;
+				int printThresh = 10000;
+#ifdef _DEBUG
+				printThresh = 5000;
+#endif // _DEBUG
+				if ((int)ceil(progress*1000)%printThresh==0)
+				{
+					for (int i=0; i<deviceNum; ++i)
+						printf("  ");
+
+					printf("  (%d)  BestCorr:%6.4f(%4d,%4d,%3d)", deviceNum, maxCorrOut, bestDelta.x, bestDelta.y, bestDelta.z);
+					printf(" Done:%5.2f%%  ", progress);
+					double est = (iterations-curIter)*(xSecTotal/curIter);
+					int estMin = (int)floor(est/60.0);
+					int estSec = (int)floor(est)%60;
+					printf("Est(min):%d:%02d\n", estMin, estSec);
+				}
+			}
+		}
+		time(&xEnd);
+		volatile double xSec = difftime(xEnd,xStart);
+		xSecTotal += xSec;		
+	}
+}
+
 void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer* overlapImage, const Overlap& overlap,
 	Vec<int>& bestDelta, double& maxCorrOut, unsigned int& bestN, int deviceNum, const char* fileName)
 {
@@ -114,228 +196,108 @@ void ridgidRegistration(const ImageContainer* staticImage, const ImageContainer*
 	if (imSizes.overlapIm>=overlapImage->getDims())
 		fprintf(stderr,"Using Total Overlap Image Size!\n");
 
-	time_t mainStart, mainEnd, mipStart, mipEnd, xStart, xEnd, zStart, zEnd;
-	double mainSec=0, mipSec=0, xSec=0, xSecTotal=0.0, zSec=0, zSecTotal=0.0;
+	time_t mainStart, mainEnd, mipStart, mipEnd, zStart, zEnd;
 	Vec<int> deltaMins(overlap.deltaXmin,overlap.deltaYmin,overlap.deltaZmin);
 	Vec<int> deltaMaxs(overlap.deltaXmax,overlap.deltaYmax,overlap.deltaZmax);
 
 	time(&mainStart);
 
-	unsigned int iterations = std::max<int>(1,(deltaMaxs.x-deltaMins.x)*(deltaMaxs.y-deltaMins.y));
-	unsigned int curIter = 0;
-	Vec<int> deltaSizes((deltaMaxs.x-deltaMins.x),(deltaMaxs.y-deltaMins.y),(deltaMaxs.z-deltaMins.z));
+	const float* staticMaxRoi = staticImage->getFloatConstROIData(imStarts.staticIm,imSizes.staticIm);
+	const float* overlapMaxRoi = overlapImage->getFloatConstROIData(imStarts.overlapIm,imSizes.overlapIm);
 
-	comparedImages<unsigned int> starts;
-	comparedImages<unsigned int> szs;
+	CudaStorageBuffer<float> staticMaxRoiCuda(staticMaxRoi,imSizes.staticIm,deviceNum);
+	CudaStorageBuffer<float> overlapMaxRoiCuda(overlapMaxRoi,imSizes.overlapIm,deviceNum);
 
-	printf("(%d) Deltas(%d to %d, %d to %d, %d to %d) Max Overlap(%d, %d, %d)",deviceNum,
+	const size_t MAX_MEM = staticMaxRoiCuda.getGlobalMemoryAvailable();
+	size_t memUsed = sizeof(float)*
+		((NUM_BUFFERS+1)*(imSizes.staticIm.product()+imSizes.overlapIm.product()+imSizes.staticIm.x*imSizes.staticIm.y+
+		 imSizes.overlapIm.x*imSizes.overlapIm.y));
+	
+	printf("(%d) Deltas(%d to %d, %d to %d, %d to %d) Max Overlap(%d, %d, %d) Memory Needed(%04.2f%%, %6.2fMB, %dMB)\n",deviceNum,
 		deltaMins.x,deltaMaxs.x,deltaMins.y,deltaMaxs.y,deltaMins.z,deltaMaxs.z,
-		maxOverlapSize.x,maxOverlapSize.y,maxOverlapSize.z);
+		maxOverlapSize.x,maxOverlapSize.y,maxOverlapSize.z,
+		(float)memUsed/MAX_MEM*100.0f,(float)memUsed/1024.0f/1024.0f,(int)(MAX_MEM/1024.0f/1024.0f));
 
-	//Start of MIPs registration
+	if (memUsed>=MAX_MEM*0.8)
 	{
-		const float* staticMaxRoi = staticImage->getFloatConstROIData(imStarts.staticIm,imSizes.staticIm);
-		const float* overlapMaxRoi = overlapImage->getFloatConstROIData(imStarts.overlapIm,imSizes.overlapIm);
+		printf("\n(%d) Overlap TOO BIG!\n\n",deviceNum);
+		return;
+	}
 
-		Vec<unsigned int> mipSizes(maxOverlapSize.x,maxOverlapSize.y,1);
+	CudaProcessBuffer<float> staticCudaIm(maxOverlapSize,false,deviceNum);
+	CudaProcessBuffer<float> overlapCudaIm(maxOverlapSize,false,deviceNum);
+	staticCudaIm.copyROI(&staticMaxRoiCuda,Vec<unsigned int>(0,0,0),imSizes.staticIm);
+	overlapCudaIm.copyROI(&overlapMaxRoiCuda,Vec<unsigned int>(0,0,0),imSizes.overlapIm);
 
-		CudaImageBuffer<float> staticMaxRoiCuda(imSizes.staticIm,false,deviceNum);
-		const size_t MAX_MEM = staticMaxRoiCuda.getGlobalMemoryAvailable();
-		if (imSizes.staticIm.product()+imSizes.overlapIm.product()+2*mipSizes.product()*sizeof(float)>MAX_MEM)
-		{
-			printf("Overlap Too Large!\n");
-			return;
-		}
+	staticCudaIm.maximumIntensityProjection();
+	overlapCudaIm.maximumIntensityProjection();
 
-		CudaImageBuffer<float> overlapMaxRoiCuda(imSizes.overlapIm,false,deviceNum);
+	CudaStorageBuffer<float> staticMIP(&staticCudaIm);
+	CudaStorageBuffer<float> overlapMIP(&overlapCudaIm);
 
-		staticMaxRoiCuda.loadImage(staticMaxRoi,imSizes.staticIm);
-		overlapMaxRoiCuda.loadImage(overlapMaxRoi,imSizes.overlapIm);
+	comparedImages<unsigned int> imMIPstarts=imStarts, imMIPsizes=imSizes;
 
-		staticMaxRoiCuda.maximumIntensityProjection();
-		overlapMaxRoiCuda.maximumIntensityProjection();
+	imMIPstarts.overlapIm.z = 0;
+	imMIPstarts.staticIm.z = 0;
+	imMIPsizes.overlapIm.z = 1;
+	imMIPsizes.staticIm.z = 1;
+	deltaMins.z = 0;
+	deltaMaxs.z = 1;
 
-		CudaImageBuffer<float> staticCudaIm(mipSizes,false,deviceNum);
-		CudaImageBuffer<float> overlapCudaIm(mipSizes,false,deviceNum);
+	time(&mipStart);
 
-		size_t memUsed = staticMaxRoiCuda.getMemoryUsed() + overlapMaxRoiCuda.getMemoryUsed() + staticCudaIm.getMemoryUsed() + overlapCudaIm.getMemoryUsed();
-
-		printf(" Memory(%04.2f%%, %6.2fMB, %dMB)\n",(float)memUsed/MAX_MEM*100.0f,(float)memUsed/1024.0f/1024.0f,(int)(MAX_MEM/1024.0f/1024.0f));
-		time(&mipStart);
-		for (int deltaX=deltaMins.x; deltaX<deltaMaxs.x; ++deltaX)//, ++reportInd.x)
-		{
-			//reportInd.y = 0;
-			time(&xStart);
-			for (int deltaY=deltaMins.y; deltaY<deltaMaxs.y; ++deltaY)//, ++reportInd.y)
-			{
-				starts.staticIm.x = (unsigned int)std::max<int>(0,overlap.deltaXss+deltaX-imStarts.staticIm.x);
-				starts.overlapIm.x = (unsigned int)std::max<int>(0,-(overlap.deltaXss+deltaX)-imStarts.overlapIm.x);
-				szs.staticIm.x = szs.overlapIm.x = (unsigned int)std::min<int>(imSizes.staticIm.x,overlap.deltaXse+deltaX+1) - starts.staticIm.x;
-
-				starts.staticIm.y = (unsigned int)std::max<int>(0,overlap.deltaYss+deltaY-imStarts.staticIm.y);
-				starts.overlapIm.y = (unsigned int)std::max<int>(0,-(overlap.deltaYss+deltaY)-imStarts.overlapIm.y);
-				szs.staticIm.y = szs.overlapIm.y = (unsigned int)std::min<int>(imSizes.staticIm.y,overlap.deltaYse+deltaY+1) - starts.staticIm.y;
-				szs.staticIm.z = 1;
-				szs.overlapIm.z = 1;
-
-				staticCudaIm.copyROI(staticMaxRoiCuda,Vec<unsigned int>(starts.staticIm.x,starts.staticIm.y,0),
-					Vec<unsigned int>(szs.staticIm.x,szs.staticIm.y,1));
-				overlapCudaIm.copyROI(overlapMaxRoiCuda,Vec<unsigned int>(starts.overlapIm.x,starts.overlapIm.y,0),
-					Vec<unsigned int>(szs.overlapIm.x,szs.overlapIm.y,1));
-
-				double curCorr = staticCudaIm.normalizedCovariance(&overlapCudaIm);
-
-				if (curCorr>maxCorrOut)
-				{
-					maxCorrOut = curCorr;
-					bestDelta.x = deltaX;
-					bestDelta.y = deltaY;
-					bestDelta.z = 0;
-					bestN = szs.staticIm.x*szs.staticIm.y;
-				}
-				++curIter; 			
-			}
-			time(&xEnd);
-			xSec = difftime(xEnd,xStart);
-			xSecTotal += xSec;
-
-#ifndef _DEBUG
-			if (0==deltaX%20)
-#else
-			if (0==deltaX%10)
-#endif // _DEBUG
-			{
-				printf("\t");
-				for (int i=0; i<deviceNum; ++i)
-					printf("  ");
-
-				printf("(%d)  BestCorr:%6.4f(%4d,%4d,%3d)", deviceNum, maxCorrOut, bestDelta.x, bestDelta.y, bestDelta.z);
-				printf(" Done:%5.2f%% deltaX= %+03d", (float)curIter/iterations*100.0, deltaX);
-				double est = (iterations-curIter)*(xSecTotal/curIter);
-				int estMin = (int)floor(est/60.0);
-				int estSec = (int)floor(est)%60;
-				printf(" X(sec):%4.1f avgY(sec):%5.3f Est(min):%d:%02d\n", xSec, xSec/deltaSizes.y, estMin, estSec);
-			}
-		}
-
-		delete[] staticMaxRoi;
-		delete[] overlapMaxRoi;
-	}//End of MIPs registration
+	findRegistration(staticMIP,overlapMIP,staticCudaIm,overlapCudaIm,deviceNum,deltaMins,deltaMaxs,overlap,imMIPstarts,imMIPsizes,
+		maxCorrOut,bestDelta,bestN);
 
 	time(&mipEnd);
-	mipSec = difftime(mipEnd,mipStart);
+	volatile double mipTime = difftime(mipEnd,mipStart);
 
-	Vec<double> offsets;
-	offsets.x = ((deltaMaxs.x-deltaMins.x)/3.0)/2.0;
-	offsets.y = ((deltaMaxs.y-deltaMins.y)/3.0)/2.0;
-	offsets.z = ((deltaMaxs.z-deltaMins.z)/3.0)/2.0;
+	int mipMin = (int)floor(mipTime/60.0);
+	int mipSec = (int)floor(mipTime)%60;
 
-	deltaMins.x = std::max<int>(overlap.deltaXmin, (int)round((double)bestDelta.x - offsets.x));
-	deltaMaxs.x = std::min<int>(overlap.deltaXmax, (int)round((double)bestDelta.x + offsets.x));
-	deltaMins.y = std::max<int>(overlap.deltaYmin, (int)round((double)bestDelta.y - offsets.y));
-	deltaMaxs.y = std::min<int>(overlap.deltaYmax, (int)round((double)bestDelta.y + offsets.y));
-	deltaMins.z = std::max<int>(overlap.deltaZmin, (int)round((double)bestDelta.z - offsets.z));
-	deltaMaxs.z = std::min<int>(overlap.deltaZmax, (int)round((double)bestDelta.z + offsets.z));
+	printf("\n");
 
-	printf("   (%d) Delta (%d,%d,%d) max:%f mipsTotalTime(min):%d:%02d avgTime:%5.5f\n\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrOut,floor(mipSec/60.0),(int)mipSec%60,mipSec/iterations);
+	for (int i=0; i<deviceNum; ++i)
+		printf("  ");
 
-	iterations = (deltaMaxs.z-deltaMins.z)*SQR(LOCAL_REGION*2+1);
-	curIter = 0;
+	printf("  (%d) *Delta (%d,%d,%d) max:%f mipsTotalTime(min):%d:%02d avgTime:%5.5f\n\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,
+		maxCorrOut,mipMin,mipSec,mipTime/(deltaMaxs-deltaMins).product());
+
+	deltaMins.x = bestDelta.x-LOCAL_REGION;
+	deltaMaxs.x = bestDelta.x+LOCAL_REGION;
+	deltaMins.y = bestDelta.y-LOCAL_REGION;
+	deltaMaxs.y = bestDelta.y+LOCAL_REGION;
+	deltaMins.z = overlap.deltaZmin;
+	deltaMaxs.z = overlap.deltaZmax;
+
 	maxCorrOut = -std::numeric_limits<double>::infinity();
 
-	//Start of Z stack registration
-	{
-		const float* staticMaxRoi = staticImage->getFloatConstROIData(imStarts.staticIm,imSizes.staticIm);
-		const float* overlapMaxRoi = overlapImage->getFloatConstROIData(imStarts.overlapIm,imSizes.overlapIm);
+	time(&zStart);
+	findRegistration(staticMaxRoiCuda,overlapMaxRoiCuda,staticCudaIm,overlapCudaIm,deviceNum,deltaMins,deltaMaxs,overlap,imStarts,imSizes,
+		maxCorrOut,bestDelta,bestN);
 
-		CudaImageBuffer<float> staticMaxRoiCuda(imSizes.staticIm,false,deviceNum);
-		CudaImageBuffer<float> overlapMaxRoiCuda(imSizes.overlapIm,false,deviceNum);
+	time(&zEnd);
+	volatile double zTime = difftime(zEnd,zStart);
 
-		staticMaxRoiCuda.loadImage(staticMaxRoi,imSizes.staticIm);
-		overlapMaxRoiCuda.loadImage(overlapMaxRoi,imSizes.overlapIm);
+	int zMins = (int)floor(zTime/60.0);
+	int zSecs = (int)zTime%60;
 
-		CudaImageBuffer<float> staticCudaIm(maxOverlapSize,false,deviceNum);
-		CudaImageBuffer<float> overlapCudaIm(maxOverlapSize,false,deviceNum);
+	printf("\n");
 
-		const size_t MAX_MEM = staticMaxRoiCuda.getGlobalMemoryAvailable();
-		size_t memUsed = staticMaxRoiCuda.getMemoryUsed() + overlapMaxRoiCuda.getMemoryUsed() + staticCudaIm.getMemoryUsed() + overlapCudaIm.getMemoryUsed();
+	for (int i=0; i<deviceNum; ++i)
+		printf("  ");
 
-		printf(" Memory(%04.2f%%, %6.2fMB, %dMB)\n",(float)memUsed/MAX_MEM*100.0f,(float)memUsed/1024.0f/1024.0f,(int)(MAX_MEM/1024.0f/1024.0f));
-
-		//reportInd.z = 0;
-		for (int deltaZ=deltaMins.z; deltaZ<deltaMaxs.z; ++deltaZ)//, ++reportInd.z)
-		{
-			time(&zStart);
-			//reportInd.x = bestDelta.x - deltaMins.x;
-			for (int deltaX=bestDelta.x-LOCAL_REGION; deltaX<bestDelta.x+LOCAL_REGION; ++deltaX)//, ++reportInd.x)
-			{
-				//reportInd.y = bestDelta.y - deltaMins.y;
-				for (int deltaY=bestDelta.y-LOCAL_REGION; deltaY<bestDelta.y+LOCAL_REGION; ++deltaY)//, ++reportInd.y)
-				{
-					starts.staticIm.x = (unsigned int)std::max<int>(0,overlap.deltaXss+deltaX-imStarts.staticIm.x);
-					starts.overlapIm.x = (unsigned int)std::max<int>(0,-(overlap.deltaXss+deltaX)-imStarts.overlapIm.x);
-					szs.staticIm.x = szs.overlapIm.x = (unsigned int)std::min<int>(imSizes.staticIm.x,overlap.deltaXse+deltaX+1) - starts.staticIm.x;
-
-					starts.staticIm.y = (unsigned int)std::max<int>(0,overlap.deltaYss+deltaY-imStarts.staticIm.y);
-					starts.overlapIm.y = (unsigned int)std::max<int>(0,-(overlap.deltaYss+deltaY)-imStarts.overlapIm.y);
-					szs.staticIm.y = szs.overlapIm.y = (unsigned int)std::min<int>(imSizes.staticIm.y,overlap.deltaYse+deltaY+1) - starts.staticIm.y;
-
-					starts.staticIm.z = (unsigned int)std::max<int>(0,overlap.deltaZss+deltaZ-imStarts.staticIm.z);
-					starts.overlapIm.z = (unsigned int)std::max<int>(0,-(overlap.deltaZss+deltaZ)-imStarts.overlapIm.z);
-					szs.staticIm.z = szs.overlapIm.z = (unsigned int)std::min<int>(imSizes.staticIm.z,overlap.deltaZse+deltaZ+1) - starts.staticIm.z;
-					staticCudaIm.copyROI(staticMaxRoiCuda,starts.staticIm,szs.staticIm);
-					overlapCudaIm.copyROI(overlapMaxRoiCuda,starts.overlapIm,szs.overlapIm);
-
-// 					float* overlapTemp = overlapCudaIm.retrieveImage();
-// 					char buff[255];
-// 					sprintf_s(buff,"overlap_x%03d_y%03d_z%03d_z%s",deltaX,deltaY,deltaZ,"%04d");
-// 					writeImage(overlapTemp,szs.overlapIm,buff);
-// 					delete[] overlapTemp;
-// 
-// 					float* staticTemp = staticCudaIm.retrieveImage();
-// 					sprintf_s(buff,"static_%03d_y%03d_z%03d_z%s",deltaX,deltaY,deltaZ,"%04d");
-// 					writeImage(staticTemp,szs.staticIm,buff);
-// 					delete[] staticTemp;
-
-					double curCorr = staticCudaIm.normalizedCovariance(&overlapCudaIm);
-
-					if (curCorr>maxCorrOut)
-					{
-						maxCorrOut = curCorr;
-						bestDelta.z = deltaZ;
-						bestN = (unsigned int)szs.staticIm.product();
-					}
-					++curIter;
-				}
-			}
-			time(&zEnd);
-			zSec = difftime(zEnd,zStart);
-			zSecTotal += zSec;
-
-#ifndef _DEBUG
-			if (0==deltaZ%4)
-#endif
-			{
-				printf("\t");
-				for (int i=0; i<deviceNum; ++i)
-					printf("  ");
-
-				printf("(%d)  BestCorr:%6.4f(%4d,%4d,%3d)", deviceNum, maxCorrOut, bestDelta.x, bestDelta.y, bestDelta.z);
-				printf(" Done:%5.2f%% deltaZ= %+02d", (float)curIter/iterations*100.0, deltaZ);
-				double est = (iterations-curIter)*(zSecTotal/curIter);
-				int estMin = (int)floor(est/60.0);
-				int estSec = (int)floor(est)%60;
-				printf(" Z(sec):%4.1f avgX(sec):%5.3f avgY(sec):%5.3f Est(min):%d:%02d\n", zSec, zSec/(2*LOCAL_REGION +1), zSecTotal/curIter, estMin, estSec);
-			}
-		}
-		delete[] staticMaxRoi;
-		delete[] overlapMaxRoi;
-	}//End of Z stack registration
+	printf("  (%d) **Delta (%d,%d,%d) max:%f zTotalTime(min):%d:%02d\n\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,
+		maxCorrOut,zMins,zSecs);
 
 	time(&mainEnd);
-	mainSec = difftime(mainEnd,mainStart);
+	volatile double mainTime = difftime(mainEnd,mainStart);
 
-	int totMin = (int)floor(mainSec/60.0);
-	int totSec = (int)floor(mainSec)%60;
-	printf("  (%d) Delta (%d,%d,%d) max:%5.5f totalTime(min):%d:%02d\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrOut,totMin,totSec);
+	int totMin = (int)floor(mainTime/60.0);
+	int totSec = (int)floor(mainTime)%60;
+
+	for (int i=0; i<deviceNum; ++i)
+		printf("  ");
+
+	printf("  (%d) ***Delta (%d,%d,%d) max:%5.5f totalTime(min):%d:%02d\n",deviceNum,bestDelta.x,bestDelta.y,bestDelta.z,maxCorrOut,totMin,totSec);
 }
