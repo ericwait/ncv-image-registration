@@ -22,7 +22,7 @@ while ~isempty(fileList)
 %             fprintf(1,'error moving %s\n',[root '\' volumeName '*']);
         end
     end
-    createMetadata([root '\' volumeName], volumeName);
+    readXMLmetadata([root '\' volumeName], volumeName);
     tifNamePatternFix([root '\' volumeName]);
     fileList = dir(fullfile(root,'*.tif'));
 end

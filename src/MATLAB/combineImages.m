@@ -1,7 +1,7 @@
 function combineImages()
 global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent
 
-datasetName = 'DAPI Olig2-514 GFAP-488 Dcx-647 Laminin-Cy3 Bcatenin-568';
+datasetName = 'DAPI Il-1b-Cy3 Laminin-GFAP Iba1-647';
 readMetaData();
 
 if (isempty(imageDatasets))
@@ -25,6 +25,19 @@ if ~isdir(fullfile(rootDir,prefix))
     mkdir(rootDir,prefix);
 end
 
+if ~isdir(fullfile(rootDir,prefix,'x5'))
+    mkdir(fullfile(rootDir,prefix),'x5');
+end
+if ~isdir(fullfile(rootDir,prefix,'x4'))
+    mkdir(fullfile(rootDir,prefix),'x4');
+end
+if ~isdir(fullfile(rootDir,prefix,'x3'))
+    mkdir(fullfile(rootDir,prefix),'x3');
+end
+if ~isdir(fullfile(rootDir,prefix,'x2'))
+    mkdir(fullfile(rootDir,prefix),'x2');
+end
+
 minXPos = min([imageDatasets(:).xMinPos]);
 minYPos = min([imageDatasets(:).yMinPos]);
 minZPos = min([imageDatasets(:).zMinPos]);
@@ -38,13 +51,23 @@ imageWidth = round((maxXPos-minXPos)/minXvoxelSize +1);
 imageHeight = round((maxYPos-minYPos)/minYvoxelSize +1);
 imageDepth = round((maxZPos-minZPos)/minZvoxelSize +1);
 
+imageData.DatasetName = datasetName;
+imageData.NumberOfChannels = max([imageDatasets(:).NumberOfChannels]);
+imageData.NumberOfFrames = max([imageDatasets(:).NumberOfFrames]);
+imageData.XDimension = imageWidth;
+imageData.YDimension = imageHeight;
+imageData.ZDimension = imageDepth;
+imageData.XPixelPhysicalSize = minXvoxelSize;
+imageData.YPixelPhysicalSize = minYvoxelSize;
+imageData.ZPixelPhysicalSize = minZvoxelSize;
+
 newImage = cell(length(imageDatasets),1);
 
 % outImage = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
 for c=1:max([imageDatasets(:).NumberOfChannels])
     outImage = zeros(imageWidth,imageHeight,imageDepth,'uint8');
     fprintf('Read Chan:%d',c);
-    for t=1:min([imageDatasets(:).NumberOfFrames])
+    for t=1:max([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
             if (imageDatasets(im).NumberOfChannels>=c)
                 newImage{im} = zeros(imageDatasets(im).xDim,imageDatasets(im).yDim,imageDatasets(im).zDim,'uint8');
@@ -67,7 +90,7 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
 %     imageMatch(A,1);
     
     fprintf('Making image:%d',c);
-    for t=1:min([imageDatasets(:).NumberOfFrames])
+    for t=1:max([imageDatasets(:).NumberOfFrames])
         for im=1:length(imageDatasets)
             if (imageDatasets(im).NumberOfChannels>=c)
                 for z=1:imageDatasets(im).zDim
@@ -78,11 +101,13 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
                         = newImage{im}(:,:,z);
                 end
             end
+            clear newImage{im};
         end
         
         fprintf('\nWrite Chan:%d',c);
         imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',c,t)]),'tif','Compression','lzw');
         fprintf('.');
+        createMetadata(fullfile(rootDir, prefix),datasetName,imageData);
         modZ = ceil(size(outImage,3)/length(imageDatasets));
         for z=1:size(outImage,3)
             imwrite(outImage(:,:,z),fullfile(rootDir, prefix, [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif','Compression','lzw');
@@ -90,8 +115,30 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
                 fprintf('.');
             end
         end
+        
+        for reduce=2:5
+            fprintf('\nReduce x%d...',reduce);
+            imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1]);
+            fprintf(' done. Writing:');
+            imDataReduced = imageData;
+            imDataReduced.XDimension = size(imR,2);
+            imDataReduced.YDimension = size(imR,1);
+            imDataReduced.ZDimension = size(imR,3);
+            imDataReduced.XPixelPhysicalSize = imageData.XPixelPhysicalSize*reduce;
+            imDataReduced.YPixelPhysicalSize = imageData.YPixelPhysicalSize*reduce;
+            % ZPixelPhysicalSize is same as orginal
+            createMetadata(fullfile(rootDir, prefix, ['x' num2str(reduce)]),datasetName,imDataReduced);
+            for z=1:size(outImage,3)
+                imwrite(imR(:,:,z),fullfile(rootDir, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif','Compression','lzw');
+                if (mod(z,modZ)==0)
+                    fprintf('.');
+                end
+            end
+            clear imR;
+        end
     end
     fprintf('\n');
+    clear outImage;
 end
 
 end

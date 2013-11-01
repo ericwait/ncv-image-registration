@@ -17,9 +17,15 @@ dlist = dir(fullfile(rootDir,[datasetName '*']));
 for i=1:length(dlist)
     if (strcmp(dlist(i).name,'.') || strcmp(dlist(i).name,'..')),continue,end
     
+    if (~isempty(strfind(dlist(i).name,'_Montage')))
+        continue
+    end
+    
     dSublist = dir(fullfile(rootDir,dlist(i).name,'*.txt'));
     
-    if isempty(dSublist), continue, end
+    if isempty(dSublist)
+        continue
+    end
     
     for j=1:length(dSublist)
         corr = strfind(dlist(i).name,'_corrResults.txt');
