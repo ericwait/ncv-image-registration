@@ -1,7 +1,7 @@
 function combineImages()
 global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent
 
-datasetName = 'DAPI Il-1b-Cy3 Laminin-GFAP Iba1-647';
+datasetName = 'DAPI Olig2-514 GFAP-488 Dcx-647 Laminin-Cy3 Bcatenin-568';
 readMetaData();
 
 if (isempty(imageDatasets))
@@ -24,7 +24,15 @@ end
 if ~isdir(fullfile(rootDir,prefix))
     mkdir(rootDir,prefix);
 end
-
+if ~isdir(fullfile(rootDir,prefix,'x8'))
+    mkdir(fullfile(rootDir,prefix),'x8');
+end
+if ~isdir(fullfile(rootDir,prefix,'x7'))
+    mkdir(fullfile(rootDir,prefix),'x7');
+end
+if ~isdir(fullfile(rootDir,prefix,'x6'))
+    mkdir(fullfile(rootDir,prefix),'x6');
+end
 if ~isdir(fullfile(rootDir,prefix,'x5'))
     mkdir(fullfile(rootDir,prefix),'x5');
 end
@@ -63,7 +71,7 @@ imageData.zVoxelSize = minZvoxelSize;
 
 newImage = cell(length(imageDatasets),1);
 
-% outImage = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
+outImage = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
 for c=1:max([imageDatasets(:).NumberOfChannels])
     outImage = zeros(imageWidth,imageHeight,imageDepth,'uint8');
     fprintf('Read Chan:%d',c);
@@ -81,11 +89,11 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
     fprintf('\n');
     % end
     
-    A = zeros(length(imageDatasets),length(imageDatasets));
-    
-    for i=2:length(imageDatasets)
-        A(imageDatasets(i).ParentDelta,i) = 1;
-    end
+%     A = zeros(length(imageDatasets),length(imageDatasets));
+%     
+%     for i=2:length(imageDatasets)
+%         A(imageDatasets(i).ParentDelta,i) = 1;
+%     end
     
 %     imageMatch(A,1);
     
@@ -116,7 +124,7 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
             end
         end
         
-        for reduce=2:5
+        for reduce=1:8
             fprintf('\nReduce x%d...',reduce);
             imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1]);
             fprintf(' done. Writing:');
@@ -141,4 +149,5 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
     clear outImage;
 end
 
+clear mex
 end
