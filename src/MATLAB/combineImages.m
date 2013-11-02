@@ -54,12 +54,12 @@ imageDepth = round((maxZPos-minZPos)/minZvoxelSize +1);
 imageData.DatasetName = datasetName;
 imageData.NumberOfChannels = max([imageDatasets(:).NumberOfChannels]);
 imageData.NumberOfFrames = max([imageDatasets(:).NumberOfFrames]);
-imageData.XDimension = imageWidth;
-imageData.YDimension = imageHeight;
-imageData.ZDimension = imageDepth;
-imageData.XPixelPhysicalSize = minXvoxelSize;
-imageData.YPixelPhysicalSize = minYvoxelSize;
-imageData.ZPixelPhysicalSize = minZvoxelSize;
+imageData.xDim = imageWidth;
+imageData.yDim = imageHeight;
+imageData.zDim = imageDepth;
+imageData.xVoxelSize = minXvoxelSize;
+imageData.yVoxelSize = minYvoxelSize;
+imageData.zVoxelSize = minZvoxelSize;
 
 newImage = cell(length(imageDatasets),1);
 
@@ -121,11 +121,11 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
             imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1]);
             fprintf(' done. Writing:');
             imDataReduced = imageData;
-            imDataReduced.XDimension = size(imR,2);
-            imDataReduced.YDimension = size(imR,1);
-            imDataReduced.ZDimension = size(imR,3);
-            imDataReduced.XPixelPhysicalSize = imageData.XPixelPhysicalSize*reduce;
-            imDataReduced.YPixelPhysicalSize = imageData.YPixelPhysicalSize*reduce;
+            imDataReduced.xDim = size(imR,2);
+            imDataReduced.yDim = size(imR,1);
+            imDataReduced.zDim = size(imR,3);
+            imDataReduced.xVoxelSize = imageData.xVoxelSize*reduce;
+            imDataReduced.yVoxelSize = imageData.yVoxelSize*reduce;
             % ZPixelPhysicalSize is same as orginal
             createMetadata(fullfile(rootDir, prefix, ['x' num2str(reduce)]),datasetName,imDataReduced);
             for z=1:size(outImage,3)
