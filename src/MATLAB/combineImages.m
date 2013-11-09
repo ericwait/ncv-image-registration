@@ -1,7 +1,7 @@
 function combineImages()
-global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent
+global imageDatasets rootDir MARGIN newImage outImage datasetName DeltasPresent outImageColor
 
-datasetName = 'DAPI Olig2-514 GFAP-488 Dcx-647 Laminin-Cy3 Bcatenin-568';
+datasetName = 'DAPI Olig2-514 GFAP-488 Mash1-647 PSA-NCAM-549 lectin-568 22mo wmSVZ';
 readMetaData();
 
 if (isempty(imageDatasets))
@@ -23,27 +23,6 @@ end
 % %create a dirctory for the new images
 if ~isdir(fullfile(rootDir,prefix))
     mkdir(rootDir,prefix);
-end
-if ~isdir(fullfile(rootDir,prefix,'x8'))
-    mkdir(fullfile(rootDir,prefix),'x8');
-end
-if ~isdir(fullfile(rootDir,prefix,'x7'))
-    mkdir(fullfile(rootDir,prefix),'x7');
-end
-if ~isdir(fullfile(rootDir,prefix,'x6'))
-    mkdir(fullfile(rootDir,prefix),'x6');
-end
-if ~isdir(fullfile(rootDir,prefix,'x5'))
-    mkdir(fullfile(rootDir,prefix),'x5');
-end
-if ~isdir(fullfile(rootDir,prefix,'x4'))
-    mkdir(fullfile(rootDir,prefix),'x4');
-end
-if ~isdir(fullfile(rootDir,prefix,'x3'))
-    mkdir(fullfile(rootDir,prefix),'x3');
-end
-if ~isdir(fullfile(rootDir,prefix,'x2'))
-    mkdir(fullfile(rootDir,prefix),'x2');
 end
 
 minXPos = min([imageDatasets(:).xMinPos]);
@@ -72,15 +51,16 @@ imageData.zVoxelSize = minZvoxelSize;
 newImage = cell(length(imageDatasets),1);
 
 outImage = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
+outImageColor = zeros(imageWidth,imageHeight,imageDepth,min([imageDatasets(:).NumberOfChannels]),'uint8');
 for c=1:max([imageDatasets(:).NumberOfChannels])
     outImage = zeros(imageWidth,imageHeight,imageDepth,'uint8');
     fprintf('Read Chan:%d',c);
     for t=1:max([imageDatasets(:).NumberOfFrames])
-        for im=1:length(imageDatasets)
-            if (imageDatasets(im).NumberOfChannels>=c)
-                newImage{im} = zeros(imageDatasets(im).xDim,imageDatasets(im).yDim,imageDatasets(im).zDim,'uint8');
-                for z=1:imageDatasets(im).zDim
-                    newImage{im}(:,:,z) = imread(fullfile(rootDir,imageDatasets(im).DatasetName,sprintf('%s_c%d_t%04d_z%04d.tif',imageDatasets(im).DatasetName,c,t,z)));
+        for datasetIdx=1:length(imageDatasets)
+            if (imageDatasets(datasetIdx).NumberOfChannels>=c)
+                newImage{datasetIdx} = zeros(imageDatasets(datasetIdx).xDim,imageDatasets(datasetIdx).yDim,imageDatasets(datasetIdx).zDim,'uint8');
+                for z=1:imageDatasets(datasetIdx).zDim
+                    newImage{datasetIdx}(:,:,z) = imread(fullfile(rootDir,imageDatasets(datasetIdx).DatasetName,sprintf('%s_c%d_t%04d_z%04d.tif',imageDatasets(datasetIdx).DatasetName,c,t,z)));
                 end
                 fprintf('.');
             end
@@ -99,17 +79,19 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
     
     fprintf('Making image:%d',c);
     for t=1:max([imageDatasets(:).NumberOfFrames])
-        for im=1:length(imageDatasets)
-            if (imageDatasets(im).NumberOfChannels>=c)
-                for z=1:imageDatasets(im).zDim
-                    startXind = round((imageDatasets(im).xMinPos-minXPos) / minXvoxelSize +1);
-                    startYind = round((imageDatasets(im).yMinPos-minYPos) / minYvoxelSize +1);
-                    startZind = round((imageDatasets(im).zMinPos-minZPos) / minZvoxelSize +1);
-                    outImage(startXind:startXind+imageDatasets(im).xDim-1,startYind:startYind+imageDatasets(im).yDim-1,startZind+z-1)...
-                        = newImage{im}(:,:,z);
+        for datasetIdx=1:length(imageDatasets)
+            if (imageDatasets(datasetIdx).NumberOfChannels>=c)
+                for z=1:imageDatasets(datasetIdx).zDim
+                    startXind = round((imageDatasets(datasetIdx).xMinPos-minXPos) / minXvoxelSize +1);
+                    startYind = round((imageDatasets(datasetIdx).yMinPos-minYPos) / minYvoxelSize +1);
+                    startZind = round((imageDatasets(datasetIdx).zMinPos-minZPos) / minZvoxelSize +1);
+                    outImage(startXind:startXind+imageDatasets(datasetIdx).xDim-1,startYind:startYind+imageDatasets(datasetIdx).yDim-1,startZind+z-1)...
+                        = newImage{datasetIdx}(:,:,z);
+                    outImageColor(startXind:startXind+imageDatasets(datasetIdx).xDim-1,startYind:startYind+imageDatasets(datasetIdx).yDim-1,startZind+z-1)...
+                        = datasetIdx;
                 end
             end
-            clear newImage{im};
+            clear newImage{datasetIdx}
         end
         
         fprintf('\nWrite Chan:%d',c);
@@ -124,7 +106,7 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
             end
         end
         
-        for reduce=1:8
+        for reduce=1:5
             fprintf('\nReduce x%d...',reduce);
             imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1]);
             fprintf(' done. Writing:');
@@ -135,6 +117,11 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
             imDataReduced.xVoxelSize = imageData.xVoxelSize*reduce;
             imDataReduced.yVoxelSize = imageData.yVoxelSize*reduce;
             % ZPixelPhysicalSize is same as orginal
+            
+            if ~isdir(fullfile(rootDir,prefix,['x' num2str(reduce)]))
+                mkdir(fullfile(rootDir,prefix),['x' num2str(reduce)]);
+            end
+            
             createMetadata(fullfile(rootDir, prefix, ['x' num2str(reduce)]),datasetName,imDataReduced);
             for z=1:size(outImage,3)
                 imwrite(imR(:,:,z),fullfile(rootDir, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%d_t%04d_z%04d.tif',c,t,z)]),'tif','Compression','lzw');
@@ -147,6 +134,7 @@ for c=1:max([imageDatasets(:).NumberOfChannels])
     end
     fprintf('\n');
     clear outImage;
+    clear outImageColor;
 end
 
 clear mex

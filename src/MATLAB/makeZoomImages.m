@@ -1,11 +1,14 @@
 function makeZoomImages(center,path,datasetName)
 global imageData
-maxChannel = 2;
+maxChannel = 6;
 c = 1;
 xRadius = 1023;
-yRadius = 360;
+yRadius = 575;
 while(c<=maxChannel)
-    for reduc=1:7
+    for reduc=1:5
+        if (reduc==4)
+            continue;
+        end
         if (reduc==1)
             imagesPath = path;
         else
@@ -14,24 +17,24 @@ while(c<=maxChannel)
         
         im = tiffReader('uint8',c,[],[],imagesPath,[datasetName '.txt']);
         maxChannel = imageData.NumberOfChannels;
-        rowMin = max(1,round(center(1)/reduc)-yRadius);
-        rowMax = min(size(im,1),round(center(1)/reduc)+yRadius);
-        colMin = max(1,round(center(2)/reduc)-xRadius);
-        colMax = min(size(im,2),round(center(2)/reduc)+xRadius);
+        rowMin = round(center(1)/reduc)-yRadius;
+        rowMax = round(center(1)/reduc)+yRadius;
+        colMin = round(center(2)/reduc)-xRadius;
+        colMax = round(center(2)/reduc)+xRadius;
         
-        if (rowMax-rowMin<yRadius*2)
-            if (rowMax==size(im,1))
-                rowMin = max(1,rowMax-yRadius*2);
-            else
-                rowMax = min(size(im,1),rowMin+yRadius*2);
-            end
+        if (rowMax>size(im,1))
+            rowMax = size(im,1);
+            rowMin = max(1,size(im,1)-yRadius*2);
+        elseif (rowMin<1)
+            rowMin=1;
+            rowMax = min(size(im,1),yRadius*2);
         end
-        if (colMax-colMin<xRadius*2)
-            if (colMax==size(im,2))
-                colMin = max(1,colMax-xRadius*2);
-            else
-                colMax = min(size(im,2),colMin+xRadius*2);
-            end
+        if (colMax>size(im,2))
+            colMax = size(im,2);
+            colMin = max(1,colMax-xRadius*2);
+        elseif (colMin<1)
+            colMin=1;
+            colMax = min(size(im,2),colMin+xRadius*2);
         end
         
         imROI = im(rowMin:rowMax,colMin:colMax,:);
