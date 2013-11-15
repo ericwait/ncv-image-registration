@@ -1,32 +1,29 @@
-function orgImages()
-root = uigetdir('','Select root dir');
-fileList = dir(fullfile(root,'*.tif'));
+function orgImages(root)
+if (~exist('root','var') || isempty(root))
+    root = uigetdir('','Select root dir');
+    if (root==0)
+        return
+    end
+end
 
-while ~isempty(fileList)
-    tifName = fileList(1).name;
-    tokenInd = strfind(tifName,'_');
-    if isempty(tokenInd)
+fileList = dir(root);
+bFilesRenamed = 0;
+for i=1:length(fileList)
+    if (strcmp(fileList(i).name,'.') || strcmp(fileList(i).name,'..'))
         continue
     end
-    
-    volumeName = tifName(1:tokenInd(1)-1);
-    if ~isdir([root '\' volumeName ])
-        fprintf('\nMaking dir %s',[root '\' volumeName ]);
-        mkdir(root,volumeName);
-    else
-        try
-            fprintf('.');
-            movefile([root '\' volumeName '*'], [root '\' volumeName]);
-        catch
-            %this seems to error eventhough it worked :-/
-%             fprintf(1,'error moving %s\n',[root '\' volumeName '*']);
+    if (fileList(i).isdir)        
+        if (~isempty(strfind(fileList(i).name,'MetaData')))
+            fprintf('Parsing XML...');
+            readXMLmetadata(fullfile(root,fileList(i).name));
+        else
+            orgImages(fullfile(root,fileList(i).name));
         end
+    else
+       if (~isempty(strfind(fileList(i).name,'_')) && bFilesRenamed==0)
+           tifNamePatternFix(root);
+           bFilesRenamed = 1;
+       end 
     end
-    readXMLmetadata([root '\' volumeName], volumeName);
-    tifNamePatternFix([root '\' volumeName]);
-    fileList = dir(fullfile(root,'*.tif'));
 end
-cmd = sprintf('dir /B /ON "%s" > "%s/list.txt"', root, root);
-system(cmd);
-fprintf('\nDone\n');
 end

@@ -4,23 +4,49 @@ global imageData;
 
 tree = xmlread(filename);
 
-imageData = struct(...
-    'DatasetName','',...
-    'NumberOfChannels',0,...
-    'NumberOfFrames',0,...
-    'XDimension',0,...
-    'YDimension',0,...
-    'ZDimension',0,...
-    'XPosition',0,...
-    'YPosition',0,...
-    'XPixelPhysicalSize',0,...
-    'YPixelPhysicalSize',0,...
-    'ZPixelPhysicalSize',0);
+if isempty(imageData)
+    imageData = struct(...
+        'DatasetName','',...
+        'NumberOfChannels',0,...
+        'ChannelColors',{},...
+        'NumberOfFrames',0,...
+        'xDim',0,...
+        'yDim',0,...
+        'zDim',0,...
+        'XPosition',0,...
+        'YPosition',0,...
+        'XPixelPhysicalSize',0,...
+        'YPixelPhysicalSize',0,...
+        'ZPixelPhysicalSize',0,...
+        'XDistanceUnits','',...
+        'YDistanceUnits','',...
+        'ZDistanceUnits','',...
+        'XLength',0,...
+        'YLength',0,...
+        'ZLength',0);
+end
+
+if (isempty(imageData))
+    imageData(1).NumberOfChannels = 0;
+end
+
+oldNumChannels = imageData.NumberOfChannels;
+oldColors = imageData.ChannelColors;
+
+imageData.NumberOfChannels = 0;
+imageData.ChannelColors = {};
 
 % Recurse over child nodes. This could run into problems
 % with very deeply nested trees.
 theStruct = parseChildNodes(tree);
-imageData.NumberOfFrames = imageData.NumberOfFrames/imageData.ZDimension;
+if (~isempty(imageData.NumberOfFrames) && ~isempty(imageData.zDim))
+    imageData.NumberOfFrames = imageData.NumberOfFrames/imageData.zDim;
+end
+if (length(imageData.NumberOfChannels)<length(oldNumChannels))
+    imageData.NumberOfChannels = oldNumChannels;
+    imageData.ChannelColors = oldColors;
+end
+
 end
 
 
@@ -46,6 +72,9 @@ if theNode.hasChildNodes
             ind2 = strfind(data(ind+2:end),' ');
             imageData.NumberOfFrames = str2double(data(ind+2:ind+ind2));
         end
+    elseif strcmpi(theNode.getNodeName,'Name') && theNode.hasChildNodes
+        item = childNodes.item(0);
+        imageData.DatasetName = char(item.getData);
     end
     
     for count = 1:numChildNodes
@@ -57,7 +86,7 @@ end
 
 % ----- Subfunction MAKESTRUCTFROMNODE -----
 function nodeStruct = makeStructFromNode(theNode)
-% Create structure of node info. 
+% Create structure of node info.
 
 nodeStruct = struct(                        ...
     'Name', char(theNode.getNodeName),       ...
@@ -79,9 +108,6 @@ global imageData;
 
 attributes = [];
 if theNode.hasAttributes
-    if strcmpi(theNode.getNodeName,'ChannelDescription')
-        imageData.NumberOfChannels = imageData.NumberOfChannels +1;
-    end
     theAttributes = theNode.getAttributes;
     numAttributes = theAttributes.getLength;
     allocCell = cell(1, numAttributes);
@@ -94,7 +120,14 @@ if theNode.hasAttributes
         attributes(count).Value = char(attrib.getValue);
     end
     
-    if strcmpi(theNode.getNodeName,'DimensionDescription')
+    if strcmpi(theNode.getNodeName,'ChannelDescription')
+        imageData.NumberOfChannels = imageData.NumberOfChannels +1;
+        for i = 1:numAttributes
+            if strcmpi(attributes(i).Name,'LUTName')
+                imageData.ChannelColors{end+1} = attributes(i).Value;
+            end
+        end
+    elseif strcmpi(theNode.getNodeName,'DimensionDescription')
         dim = 0;
         for i = 1:numAttributes
             if strcmpi(attributes(i).Name,'DimID')
@@ -111,11 +144,11 @@ if theNode.hasAttributes
             if strcmpi(attributes(i).Name,'NumberOfElements')
                 switch dim
                     case 1
-                        imageData.XDimension = str2double(attributes(i).Value);
+                        imageData.xDim = str2double(attributes(i).Value);
                     case 2
-                        imageData.YDimension = str2double(attributes(i).Value);
+                        imageData.yDim = str2double(attributes(i).Value);
                     case 3
-                        imageData.ZDimension = str2double(attributes(i).Value);
+                        imageData.zDim = str2double(attributes(i).Value);
                 end
             elseif strcmpi(attributes(i).Name,'Voxel')
                 switch dim
@@ -125,6 +158,24 @@ if theNode.hasAttributes
                         imageData.YPixelPhysicalSize = str2double(attributes(i).Value);
                     case 3
                         imageData.ZPixelPhysicalSize = str2double(attributes(i).Value);
+                end
+            elseif strcmpi(attributes(i).Name,'Unit')
+                switch dim
+                    case 1
+                        imageData.XDistanceUnits = attributes(i).Value;
+                    case 2
+                        imageData.YDistanceUnits = attributes(i).Value;
+                    case 3
+                        imageData.ZDistanceUnits = attributes(i).Value;
+                end
+            elseif strcmpi(attributes(i).Name,'Length')
+                switch dim
+                    case 1
+                        imageData.XLength = str2double(attributes(i).Value);
+                    case 2
+                        imageData.YLength = str2double(attributes(i).Value);
+                    case 3
+                        imageData.ZLength = str2double(attributes(i).Value);
                 end
             end
         end
