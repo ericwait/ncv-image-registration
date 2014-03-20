@@ -7,7 +7,6 @@ if (~exist('root','var') || isempty(root))
 end
 
 fileList = dir(root);
-bFilesRenamed = 0;
 for i=1:length(fileList)
     if (strcmp(fileList(i).name,'.') || strcmp(fileList(i).name,'..'))
         continue
@@ -19,11 +18,8 @@ for i=1:length(fileList)
         else
             orgImages(fullfile(root,fileList(i).name));
         end
-    else
-       if (~isempty(strfind(fileList(i).name,'_')) && bFilesRenamed==0)
-           tifNamePatternFix(root);
-           bFilesRenamed = 1;
-       end 
     end
 end
+
+tifNamePatternFix(root);
 end

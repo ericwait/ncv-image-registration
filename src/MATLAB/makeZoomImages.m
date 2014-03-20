@@ -1,57 +1,64 @@
-function makeZoomImages(center,path,datasetName)
-global imageData
-maxChannel = 6;
-c = 1;
-xRadius = 1023;
-yRadius = 575;
-while(c<=maxChannel)
-    for reduc=1:5
-        if (reduc==4)
-            continue;
-        end
-        if (reduc==1)
-            imagesPath = path;
-        else
-            imagesPath = fullfile(path,['x' num2str(reduc)]);
-        end
-        
-        im = tiffReader('uint8',c,[],[],imagesPath,[datasetName '.txt']);
-        maxChannel = imageData.NumberOfChannels;
-        rowMin = round(center(1)/reduc)-yRadius;
-        rowMax = round(center(1)/reduc)+yRadius;
-        colMin = round(center(2)/reduc)-xRadius;
-        colMax = round(center(2)/reduc)+xRadius;
-        
-        if (rowMax>size(im,1))
-            rowMax = size(im,1);
-            rowMin = max(1,size(im,1)-yRadius*2);
-        elseif (rowMin<1)
-            rowMin=1;
-            rowMax = min(size(im,1),yRadius*2);
-        end
-        if (colMax>size(im,2))
-            colMax = size(im,2);
-            colMin = max(1,colMax-xRadius*2);
-        elseif (colMin<1)
-            colMin=1;
-            colMax = min(size(im,2),colMin+xRadius*2);
-        end
-        
-        imROI = im(rowMin:rowMax,colMin:colMax,:);
-        
-        if (~exist(fullfile(path,'movie',['x' num2str(reduc)]),'file'))
-            mkdir(fullfile(path,'movie',['x' num2str(reduc)]));
-        end
-        
-        imageData.xDim = colMax-colMin+1;
-        imageData.yDim = rowMax-rowMin+1;
-        createMetadata(fullfile(path,'movie',['x' num2str(reduc)]),datasetName,imageData);
-        
-        tiffWriter(imROI,[fullfile(path,'movie',['x' num2str(reduc)]) '\' datasetName],c);
-        
-        clear im;
-        clear imROI;
+function makeZoomImages()
+
+%% set these before running
+rootDir = 'D:\Users\Eric\Documents\Images\22mo2 wmSVZ Unmixed\DAPI Olig2-514 GFAP-488 Mash1-647 PSA-NCAM-549 lectin-568 22mo wmSVZ_Montage_wDelta';
+center = [7953 1992]; %[x y]
+
+%% run
+outImSize = [576 1024]-2;
+
+reduc = 1;
+imagesPath = fullfile(rootDir,['x' num2str(reduc)]);
+
+[im, imageData] = tiffReader('uint8',[],[],[],imagesPath);
+curCenter = round(center/reduc);
+rowMin = max(1,curCenter(2)-outImSize(1)/2);
+rowMax = min(size(im,1),curCenter(2)+outImSize(1)/2);
+colMin = max(1,curCenter(1)-outImSize(2)/2);
+colMax = min(size(im,2),curCenter(1)+outImSize(2)/2);
+
+imROI = im(rowMin:rowMax,colMin:colMax,:,:,:);
+
+if (~exist(fullfile(rootDir,'movie','x0'),'file'))
+    mkdir(fullfile(rootDir,'movie','x0'));
+end
+
+imageData.YDimension = colMax-colMin+1;
+imageData.XDimension = rowMax-rowMin+1;
+createMetadata(fullfile(rootDir,'movie','x0'),imageData);
+
+tiffWriter(imROI,[fullfile(rootDir,'movie','x0') '\' imageData.DatasetName]);
+
+maxReduction = ceil(max(size(im))/1024);
+
+clear im;
+clear imROI;
+
+outImSize = [1152 2048]-2; %[row col]
+
+for reduc=1:maxReduction
+    imagesPath = fullfile(rootDir,['x' num2str(reduc)]);
+    
+    [im, imageData] = tiffReader('uint8',[],[],[],imagesPath);
+    curCenter = round(center/reduc);
+    rowMin = max(1,curCenter(2)-outImSize(1)/2);
+    rowMax = min(size(im,1),curCenter(2)+outImSize(1)/2);
+    colMin = max(1,curCenter(1)-outImSize(2)/2);
+    colMax = min(size(im,2),curCenter(1)+outImSize(2)/2);
+    
+    imROI = im(rowMin:rowMax,colMin:colMax,:,:,:);
+    
+    if (~exist(fullfile(rootDir,'movie',['x' num2str(reduc)]),'file'))
+        mkdir(fullfile(rootDir,'movie',['x' num2str(reduc)]));
     end
     
-    c = c +1;
+    imageData.YDimension = colMax-colMin+1;
+    imageData.XDimension = rowMax-rowMin+1;
+    createMetadata(fullfile(rootDir,'movie',['x' num2str(reduc)]),imageData);
+    
+    tiffWriter(imROI,[fullfile(rootDir,'movie',['x' num2str(reduc)]) '\' imageData.DatasetName]);
+    
+    clear im;
+    clear imROI;
+end
 end

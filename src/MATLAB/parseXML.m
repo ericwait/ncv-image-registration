@@ -28,6 +28,7 @@ end
 
 if (isempty(imageData))
     imageData(1).NumberOfChannels = 0;
+    imageData(1).NumberOfFrames = 1;
 end
 
 oldNumChannels = imageData.NumberOfChannels;

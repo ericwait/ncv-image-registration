@@ -27,17 +27,34 @@ for i=1:length(imageDatasets)
     imageDatasets(i).yDelta = data(1);
     imageDatasets(i).zDelta = data(3);
     
-    imageDatasets(i).xMinPos = imageDatasets(i).xDelta*imageDatasets(i).xVoxelSize + imageDatasets(i).xMinPos;
-    imageDatasets(i).xMaxPos = imageDatasets(i).xMinPos+ imageDatasets(i).xDim*imageDatasets(i).xVoxelSize;
-    imageDatasets(i).yMinPos = imageDatasets(i).yDelta*imageDatasets(i).yVoxelSize + imageDatasets(i).yMinPos;
-    imageDatasets(i).yMaxPos = imageDatasets(i).yMinPos+ imageDatasets(i).yDim*imageDatasets(i).yVoxelSize;
-    imageDatasets(i).zMinPos = imageDatasets(i).zDelta*imageDatasets(i).zVoxelSize;
-    imageDatasets(i).zMaxPos = imageDatasets(i).zMinPos+ imageDatasets(i).zDim*imageDatasets(i).zVoxelSize;
+    imageDatasets(i).xMinPos = ...
+        imageDatasets(i).xDelta * imageDatasets(i).XPixelPhysicalSize + imageDatasets(i).XPosition*1e6;
+    
+    imageDatasets(i).xMaxPos = ...
+        imageDatasets(i).xMinPos + imageDatasets(i).XDimension * imageDatasets(i).XPixelPhysicalSize;
+    
+    imageDatasets(i).yMinPos = ...
+        imageDatasets(i).yDelta * imageDatasets(i).YPixelPhysicalSize + imageDatasets(i).YPosition*1e6;
+    
+    imageDatasets(i).yMaxPos = ...
+        imageDatasets(i).yMinPos + imageDatasets(i).YDimension * imageDatasets(i).YPixelPhysicalSize;
+    
+    imageDatasets(i).zMinPos = ...
+        imageDatasets(i).zDelta * imageDatasets(i).ZPixelPhysicalSize;
+    
+    imageDatasets(i).zMaxPos = ...
+        imageDatasets(i).zMinPos + imageDatasets(i).ZDimension * imageDatasets(i).ZPixelPhysicalSize;
+    
     imageDatasets(i).ParentDelta = find(cellfun(@(x)(~isempty(x)),strfind(names,deltaParent)));
     if isempty(imageDatasets(i).ParentDelta)
         imageDatasets(i).ParentDelta = i;
-    else
-        imageDatasets(imageDatasets(i).ParentDelta).Child = [imageDatasets(imageDatasets(i).ParentDelta).Child i];
     end
 end
+
+imageDatasets(1).Child = [];
+for i=1:length(imageDatasets)
+    if (imageDatasets(i).ParentDelta == i)
+        continue;
+    end
+imageDatasets(imageDatasets(i).ParentDelta).Child = [imageDatasets(imageDatasets(i).ParentDelta).Child i];
 end

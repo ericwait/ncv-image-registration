@@ -1,7 +1,7 @@
 function readXMLmetadata( root )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
-global imageData;
+global imageData
 
 fileList = dir( fullfile([root '\'],'*.xml'));
 for i=1:length(fileList)
