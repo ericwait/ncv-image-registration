@@ -1,4 +1,4 @@
-function makeSmoothZoom(rootDir, vidObj, lowResFactor, highResFactor, orgImageData, center)
+function makeSmoothZoom(rootDir, vidObj, lowResFactor, highResFactor, orgImageData, center, vidRes)
 %% name scheme Defines
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lastIm is the last frame from the lower resolution / lower fedelity movie
@@ -9,46 +9,53 @@ function makeSmoothZoom(rootDir, vidObj, lowResFactor, highResFactor, orgImageDa
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Image reading
-lowDir = dir(fullfile(rootDir,'movie',sprintf('x%d',lowResFactor),'spin','*.bmp'));
-lastImData = readMetaData(fullfile(rootDir,'movie',sprintf('x%d',lowResFactor)));
-lastIm = imread(fullfile(rootDir,'movie',sprintf('x%d',lowResFactor),'spin',lowDir(end).name));
+dbstop('in','makeSmoothZoom.m','at','30');
 
-highDir = dir(fullfile(rootDir,'movie',sprintf('x%d',highResFactor),'spin','*.bmp'));
-firstImData = readMetaData(fullfile(rootDir,'movie',sprintf('x%d',highResFactor)));
-firstIm = imread(fullfile(rootDir,'movie',sprintf('x%d',highResFactor),'spin',highDir(end).name));
+lowDir = dir(fullfile(rootDir,sprintf('x%d',lowResFactor),'ScreenShots','*.bmp'));
+lastImData = readMetaData(fullfile(rootDir,sprintf('x%d',lowResFactor)));
+lastIm = imread(fullfile(rootDir,sprintf('x%d',lowResFactor),'ScreenShots',lowDir(end).name));
 
-bigIm = imread(fullfile(rootDir,'movie',sprintf('x%d',lowResFactor),'Big.bmp'));
+highDir = dir(fullfile(rootDir,sprintf('x%d',highResFactor),'ScreenShots','*.bmp'));
+firstImData = readMetaData(fullfile(rootDir,sprintf('x%d',highResFactor)));
+firstIm = imread(fullfile(rootDir,sprintf('x%d',highResFactor),'ScreenShots',highDir(end).name));
+
+bigDir = dir(fullfile(rootDir,'big',sprintf('x%d_*.bmp',lowResFactor)));
+bigIm = imread(fullfile(rootDir,'big',bigDir(1).name));
 
 highResFactor = max(highResFactor,1);
 
 %% find regions of interests (cut out the volumes from the backgrounds)
+newWay = 0;
+
+subtractBorder = 10;
 blackIdx = bigIm==0;
 stats = regionprops(blackIdx(:,:,1),'BoundingBox','Area');
-bigRoi = [floor(stats(1).BoundingBox(1)+1),...
-           floor(stats(1).BoundingBox(2)+1),...
-           floor(stats(1).BoundingBox(1))+stats(1).BoundingBox(3)-2,...
-           floor(stats(1).BoundingBox(2))+stats(1).BoundingBox(4)-2];
+bigRoi = [floor(stats(1).BoundingBox(1)+subtractBorder),...
+           floor(stats(1).BoundingBox(2)+subtractBorder),...
+           floor(stats(1).BoundingBox(1))+stats(1).BoundingBox(3)-subtractBorder*2+1,...
+           floor(stats(1).BoundingBox(2))+stats(1).BoundingBox(4)-subtractBorder*2+1];
 bigRoiIm = bigIm(bigRoi(2):bigRoi(4), bigRoi(1):bigRoi(3), :);
 
 blackIdx = lastIm==0;
 stats = regionprops(blackIdx(:,:,1),'BoundingBox','Area');
-lastRoi = [floor(stats(1).BoundingBox(1)+1),...
-           floor(stats(1).BoundingBox(2)+1),...
-           floor(stats(1).BoundingBox(1))+stats(1).BoundingBox(3)-2,...
-           floor(stats(1).BoundingBox(2))+stats(1).BoundingBox(4)-2];
+lastRoi = [floor(stats(1).BoundingBox(1)+subtractBorder),...
+           floor(stats(1).BoundingBox(2)+subtractBorder),...
+           floor(stats(1).BoundingBox(1))+stats(1).BoundingBox(3)-subtractBorder*2+1,...
+           floor(stats(1).BoundingBox(2))+stats(1).BoundingBox(4)-subtractBorder*2+1];
 lastRoiIm = lastIm(lastRoi(2):lastRoi(4), lastRoi(1):lastRoi(3), :);
+
+backGroundIm = lastIm;
+backGroundIm(floor(stats(1).BoundingBox(2)):floor(stats(1).BoundingBox(4))+floor(stats(1).BoundingBox(2)),...
+    floor(stats(1).BoundingBox(1)):floor(stats(1).BoundingBox(3))+floor(stats(1).BoundingBox(1)), :) = ...
+    ones(floor(stats(1).BoundingBox(4))+1,floor(stats(1).BoundingBox(3))+1, 3,'uint8').*lastIm(1);
 
 blackIdx = firstIm==0;
 stats = regionprops(blackIdx(:,:,1),'BoundingBox','Area');
-firstRoi = [floor(stats(1).BoundingBox(1)+1),...
-           floor(stats(1).BoundingBox(2)+1),...
-           floor(stats(1).BoundingBox(1))+stats(1).BoundingBox(3)-2,...
-           floor(stats(1).BoundingBox(2))+stats(1).BoundingBox(4)-2];
+firstRoi = [floor(stats(1).BoundingBox(1)+subtractBorder),...
+           floor(stats(1).BoundingBox(2)+subtractBorder),...
+           floor(stats(1).BoundingBox(1))+stats(1).BoundingBox(3)-subtractBorder*2+1,...
+           floor(stats(1).BoundingBox(2))+stats(1).BoundingBox(4)-subtractBorder*2+1];
 firstRoiIm = firstIm(firstRoi(2):firstRoi(4), firstRoi(1):firstRoi(3), :);
-       
-backGroundIm = lastIm;
-backGroundIm(lastRoi(2)-2:lastRoi(4)+4, lastRoi(1)-2:lastRoi(3)+4, :) = ...
-    ones(lastRoi(4)-lastRoi(2)+7, lastRoi(3)-lastRoi(1)+7, 3,'uint8').*lastIm(1);
 
 %% calculate zoom box
 firstImSzInOrg = [firstImData.YDimension*highResFactor firstImData.XDimension*highResFactor];
@@ -115,11 +122,20 @@ end
 vox2pX = size(bigRoiIm,2)/lastImData.XDimension;
 vox2pY = size(bigRoiIm,1)/lastImData.YDimension;
 
-boxPos([1,2]) = firstsCoorInOrg([1,2]) - bigsCoorInOrg([1,2]);
-boxPos([3,4]) = [firstImSzInOrg(2) firstImSzInOrg(1)];
-boxPos = boxPos./lowResFactor; % convert to lowRes (lastIm) space
-boxPos([1,3]) = floor(boxPos([1,3]).*vox2pX); % slight factor when resizeing in renderer
-boxPos([2,4]) = floor(boxPos([2,4]).*vox2pY);
+if (newWay==1)
+    dbstop('in','makeSmoothZoom.m','at','140');
+    boxPos = [];
+    %boxPos([1,3]) = boxPos([1,3]) + ;
+    %boxPos(3) = boxPos(3) + ;
+    %boxPos([2,4]) = boxPos([2,4]) + ;
+    %boxPos(4) = boxPos(4) + ;
+else
+    boxPos([1,2]) = firstsCoorInOrg([1,2]) - bigsCoorInOrg([1,2]);
+    boxPos([3,4]) = [firstImSzInOrg(2) firstImSzInOrg(1)];
+    boxPos = boxPos./lowResFactor; % convert to lowRes (lastIm) space
+    boxPos([1,3]) = floor(boxPos([1,3]).*vox2pX); % slight factor when resizeing in renderer
+    boxPos([2,4]) = floor(boxPos([2,4]).*vox2pY);
+end
 
 xZoomStart = [lastRoi(1),lastRoi(3)-lastRoi(1)+1];
 yZoomStart = [lastRoi(2),lastRoi(4)-lastRoi(2)+1];
@@ -132,60 +148,55 @@ xCropEnd = [boxPos(1),boxPos(1)+boxPos(3)];
 yCropEnd = [boxPos(2),boxPos(2)+boxPos(4)];
 
 fig = figure;
-imshow(bigRoiIm);
+if (newWay==1)
+    imPut = imresize(firstRoiIm(1:end,1:end,:),[yCropEnd(2)-yCropEnd(1)+1,xCropEnd(2)-xCropEnd(1)+1]);
+    bigRoiImW = bigRoiIm;
+    bigRoiImW(yCropEnd(1):yCropEnd(2),xCropEnd(1):xCropEnd(2),:) = imPut;
+    imshow(bigRoiImW);
+    %figure, imshow(bigRoiIm)
+else
+    imshow(bigRoiIm);
+end
+
 hold on
 rectangle('Position',boxPos,'EdgeColor','w');
 
 set(gcf,'Position',[100 100 1920 1080])
 set(gca,'Position',[0 0 1 1]);
 
-% movieName = ['x', num2str(factorLowRes), 'zoom.avi'];
-% vidObj = VideoWriter(movieName,'Uncompressed AVI');
-% vidObj.FrameRate = 60;
-%
-% open(vidObj);
-
-% rootDir = sprintf('.\\movieFiles\\%d_to_%d\\',factorLowRes,factorHighRes);
-% if (~exist(rootDir,'file'))
-%     if (~exist('.\movieFiles','file'))
-%         mkdir('.\movieFiles');
-%     end
-%     mkdir(rootDir);
-% end
-
 imageSeq = 1;
 n=60;
+xCropInc = (xCropEnd-xCropStart) / (n-1);
+yCropInc = (yCropEnd-yCropStart) / (n-1);
+xZoomInc = (xZoomEnd-xZoomStart) / (n-1);
+yZoomInc = (yZoomEnd-yZoomStart) / (n-1);
+
 for i=0:n-1
-    xlim(xCropStart+i/(n-1)*(xCropEnd-xCropStart));
-    ylim(yCropStart+i/(n-1)*(yCropEnd-yCropStart));
+    xlim(xCropStart + i*xCropInc);
+    ylim(yCropStart + i*yCropInc);
     
-    placeX = round(xZoomStart+i/(n-1)*(xZoomEnd-xZoomStart));
-    placeY = round(yZoomStart+i/(n-1)*(yZoomEnd-yZoomStart));
+    placeX = round(xZoomStart + i*xZoomInc);
+    placeY = round(yZoomStart + i*yZoomInc);
     
     imageData = getframe(gca);
     imLowPlace = imresize(imageData.cdata(:,2:end-1,:),[placeY(2) placeX(2)]);
     
     curIm = backGroundIm;
     curIm(placeY(1):placeY(1)+placeY(2)-1,placeX(1):placeX(1)+placeX(2)-1,:) = imLowPlace;
+    curIm = imresize(curIm,vidRes);
+    
+    %imwrite(curIm,fullfile(rootDir,sprintf('%s_%dx-%dx_%d.tif',orgImageData.DatasetName,lowResFactor,highResFactor,i)),'tif','Compression','lzw');
     
     if (i==0)
         for j=1:14
-            %filename = [rootDir sprintf('%05d',imageSeq) '.tif'];
-            %imwrite(curIm,filename,'tif','Compression','lzw');
             imageSeq = imageSeq +1;
             writeVideo(vidObj,im2frame(curIm));
         end
     end
     
-    %filename = [rootDir sprintf('%05d',imageSeq) '.tif'];
-    %imwrite(curIm,filename,'tif','Compression','lzw');
     imageSeq = imageSeq +1;
     writeVideo(vidObj,im2frame(curIm));
 end
-
-% writeVideo(vidObj,im2frame(curIm));
-
-%close(vidObj);
 
 close(fig)
 end
