@@ -1,8 +1,11 @@
-function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcor,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,drawDecisionSurf,visualize)
-global minOverlap
+function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcor,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,minOverlap,drawDecisionSurf,visualize)
+global maxSearchSize
 
-if (isempty(minOverlap))
+if (~exist('minOverlap','var') || isempty(minOverlap))
     minOverlap = 50;
+end
+if (isempty(maxSearchSize))
+    maxSearchSize = 100;
 end
 
 if (~exist('drawDecisionSurf','var') || isempty(drawDecisionSurf))
@@ -55,14 +58,15 @@ maxX2 = image2ROI(3);
 minY2 = image2ROI(2);
 maxY2 = image2ROI(4);
 
-maxIterX = min(150,min(maxX1-minX1,maxX2-minX2));
-maxIterY = min(150,min(maxY1-minY1,maxY2-minY2));
+maxIterX = min(maxSearchSize,min(maxX1-minX1,maxX2-minX2));
+maxIterY = min(maxSearchSize,min(maxY1-minY1,maxY2-minY2));
 
-if (maxIterX<minOverlap && maxIterY<minOverlap)
+if (maxIterX<minOverlap*3 && maxIterY<minOverlap*3 || maxIterX<10 || maxIterY<10)
     ultimateDeltaX = 0;
     ultimateDeltaY = 0;
     ultimateDeltaZ = 0;
-    maxNcor = inf;
+    maxNcor = -inf;
+    overlapSize = 0;
     fprintf('Does not meet minimums\n');
     return
 else
@@ -85,6 +89,7 @@ parfor deltaX = 1:maxIterX*2
     xEnd2 = min(size(imMax2,2)-xStart1+xStart2,size(imMax2,2));
     
     if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
+    if (xEnd1-xStart1<minOverlap), continue, end
     
     im1X = imMax1(:,xStart1:xEnd1);
     im2X = imMax2(:,xStart2:xEnd2);
@@ -98,6 +103,7 @@ parfor deltaX = 1:maxIterX*2
         yEnd2 = min(size(im2X,1)-yStart1+yStart2,size(im2X,1));
         
         if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
+        if (yEnd1-yStart1<minOverlap), continue, end
         
         im1Y = im1X(yStart1:yEnd1,:);
         im2Y = im2X(yStart2:yEnd2,:);
@@ -191,6 +197,7 @@ parfor deltaZ = 1:maxIterZ*2
         xEnd2 = min(size(imROI2,2)-xStart1+xStart2,size(imROI2,2));
         
         if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
+        if (xEnd1-xStart1<minOverlap), continue, end
         
         im1X = im1Z(:,xStart1:xEnd1,:);
         im2X = im2Z(:,xStart2:xEnd2,:);
@@ -204,6 +211,7 @@ parfor deltaZ = 1:maxIterZ*2
             yEnd2 = min(size(im2X,1)-yStart1+yStart2,size(im2X,1));
             
             if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
+            if (yEnd1-yStart1<minOverlap), continue, end
             
             im1Y = im1X(yStart1:yEnd1,:,:);
             im2Y = im2X(yStart2:yEnd2,:,:);
