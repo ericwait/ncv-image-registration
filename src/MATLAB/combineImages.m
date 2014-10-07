@@ -1,23 +1,31 @@
 function combineImages()
-global imageDatasets DeltasPresent
 totalTime = tic;
 imageDatasets = [];
+DeltasPresent = 0;
 
-datasetName = 'DAPI Olig2-514 GFAP-488 Mash1-647 PSA-NCAM-549 lectin-568 22mo wmSVZ';
+[fileName,pathName,~] = uigetfile('.txt');
 
-rootDir = uigetdir('');
-if rootDir==0, return, end
-dlist = dir(rootDir);
+if fileName==0, return, end
 
-for i=1:length(dlist)
-    if (~isdir(fullfile(rootDir,dlist(i).name)) || strcmp('..',dlist(i).name) || strcmp('.',dlist(i).name) ||...
-            ~isempty(strfind(dlist(i).name,'Montage')))
-        continue;
+fHand = fopen(fullfile(pathName,fileName),'rt');
+dirNames = textscan(fHand,'%s','delimiter','\n');
+fclose(fHand);
+
+datasetName = [];
+str1 = dirNames{1}{1};
+for i=length(str1):-1:1
+    bmatch = strncmpi(str1(1:i),dirNames{1},i);
+    if nnz(bmatch)==length(dirNames{1})
+        datasetName = str1(1:i);
+        break
     end
+end
+
+for i=1:length(dirNames{1})
     if isempty(imageDatasets)
-        imageDatasets = readMetaData(fullfile(rootDir,dlist(i).name));
+        [imageDatasets,~] = readMetaData(fullfile(pathName,dirNames{1}{i}));
     else
-        imageDatasets(length(imageDatasets)+1) = readMetaData(fullfile(rootDir,dlist(i).name));
+        [imageDatasets(end+1),~] = readMetaData(fullfile(pathName,dirNames{1}{i}));
     end
 end
 
@@ -25,21 +33,29 @@ if (isempty(imageDatasets))
     error('No images for dataset %s\n',datasetName);
 end
 
-readDeltaData(rootDir);
+deltasPresent = 0;
+%[deltasPresent,imageDatasets] = readDeltaData(pathName);
+
+if (0==deltasPresent)
+    result = questdlg('Would you like to refine registration or use microscope data?','Refine Deltas?','Refine','Microscope','Microscope');
+    switch result
+        case 'Refine'
+            prefix = [datasetName '_Montage_wDelta'];
+            answer = inputdlg('Channel to register:','Channel Chooser',1,{'3'});
+            imageDatasets = createDeltas(imageDatasets,str2double(answer));
+        otherwise
+            prefix = [datasetName '_Montage'];
+    end
+end
 
 %% save out
 MARGIN = 5;
 
-if DeltasPresent==1
-    prefix = [datasetName '_Montage_wDelta'];
-else
-    prefix = [datasetName '_Montage'];
-end
 
 % %% make mosiac
 % %create a dirctory for the new images
-if ~isdir(fullfile(rootDir,prefix))
-    mkdir(rootDir,prefix);
+if ~isdir(fullfile(pathName,prefix))
+    mkdir(pathName,prefix);
 end
 
 minXPos = min([imageDatasets(:).xMinPos]);
@@ -65,11 +81,15 @@ imageData.XPixelPhysicalSize = minXvoxelSize;
 imageData.YPixelPhysicalSize = minYvoxelSize;
 imageData.ZPixelPhysicalSize = minZvoxelSize;
 
-% for chan=1:imageData.NumberOfChannels
-chan=4
+[im,~] = tiffReader([],[],[],[],fullfile(pathName,dirNames{1}{i}));
+w = whos('im');
+clear im
+
+for chan=1:imageData.NumberOfChannels
+% chan=4
     chanStart = tic;
-    outImage = zeros(imageWidth,imageHeight,imageDepth,'uint8');
-    outImageColor = zeros(imageWidth,imageHeight,imageDepth,'uint8');
+    outImage = zeros(imageWidth,imageHeight,imageDepth,w.class);
+    outImageColor = zeros(imageWidth,imageHeight,imageDepth,w.class);
     fprintf('Chan:%d\n',chan);
     for datasetIdx=1:length(imageDatasets)
         if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
@@ -77,10 +97,27 @@ chan=4
             startYind = round((imageDatasets(datasetIdx).yMinPos-minYPos) / minYvoxelSize +1);
             startZind = round((imageDatasets(datasetIdx).zMinPos-minZPos) / minZvoxelSize +1);
             
-            outImage(startXind:startXind+imageDatasets(datasetIdx).XDimension-1,...
-                startYind:startYind+imageDatasets(datasetIdx).YDimension-1,...
-                startZind:startZind+imageDatasets(datasetIdx).ZDimension-1)...
-                = tiffReader('uint8',chan,1,[],fullfile(rootDir,imageDatasets(datasetIdx).DatasetName));
+            [nextIm,~] = tiffReader([],chan,[],[],fullfile(pathName,dirNames{1}{datasetIdx}));
+            
+            roi = [startXind,startYind,startZind,...
+                startXind+min(imageDatasets(datasetIdx).XDimension,size(nextIm,1))-1,...
+                startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,2))-1,...
+                startZind+min(imageDatasets(datasetIdx).ZDimension,size(nextIm,3))-1];
+            
+            outRoi = outImage(roi(1):roi(4),roi(2):roi(5),roi(3):roi(6));
+            difInd = outRoi>0;
+            nextSum = sum(sum(sum(nextIm(difInd))));
+            outSum = sum(sum(sum(outRoi(difInd))));
+            
+            if outSum>nextSum
+                nextIm(difInd) = outRoi(difInd);
+            end
+            
+            clear outRoi
+            
+            outImage(roi(1):roi(4),roi(2):roi(5),roi(3):roi(6)) = nextIm;
+            
+            clear nextIm
             
             outImageColor(startXind:startXind+imageDatasets(datasetIdx).XDimension-1,...
                 startYind:startYind+imageDatasets(datasetIdx).YDimension-1,...
@@ -89,11 +126,11 @@ chan=4
         end
     end
     
-    imwrite(max(outImage(:,:,:),[],3),fullfile(rootDir, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
-    createMetadata(fullfile(rootDir, prefix),imageData);
+    imwrite(max(outImage(:,:,:),[],3),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
+    createMetadata(fullfile(pathName, prefix),imageData);
     modZ = ceil(size(outImage,3)/length(imageDatasets));
     for z=1:size(outImage,3)
-        imwrite(outImage(:,:,z),fullfile(rootDir, prefix, [datasetName sprintf('_c%d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
+        imwrite(outImage(:,:,z),fullfile(pathName, prefix, [datasetName sprintf('_c%d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
         if (mod(z,modZ)==0)
             fprintf('.');
         end
@@ -114,13 +151,13 @@ chan=4
         imDataReduced.YPixelPhysicalSize = imageData.YPixelPhysicalSize*reduce;
         % ZPixelPhysicalSize is same as orginal
         
-        if ~isdir(fullfile(rootDir,prefix,['x' num2str(reduce)]))
-            mkdir(fullfile(rootDir,prefix),['x' num2str(reduce)]);
+        if ~isdir(fullfile(pathName,prefix,['x' num2str(reduce)]))
+            mkdir(fullfile(pathName,prefix),['x' num2str(reduce)]);
         end
         
-        createMetadata(fullfile(rootDir, prefix, ['x' num2str(reduce)]),imDataReduced);
+        createMetadata(fullfile(pathName, prefix, ['x' num2str(reduce)]),imDataReduced);
         for z=1:size(outImage,3)
-            imwrite(imR(:,:,z),fullfile(rootDir, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
+            imwrite(imR(:,:,z),fullfile(pathName, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
             if (mod(z,modZ)==0)
                 fprintf('.');
             end
@@ -133,7 +170,7 @@ chan=4
     clear outImage;
     clear outImageColor;
     fprintf('Chan:%d done in %f sec\n',chan,toc(chanStart));
-%end
+end
 fprintf('Completed in %f sec\n',toc(totalTime));
 
 clear mex
