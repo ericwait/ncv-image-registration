@@ -1,8 +1,4 @@
-function [image1ROI,image2ROI] = calculateOverlap(imageData1,imageData2,pad)
-
-if (~exist('pad','var')||isempty(pad))
-    pad = 0;
-end
+function [image1ROI,image2ROI] = calculateOverlap(imageData1,imageData2)
 
 image1ROI = [1, 1, imageData1.XDimension, imageData1.YDimension];
 image2ROI = [1, 1, imageData2.XDimension, imageData2.YDimension];
@@ -33,9 +29,9 @@ else
     image2ROI(4) = image1ROI(4) - image1ROI(2) +1;
 end
 
-image1ROI([1,2]) = max(image1ROI([1,2])-pad,[1,1]);
-image1ROI([3,4]) = min(image1ROI([3,4])+pad,[imageData1.XDimension,imageData1.YDimension]);
+image1ROI([1,2]) = max(image1ROI([1,2]),[1,1]);
+image1ROI([3,4]) = min(image1ROI([3,4]),[imageData1.XDimension,imageData1.YDimension]);
 
-image2ROI([1,2]) = max(image2ROI([1,2])-pad,[1,1]);
-image2ROI([3,4]) = min(image2ROI([3,4])+pad,[imageData2.XDimension,imageData2.YDimension]);
+image2ROI([1,2]) = max(image2ROI([1,2]),[1,1]);
+image2ROI([3,4]) = min(image2ROI([3,4]),[imageData2.XDimension,imageData2.YDimension]);
 end
