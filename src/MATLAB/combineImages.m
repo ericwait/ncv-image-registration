@@ -33,8 +33,8 @@ if (isempty(imageDatasets))
     error('No images for dataset %s\n',datasetName);
 end
 
-deltasPresent = 0;
-%[deltasPresent,imageDatasets] = readDeltaData(pathName);
+%deltasPresent = 0;
+[deltasPresent,imageDatasets] = readDeltaData(pathName,imageDatasets);
 
 if (0==deltasPresent)
     result = questdlg('Would you like to refine registration or use microscope data?','Refine Deltas?','Refine','Microscope','Microscope');
@@ -46,7 +46,11 @@ if (0==deltasPresent)
         otherwise
             prefix = [datasetName '_Montage'];
     end
+else
+    prefix = [datasetName '_Montage_wDelta'];
 end
+
+answer = questdlg('Would you like to see the results?','Results Visualizer','Yes','No','No');
 
 %% save out
 MARGIN = 5;
@@ -85,8 +89,8 @@ imageData.ZPixelPhysicalSize = minZvoxelSize;
 w = whos('im');
 clear im
 
-for chan=1:imageData.NumberOfChannels
-% chan=4
+%for chan=1:imageData.NumberOfChannels
+for chan=[3,5]
     chanStart = tic;
     outImage = zeros(imageWidth,imageHeight,imageDepth,w.class);
     outImageColor = zeros(imageWidth,imageHeight,imageDepth,w.class);
@@ -126,46 +130,49 @@ for chan=1:imageData.NumberOfChannels
         end
     end
     
-    imwrite(max(outImage(:,:,:),[],3),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
-    createMetadata(fullfile(pathName, prefix),imageData);
-    modZ = ceil(size(outImage,3)/length(imageDatasets));
-    for z=1:size(outImage,3)
-        imwrite(outImage(:,:,z),fullfile(pathName, prefix, [datasetName sprintf('_c%d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
-        if (mod(z,modZ)==0)
-            fprintf('.');
-        end
+%     imwrite(max(outImage(:,:,:),[],3),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
+%     createMetadata(fullfile(pathName, prefix),imageData);
+%     modZ = ceil(size(outImage,3)/length(imageDatasets));
+%     for z=1:size(outImage,3)
+%         imwrite(outImage(:,:,z),fullfile(pathName, prefix, [datasetName sprintf('_c%02d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
+%         if (mod(z,modZ)==0)
+%             fprintf('.');
+%         end
+%     end
+    
+    if (strcmp(answer,'Yes'))
+        figure,imagesc(max(outImage,[],3)),colormap gray, axis image
+        testingDeltas(outImage, outImageColor,imageDatasets);
     end
     
-    %testingDeltas();
-    
-    maxReduction = ceil(max(size(outImage))/1024);
-    
-    for reduce=1:maxReduction
-        fprintf('\nReduce x%d...',reduce);
-        imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1]);
-        imDataReduced = imageData;
-        imDataReduced.XDimension = size(imR,1);
-        imDataReduced.YDimension = size(imR,2);
-        imDataReduced.ZDimension = size(imR,3);
-        imDataReduced.XPixelPhysicalSize = imageData.XPixelPhysicalSize*reduce;
-        imDataReduced.YPixelPhysicalSize = imageData.YPixelPhysicalSize*reduce;
-        % ZPixelPhysicalSize is same as orginal
-        
-        if ~isdir(fullfile(pathName,prefix,['x' num2str(reduce)]))
-            mkdir(fullfile(pathName,prefix),['x' num2str(reduce)]);
-        end
-        
-        createMetadata(fullfile(pathName, prefix, ['x' num2str(reduce)]),imDataReduced);
-        for z=1:size(outImage,3)
-            imwrite(imR(:,:,z),fullfile(pathName, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
-            if (mod(z,modZ)==0)
-                fprintf('.');
-            end
-        end
-        
-        fprintf(' done.\n');
-        clear imR;
-    end
+%     maxReduction = ceil(max(size(outImage))/1024);
+%     
+%     for reduce=1:maxReduction
+%         fprintf('\nReduce x%d...',reduce);
+%         imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1]);
+%         imDataReduced = imageData;
+%         imDataReduced.XDimension = size(imR,1);
+%         imDataReduced.YDimension = size(imR,2);
+%         imDataReduced.ZDimension = size(imR,3);
+%         imDataReduced.XPixelPhysicalSize = imageData.XPixelPhysicalSize*reduce;
+%         imDataReduced.YPixelPhysicalSize = imageData.YPixelPhysicalSize*reduce;
+%         % ZPixelPhysicalSize is same as orginal
+%         
+%         if ~isdir(fullfile(pathName,prefix,['x' num2str(reduce)]))
+%             mkdir(fullfile(pathName,prefix),['x' num2str(reduce)]);
+%         end
+%         
+%         createMetadata(fullfile(pathName, prefix, ['x' num2str(reduce)]),imDataReduced);
+%         for z=1:size(outImage,3)
+%             imwrite(imR(:,:,z),fullfile(pathName, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%02d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
+%             if (mod(z,modZ)==0)
+%                 fprintf('.');
+%             end
+%         end
+%         
+%         fprintf(' done.\n');
+%         clear imR;
+%     end
     
     clear outImage;
     clear outImageColor;

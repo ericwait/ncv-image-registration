@@ -1,5 +1,4 @@
-function testingDeltas(outImage, outImageColor)
-global imageDatasets
+function testingDeltas(outImage, outImageColor,imageDatasets)
 figure
 hold off
 [img, colorIdx] = max(outImage(:,:,:),[],3);
@@ -12,7 +11,6 @@ alpha = cat(3, reshape(cmap(pixelColors+1,1),size(pixelColors)), reshape(cmap(pi
 imgC = alpha .* repmat(mat2gray(img),[1 1 3]);
 
 imagesc(img), colormap gray
-%image(imgC);
 hold on
 
 minXPos = min([imageDatasets(:).xMinPos]);
@@ -64,10 +62,11 @@ set(gca,'Color',[0 0 0]);
 set(gcf,'PaperPositionMode','auto');
 set(gcf,'InvertHardcopy','off');
 set(gcf,'Position',[20 20 2550 1434]);
-axis equal
+axis image
 hold off
 
 figure
+image(imgC);
 hold on
 for i=1:length(imageDatasets)
     rectangle('Position',...
@@ -102,8 +101,9 @@ set(gcf,'PaperPositionMode','auto');
 set(gcf,'InvertHardcopy','off');
 axis ij
 set(gcf,'Position',[120 120 2550 1434]);
-axis equal
-
+axis image
 hold off
+
+drawnow
 
 end

@@ -1,5 +1,4 @@
-function readDeltaData(root)
-global imageDatasets DeltasPresent
+function [deltasPresent,imageDatasets] = readDeltaData(root,imageDatasets)
 
 if ~exist('root','var')
     rootDir = uigetdir('');
@@ -7,7 +6,7 @@ if ~exist('root','var')
 else
     rootDir = root;
 end
-DeltasPresent = 0;
+deltasPresent = 0;
 names = {imageDatasets(:).DatasetName};
 names = cellfun(@(x)([x '.']),names,'uniformOutput',0);
 for i=1:length(imageDatasets)
@@ -17,7 +16,7 @@ for i=1:length(imageDatasets)
         continue
     end
 
-    DeltasPresent = 1;
+    deltasPresent = 1;
     fid = fopen(filename,'rt');
     data = fscanf(fid,'deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%f\n');
     deltaParent = [strtrim(fscanf(fid,'Parent:%255c\n')) '.'];
@@ -51,10 +50,12 @@ for i=1:length(imageDatasets)
     end
 end
 
-imageDatasets(1).Child = [];
-for i=1:length(imageDatasets)
-    if (imageDatasets(i).ParentDelta == i)
-        continue;
+if (deltasPresent==1)
+    imageDatasets(1).Child = [];
+    for i=1:length(imageDatasets)
+        if (imageDatasets(i).ParentDelta == i)
+            continue;
+        end
+        imageDatasets(imageDatasets(i).ParentDelta).Child = [imageDatasets(imageDatasets(i).ParentDelta).Child i];
     end
-imageDatasets(imageDatasets(i).ParentDelta).Child = [imageDatasets(imageDatasets(i).ParentDelta).Child i];
 end

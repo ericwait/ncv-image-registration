@@ -20,8 +20,6 @@ fprintf('Registering %s with %s...',imageDataset1.DatasetName,imageDataset2.Data
 
 [image1ROI,image2ROI] = calculateOverlap(imageDataset1,imageDataset2);
 
-
-
 if (visualize==1)
     error('This is not working with a parfor, change and comment out this line');
 %     delete(gcp);
@@ -49,17 +47,17 @@ if (visualize==1)
 %     rect2 = rectangle('Position',[1,1,image2ROI(3)-image2ROI(1),image2ROI(4)-image2ROI(2)],'EdgeColor','r');
 end
 
-minX1 = image1ROI(1);
-maxX1 = image1ROI(3);
-minY1 = image1ROI(2);
-maxY1 = image1ROI(4);
-minX2 = image2ROI(1);
-maxX2 = image2ROI(3);
-minY2 = image2ROI(2);
-maxY2 = image2ROI(4);
+minXROI1 = image1ROI(1);
+maxXROI1 = image1ROI(3);
+minYROI1 = image1ROI(2);
+maxYROI1 = image1ROI(4);
+minXROI2 = image2ROI(1);
+maxXROI2 = image2ROI(3);
+minYROI2 = image2ROI(2);
+maxYROI2 = image2ROI(4);
 
-maxIterX = min(maxSearchSize,min(maxX1-minX1,maxX2-minX2));
-maxIterY = min(maxSearchSize,min(maxY1-minY1,maxY2-minY2));
+maxIterX = min(maxSearchSize,min(maxXROI1-minXROI1,maxXROI2-minXROI2));
+maxIterY = min(maxSearchSize,min(maxYROI1-minYROI1,maxYROI2-minYROI2));
 
 if (maxIterX<minOverlap*3 && maxIterY<minOverlap*3 || maxIterX<10 || maxIterY<10)
     ultimateDeltaX = 0;
@@ -73,8 +71,8 @@ else
     fprintf('\n');
 end
 
-imMax1 = max(im1(image1ROI(2):image1ROI(4),image1ROI(1):image1ROI(3),:,chan),[],3);
-imMax2 = max(im2(image2ROI(2):image2ROI(4),image2ROI(1):image2ROI(3),:,chan),[],3);
+imMax1 = max(im1(minYROI1:maxYROI1,minXROI1:maxXROI1,:,chan),[],3);
+imMax2 = max(im2(minYROI2:maxYROI2,minXROI2:maxXROI2,:,chan),[],3);
 
 normCovar = zeros(maxIterY*2,maxIterX*2);
 
@@ -83,10 +81,11 @@ normCovar = zeros(maxIterY*2,maxIterX*2);
 totalTm = tic;
 parfor deltaX = 1:maxIterX*2
 %     warning('Is not running as parfor, change line and comment out this message');
-    xStart1 = max(maxIterX-deltaX, 1);
-    xStart2 = max(deltaX-maxIterX, 1);
-    xEnd1 = min(size(imMax1,2)-xStart2+xStart1,size(imMax1,2));
-    xEnd2 = min(size(imMax2,2)-xStart1+xStart2,size(imMax2,2));
+    curDeltaX = deltaX-maxIterX;
+    xStart1 = max(1, 1+curDeltaX);
+    xStart2 = max(1, 1-curDeltaX);
+    xEnd1 = xStart1 + min(size(imMax1,2)-xStart1,size(imMax2,2)-xStart2);
+    xEnd2 = xStart2 + min(size(imMax2,2)-xStart2,size(imMax1,2)-xStart1);
     
     if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
     if (xEnd1-xStart1<minOverlap), continue, end
@@ -97,10 +96,11 @@ parfor deltaX = 1:maxIterX*2
     normCoLine = zeros(maxIterY*2,1);
     
     for deltaY = 1:maxIterY*2
-        yStart1 = max(maxIterY-deltaY, 1);
-        yStart2 = max(deltaY-maxIterY, 1);
-        yEnd1 = min(size(im1X,1)-yStart2+yStart1,size(im1X,1));
-        yEnd2 = min(size(im2X,1)-yStart1+yStart2,size(im2X,1));
+        curDeltaY = deltaY-maxIterY;
+        yStart1 = max(1, 1+curDeltaY);
+        yStart2 = max(1, 1-curDeltaY);
+        yEnd1 = yStart1 + min(size(imMax1,1)-yStart1,size(imMax2,1)-yStart2);
+        yEnd2 = yStart2 + min(size(imMax2,1)-yStart2,size(imMax1,1)-yStart1);
         
         if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
         if (yEnd1-yStart1<minOverlap), continue, end
@@ -109,6 +109,7 @@ parfor deltaX = 1:maxIterX*2
         im2Y = im2X(yStart2:yEnd2,:);
         
         normCoLine(deltaY) = CudaMex('NormalizedCovariance',im1Y,im2Y);
+        
         
 %         if (visualize==1)
 %             maxCovar = updateXYviewer(rect1,rect2,xStart1,yStart1,xEnd1,yEnd1,xStart2,yStart2,xEnd2,yEnd2,im1Y,im2Y,maxCovar,normCoLine,deltaX,deltaY,maxIterX,maxIterY);
@@ -128,17 +129,17 @@ fprintf('Total time: %d:%02d:%04.2f\n\t average per step %5.3f\n\t average per s
 
 [maxNcor,I] = max(normCovar(:));
 [r,c] = ind2sub(size(normCovar),I);
-bestDeltaX = c-maxIterX+1;
-bestDeltaY = r-maxIterY+1;
+bestDeltaX = c-maxIterX;
+bestDeltaY = r-maxIterY;
 
-xStart1 = max(minX1-bestDeltaX, 1);
-xStart2 = max(minX2+bestDeltaX, 1);
-xEnd1 = min(maxX1-bestDeltaX,size(im1,2));
-xEnd2 = min(maxX2+bestDeltaX,size(im2,2));
-yStart1 = max(minY1-bestDeltaY, 1);
-yStart2 = max(minY2+bestDeltaY, 1);
-yEnd1 = min(maxY1-bestDeltaY,size(im1,1));
-yEnd2 = min(maxY2+bestDeltaY,size(im2,1));
+xStart1 = max(1, minXROI1+bestDeltaX);
+xStart2 = max(1, minXROI1-bestDeltaX);
+xEnd1 = xStart1 + min(size(im1,2)-xStart1, size(im2,2)-xStart2);
+xEnd2 = xStart2 + min(size(im2,2)-xStart2, size(im1,2)-xStart1);
+yStart1 = max(1, minYROI1+bestDeltaY);
+yStart2 = max(1, minYROI2-bestDeltaY);
+yEnd1 = yStart1 + min(size(im1,1)-yStart1, size(im2,1)-yStart2);
+yEnd2 = yStart2 + min(size(im2,1)-yStart2, size(im1,1)-yStart1);
 
 if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
 if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
@@ -172,17 +173,18 @@ imROI2 = squeeze(im2(yStart2:yEnd2,xStart2:xEnd2,:,chan));
 % end
 
 maxIterZ = floor(min(imageDataset1.ZDimension,imageDataset2.ZDimension)/2);
-maxIterX = 10;
-maxIterY = 10;
+maxIterX = 5;
+maxIterY = 5;
 normCovarZ = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
 totalTm = tic;
 
-parfor deltaZ = 1:maxIterZ*2
 %     warning('Is not running as parfor, change line and comment out this message');
-    zStart1 = max(maxIterZ-deltaZ, 1);
-    zStart2 = max(deltaZ-maxIterZ, 1);
-    zEnd1 = min(size(imROI1,3)-zStart2+zStart1,size(imROI1,3));
-    zEnd2 = min(size(imROI2,3)-zStart1+zStart2,size(imROI2,3));
+parfor deltaZ = 1:maxIterZ*2
+    curDeltaZ = deltaZ-maxIterZ;
+    zStart1 = max(1, 1+curDeltaZ);
+    zStart2 = max(1, 1-curDeltaZ);
+    zEnd1 = zStart1 + min(size(imROI1,3)-zStart1,size(imROI1,3)-zStart2);
+    zEnd2 = zStart2 + min(size(imROI1,3)-zStart2,size(imROI1,3)-zStart1);
     
     if (zEnd1-zStart1~=zEnd2-zStart2),error('Sizes dont`t match %d : %d!',zEnd1-zStart1,zEnd2-zStart2), end
     
@@ -191,10 +193,11 @@ parfor deltaZ = 1:maxIterZ*2
     
     normCoSquare = zeros(maxIterY*2,maxIterX*2);
     for deltaX = 1:maxIterX*2
-        xStart1 = max(maxIterX-deltaX, 1);
-        xStart2 = max(deltaX-maxIterX, 1);
-        xEnd1 = min(size(imROI1,2)-xStart2+xStart1,size(imROI1,2));
-        xEnd2 = min(size(imROI2,2)-xStart1+xStart2,size(imROI2,2));
+        curDeltaX = deltaX-maxIterX;
+        xStart1 = max(1, 1+curDeltaX);
+        xStart2 = max(1, 1-curDeltaX);
+        xEnd1 = xStart1 + min(size(im1Z,2)-xStart1,size(im1Z,2)-xStart2);
+        xEnd2 = xStart2 + min(size(im2Z,2)-xStart2,size(im2Z,2)-xStart1);
         
         if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
         if (xEnd1-xStart1<minOverlap), continue, end
@@ -205,10 +208,11 @@ parfor deltaZ = 1:maxIterZ*2
         normCoLine = zeros(maxIterY*2,1);
         
         for deltaY = 1:maxIterY*2
-            yStart1 = max(maxIterY-deltaY, 1);
-            yStart2 = max(deltaY-maxIterY, 1);
-            yEnd1 = min(size(im1X,1)-yStart2+yStart1,size(im1X,1));
-            yEnd2 = min(size(im2X,1)-yStart1+yStart2,size(im2X,1));
+            curDeltaY = deltaY-maxIterY;
+            yStart1 = max(1, 1+curDeltaY);
+            yStart2 = max(1, 1-curDeltaY);
+            yEnd1 = yStart1 + min(size(im1X,1)-yStart1,size(im1X,1)-yStart2);
+            yEnd2 = yStart2 + min(size(im2X,1)-yStart2,size(im2X,1)-yStart1);
             
             if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
             if (yEnd1-yStart1<minOverlap), continue, end
@@ -241,22 +245,22 @@ fprintf('Total time: %d:%02d:%04.2f\n\t average per step %5.3f\n\t average per s
 [maxNcor,I] = max(normCovarZ(:));
 [r,c,z] = ind2sub(size(normCovarZ),I);
 
-ultimateDeltaX = bestDeltaX + c - maxIterX +1;
-ultimateDeltaY = bestDeltaY + r - maxIterY +1;
-ultimateDeltaZ = z - maxIterZ +1;
+ultimateDeltaX = bestDeltaX +maxIterX -c;
+ultimateDeltaY = bestDeltaY +maxIterY -r;
+ultimateDeltaZ = maxIterZ -z;
 
-xStart1 = max(minX1-ultimateDeltaX, 1);
-xStart2 = max(minX2+ultimateDeltaX, 1);
-xEnd1 = min(maxX1-ultimateDeltaX,size(im1,2));
-xEnd2 = min(maxX2+ultimateDeltaX,size(im2,2));
-yStart1 = max(minY1-ultimateDeltaY, 1);
-yStart2 = max(minY2+ultimateDeltaY, 1);
-yEnd1 = min(maxY1-ultimateDeltaY,size(im1,1));
-yEnd2 = min(maxY2+ultimateDeltaY,size(im2,1));
-zStart1 = max(-ultimateDeltaZ+1, 1);
-zStart2 = max(ultimateDeltaZ+1, 1);
-zEnd1 = min(size(im1,3)-ultimateDeltaZ,size(im1,3));
-zEnd2 = min(size(im1,3)+ultimateDeltaZ,size(im2,3));
+xStart1 = max(1, minXROI1+ultimateDeltaX);
+xStart2 = max(1, minXROI1-ultimateDeltaX);
+xEnd1 = xStart1 + min(size(im1,2)-xStart1, size(im2,2)-xStart2);
+xEnd2 = xStart2 + min(size(im2,2)-xStart2, size(im1,2)-xStart1);
+yStart1 = max(1, minYROI1+ultimateDeltaY);
+yStart2 = max(1, minYROI2-ultimateDeltaY);
+yEnd1 = yStart1 + min(size(im1,1)-yStart1, size(im2,1)-yStart2);
+yEnd2 = yStart2 + min(size(im2,1)-yStart2, size(im1,1)-yStart1);
+zStart1 = max(1, 1+ultimateDeltaZ);
+zStart2 = max(1, 1-ultimateDeltaZ);
+zEnd1 = zStart1 + min(size(im1,3)-zStart1, size(im2,3)-zStart2);
+zEnd2 = zStart2 + min(size(im2,3)-zStart2, size(im1,3)-zStart1);
 
 if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
 if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
@@ -265,7 +269,7 @@ if (zEnd1-zStart1~=zEnd2-zStart2),error('Sizes dont`t match %d : %d!',zEnd1-zSta
 overlapSize = (xEnd1-xStart1) * (yEnd1-yStart1) * (zEnd1-zStart1);
 
 if (drawDecisionSurf==1)    
-    co = CudaMex('NormalizedCovariance',max(im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,chan),[],3),max(im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,chan),[],3));
+    co = CudaMex('NormalizedCovariance',im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,chan),im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,chan));
     
     figure
     surf(normCovarZ(:,:,z),'EdgeColor','none');
