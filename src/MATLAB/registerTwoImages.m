@@ -132,8 +132,8 @@ end
 [zStart1,zStart2,zEnd1,zEnd2] = calculateROIs(ultimateDeltaZ,1,1,size(im1,3),size(im2,3));
 
 curCovar = CudaMex('NormalizedCovariance',...
-    max(im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,chan),[],3),...
-    max(im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,chan),[],3));
+    im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,chan),...
+    im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,chan));
 
 if (maxNcovZ ~= curCovar)
     warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
