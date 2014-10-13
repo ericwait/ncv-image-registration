@@ -1,69 +1,37 @@
-function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcor,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,minOverlap,drawDecisionSurf,visualize)
-global maxSearchSize
+function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,minOverlap,maxSearchSize,showDecisionSurf,visualize)
+clear global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
+global Rect1 Rect2
 
+%% check inputs
 if (~exist('minOverlap','var') || isempty(minOverlap))
     minOverlap = 50;
 end
-if (isempty(maxSearchSize))
+if (~exist('maxSearchSize','var') || isempty(maxSearchSize))
     maxSearchSize = 100;
 end
 
-if (~exist('drawDecisionSurf','var') || isempty(drawDecisionSurf))
-    drawDecisionSurf = 0;
+if (~exist('showDecisionSurf','var') || isempty(showDecisionSurf))
+    showDecisionSurf = 0;
 end
 
 if (~exist('visualize','var') || isempty(visualize))
     visualize = 0;
 end
 
-fprintf('Registering %s with %s...',imageDataset1.DatasetName,imageDataset2.DatasetName);
+%% setup and early out
 
-[image1ROI,image2ROI] = calculateOverlap(imageDataset1,imageDataset2);
+fprintf('Registering %s\n\t-->%s...',imageDataset1.DatasetName,imageDataset2.DatasetName);
 
-if (visualize==1)
-    error('This is not working with a parfor, change and comment out this line');
-%     delete(gcp);
-%     parpool(1);
-%     fig = figure;
-%     
-%     subplot(5,2,[1,3])
-%     imagesc(max(im1(:,:,:,chan),[],3)), colormap gray, axis image
-%     hold on
-%     rectangle('Position',[image1ROI(1),image1ROI(2),image1ROI(3)-image1ROI(1),image1ROI(4)-image1ROI(2)],'EdgeColor','g');
-%     
-%     subplot(5,2,[2,4])
-%     imagesc(max(im2(:,:,:,chan),[],3)), colormap gray, axis image
-%     hold on
-%     rectangle('Position',[image2ROI(1),image2ROI(2),image2ROI(3)-image2ROI(1),image2ROI(4)-image2ROI(2)],'EdgeColor','g');
-%     
-%     subplot(5,2,5)
-%     imagesc(max(im1(image1ROI(2):image1ROI(4),image1ROI(1):image1ROI(3),:,chan),[],3)), colormap gray, axis image
-%     hold on
-%     rect1 = rectangle('Position',[1,1,image1ROI(3)-image1ROI(1),image1ROI(4)-image1ROI(2)],'EdgeColor','r');
-%     
-%     subplot(5,2,6)
-%     imagesc(max(im2(image2ROI(2):image2ROI(4),image2ROI(1):image2ROI(3),:,chan),[],3)), colormap gray, axis image
-%     hold on
-%     rect2 = rectangle('Position',[1,1,image2ROI(3)-image2ROI(1),image2ROI(4)-image2ROI(2)],'EdgeColor','r');
-end
+[imageROI1,imageROI2] = calculateOverlap(imageDataset1,imageDataset2);
 
-minXROI1 = image1ROI(1);
-maxXROI1 = image1ROI(3);
-minYROI1 = image1ROI(2);
-maxYROI1 = image1ROI(4);
-minXROI2 = image2ROI(1);
-maxXROI2 = image2ROI(3);
-minYROI2 = image2ROI(2);
-maxYROI2 = image2ROI(4);
+maxIterX = min(maxSearchSize,min(imageROI1(4)-imageROI1(1),imageROI2(4)-imageROI2(1)));
+maxIterY = min(maxSearchSize,min(imageROI1(5)-imageROI1(2),imageROI2(5)-imageROI2(2)));
 
-maxIterX = min(maxSearchSize,min(maxXROI1-minXROI1,maxXROI2-minXROI2));
-maxIterY = min(maxSearchSize,min(maxYROI1-minYROI1,maxYROI2-minYROI2));
-
-if (maxIterX<minOverlap*3 && maxIterY<minOverlap*3 || maxIterX<10 || maxIterY<10)
+if (maxIterX<minOverlap && maxIterY<minOverlap)
     ultimateDeltaX = 0;
     ultimateDeltaY = 0;
     ultimateDeltaZ = 0;
-    maxNcor = -inf;
+    maxNCV = -inf;
     overlapSize = 0;
     fprintf('Does not meet minimums\n');
     return
@@ -71,52 +39,17 @@ else
     fprintf('\n');
 end
 
-imMax1 = max(im1(minYROI1:maxYROI1,minXROI1:maxXROI1,:,chan),[],3);
-imMax2 = max(im2(minYROI2:maxYROI2,minXROI2:maxXROI2,:,chan),[],3);
+imMax1 = max(im1(:,:,:,chan),[],3);
+imMax2 = max(im2(:,:,:,chan),[],3);
 
-normCovar = zeros(maxIterY*2,maxIterX*2);
-
-% maxCovar = -inf;
-
+%% run 2-D case
 totalTm = tic;
-parfor deltaX = 1:maxIterX*2
-%     warning('Is not running as parfor, change line and comment out this message');
-    curDeltaX = deltaX-maxIterX;
-    xStart1 = max(1, 1+curDeltaX);
-    xStart2 = max(1, 1-curDeltaX);
-    xEnd1 = xStart1 + min(size(imMax1,2)-xStart1,size(imMax2,2)-xStart2);
-    xEnd2 = xStart2 + min(size(imMax2,2)-xStart2,size(imMax1,2)-xStart1);
-    
-    if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
-    if (xEnd1-xStart1<minOverlap), continue, end
-    
-    im1X = imMax1(:,xStart1:xEnd1);
-    im2X = imMax2(:,xStart2:xEnd2);
-    
-    normCoLine = zeros(maxIterY*2,1);
-    
-    for deltaY = 1:maxIterY*2
-        curDeltaY = deltaY-maxIterY;
-        yStart1 = max(1, 1+curDeltaY);
-        yStart2 = max(1, 1-curDeltaY);
-        yEnd1 = yStart1 + min(size(imMax1,1)-yStart1,size(imMax2,1)-yStart2);
-        yEnd2 = yStart2 + min(size(imMax2,1)-yStart2,size(imMax1,1)-yStart1);
-        
-        if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
-        if (yEnd1-yStart1<minOverlap), continue, end
-        
-        im1Y = im1X(yStart1:yEnd1,:);
-        im2Y = im2X(yStart2:yEnd2,:);
-        
-        normCoLine(deltaY) = CudaMex('NormalizedCovariance',im1Y,im2Y);
-        
-        
-%         if (visualize==1)
-%             maxCovar = updateXYviewer(rect1,rect2,xStart1,yStart1,xEnd1,yEnd1,xStart2,yStart2,xEnd2,yEnd2,im1Y,im2Y,maxCovar,normCoLine,deltaX,deltaY,maxIterX,maxIterY);
-%         end
-    end
-    
-    normCovar(:,deltaX) = normCoLine;
+
+if (visualize==1)
+    setupVisualizer(imMax1,imMax2,imageROI1,imageROI2,imageDataset1,imageDataset2);
+    normCovar = iterateOverXDraw(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0);
+else
+    normCovar = iterateOverX(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2));
 end
 
 tm = toc(totalTm);
@@ -125,112 +58,52 @@ tmNew = tm - hr*3600;
 mn = floor(tmNew/60);
 tmNew = tmNew - mn*60;
 sc = tmNew;
-fprintf('Total time: %d:%02d:%04.2f\n\t average per step %5.3f\n\t average per scan line %5.3f\n\n',hr,mn,sc,tm/(maxIterX*2*maxIterY*2),tm/(maxIterX*2));
+fprintf('Total time: %d:%02d:%04.2f\n\t average per step %5.3f\n\t average per scan line %5.3f\n\n',...
+    hr,mn,sc,tm/(maxIterX*2*maxIterY*2),tm/(maxIterX*2));
 
-[maxNcor,I] = max(normCovar(:));
+%% find the best answer and check results
+[maxNCV,I] = max(normCovar(:));
 [r,c] = ind2sub(size(normCovar),I);
 bestDeltaX = c-maxIterX;
 bestDeltaY = r-maxIterY;
 
-xStart1 = max(1, minXROI1+bestDeltaX);
-xStart2 = max(1, minXROI1-bestDeltaX);
-xEnd1 = xStart1 + min(size(im1,2)-xStart1, size(im2,2)-xStart2);
-xEnd2 = xStart2 + min(size(im2,2)-xStart2, size(im1,2)-xStart1);
-yStart1 = max(1, minYROI1+bestDeltaY);
-yStart2 = max(1, minYROI2-bestDeltaY);
-yEnd1 = yStart1 + min(size(im1,1)-yStart1, size(im2,1)-yStart2);
-yEnd2 = yStart2 + min(size(im2,1)-yStart2, size(im1,1)-yStart1);
+[xStart1,xStart2,xEnd1,xEnd2] = calculateROIs(bestDeltaX,imageROI1(1),imageROI2(1),size(im1,2),size(im2,2));
+[yStart1,yStart2,yEnd1,yEnd2] = calculateROIs(bestDeltaY,imageROI1(2),imageROI2(2),size(im1,1),size(im2,1));
 
-if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
-if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
-
-if (drawDecisionSurf==1)
-    co = CudaMex('NormalizedCovariance',max(im1(yStart1:yEnd1,xStart1:xEnd1,:,chan),[],3),max(im2(yStart2:yEnd2,xStart2:xEnd2,:,chan),[],3));
-    
-    figure
-    surf(normCovar,'EdgeColor','none');
-    hold on
-    text(c,r,maxNcor,sprintf('  \\Delta (%d,%d):%.3f',bestDeltaX,bestDeltaY,co),'Color','r','BackgroundColor','k','VerticalAlignment','bottom');
-    scatter3(c,r,maxNcor,'fill');
-    drawnow
+if (visualize==1)
+    set(Rect1,'Position',[xStart1,yStart1,xEnd1-xStart1,yEnd1-yStart1]);
+    set(Rect2,'Position',[xStart2,yStart2,xEnd2-xStart2,yEnd2-yStart2]);
 end
 
-imROI1 = squeeze(im1(yStart1:yEnd1,xStart1:xEnd1,:,chan));
-imROI2 = squeeze(im2(yStart2:yEnd2,xStart2:xEnd2,:,chan));
+curCovar = CudaMex('NormalizedCovariance',...
+    max(im1(yStart1:yEnd1,xStart1:xEnd1,:,chan),[],3),...
+    max(im2(yStart2:yEnd2,xStart2:xEnd2,:,chan),[],3));
 
-% if (visualize==1)
-%     figure(fig)
-%     maxCovar = -inf;
-%     subplot(5,2,5)
-%     imagesc(max(imROI1,[],3)), colormap gray, axis image
-%     hold on
-%     rect1 = rectangle('Position',[1,1,size(imROI1,2),size(imROI1,2)],'EdgeColor','r');
-%     
-%     subplot(5,2,6)
-%     imagesc(max(imROI2,[],3)), colormap gray, axis image
-%     hold on
-%     rect2 = rectangle('Position',[1,1,size(imROI2,2),size(imROI2,2)],'EdgeColor','r');
-% end
+if (maxNCV ~= curCovar)
+    warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
+end
 
-maxIterZ = floor(min(imageDataset1.ZDimension,imageDataset2.ZDimension)/2);
+if (showDecisionSurf || maxNCV~=curCovar)
+    drawDecisionSurf(normCovar,c,r,bestDeltaX,bestDeltaY,0,maxNCV,curCovar,1,imageDataset1,imageDataset2);
+end
+
+%% run 3-D case
+newROI1 = [xStart1,yStart1,imageROI1(3),xEnd1,yEnd1,imageROI1(6)];
+newROI2 = [xStart2,yStart2,imageROI2(3),xEnd2,yEnd2,imageROI2(6)];
+
+imC1 = squeeze(im1(:,:,:,chan));
+imC2 = squeeze(im2(:,:,:,chan));
+
+maxIterZ = floor(min(newROI1(6)-newROI1(3),newROI2(6)-newROI2(3))/2);
 maxIterX = 5;
 maxIterY = 5;
-normCovarZ = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
 totalTm = tic;
 
-%     warning('Is not running as parfor, change line and comment out this message');
-parfor deltaZ = 1:maxIterZ*2
-    curDeltaZ = deltaZ-maxIterZ;
-    zStart1 = max(1, 1+curDeltaZ);
-    zStart2 = max(1, 1-curDeltaZ);
-    zEnd1 = zStart1 + min(size(imROI1,3)-zStart1,size(imROI1,3)-zStart2);
-    zEnd2 = zStart2 + min(size(imROI1,3)-zStart2,size(imROI1,3)-zStart1);
-    
-    if (zEnd1-zStart1~=zEnd2-zStart2),error('Sizes dont`t match %d : %d!',zEnd1-zStart1,zEnd2-zStart2), end
-    
-    im1Z = imROI1(:,:,zStart1:zEnd1);
-    im2Z = imROI2(:,:,zStart2:zEnd2);
-    
-    normCoSquare = zeros(maxIterY*2,maxIterX*2);
-    for deltaX = 1:maxIterX*2
-        curDeltaX = deltaX-maxIterX;
-        xStart1 = max(1, 1+curDeltaX);
-        xStart2 = max(1, 1-curDeltaX);
-        xEnd1 = xStart1 + min(size(im1Z,2)-xStart1,size(im1Z,2)-xStart2);
-        xEnd2 = xStart2 + min(size(im2Z,2)-xStart2,size(im2Z,2)-xStart1);
-        
-        if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
-        if (xEnd1-xStart1<minOverlap), continue, end
-        
-        im1X = im1Z(:,xStart1:xEnd1,:);
-        im2X = im2Z(:,xStart2:xEnd2,:);
-        
-        normCoLine = zeros(maxIterY*2,1);
-        
-        for deltaY = 1:maxIterY*2
-            curDeltaY = deltaY-maxIterY;
-            yStart1 = max(1, 1+curDeltaY);
-            yStart2 = max(1, 1-curDeltaY);
-            yEnd1 = yStart1 + min(size(im1X,1)-yStart1,size(im1X,1)-yStart2);
-            yEnd2 = yStart2 + min(size(im2X,1)-yStart2,size(im2X,1)-yStart1);
-            
-            if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
-            if (yEnd1-yStart1<minOverlap), continue, end
-            
-            im1Y = im1X(yStart1:yEnd1,:,:);
-            im2Y = im2X(yStart2:yEnd2,:,:);
-            
-            normCoLine(deltaY) = CudaMex('NormalizedCovariance',im1Y,im2Y);
-            
-%             if (visualize==1)
-%                 maxCovar = updateXYviewer(rect1,rect2,xStart1,yStart1,xEnd1,yEnd1,xStart2,yStart2,xEnd2,yEnd2,im1Y,maxCovar,normCoLine,deltaX,deltaY,maxIterX,maxIterY);
-%             end
-        end
-        
-        normCoSquare(:,deltaX) = normCoLine;
-    end
-    
-    normCovarZ(:,:,deltaZ) = normCoSquare;
+if (visualize==1)
+    setupVisualizer(imMax1,imMax2,newROI1,newROI2,imageDataset1,imageDataset2);
+    normCovarZ = iterateOverZDraw(maxIterZ,maxIterX,maxIterY,imC1,imC2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),newROI2(3));
+else
+    normCovarZ = iterateOverZ(maxIterZ,maxIterX,maxIterY,imC1,imC2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),newROI2(3));
 end
 
 tm = toc(totalTm);
@@ -242,58 +115,209 @@ sc = tmNew;
 fprintf('Total time: %d:%02d:%04.2f\n\t average per step %5.3f\n\t average per scan line %5.3f\n\t average per scan box %5.3f\n\n',...
     hr,mn,sc,tm/(maxIterZ*2*maxIterX*2*maxIterY*2),tm/(maxIterZ*2*maxIterX*2),tm/(maxIterZ*2));
 
-[maxNcor,I] = max(normCovarZ(:));
+%% find the best answer and check
+[maxNcovZ,I] = max(normCovarZ(:));
 [r,c,z] = ind2sub(size(normCovarZ),I);
 
-ultimateDeltaX = bestDeltaX +maxIterX -c;
-ultimateDeltaY = bestDeltaY +maxIterY -r;
-ultimateDeltaZ = maxIterZ -z;
+ultimateDeltaX = bestDeltaX + c-maxIterX;
+ultimateDeltaY = bestDeltaY + r-maxIterY;
+ultimateDeltaZ = z - maxIterZ;
 
-xStart1 = max(1, minXROI1+ultimateDeltaX);
-xStart2 = max(1, minXROI1-ultimateDeltaX);
-xEnd1 = xStart1 + min(size(im1,2)-xStart1, size(im2,2)-xStart2);
-xEnd2 = xStart2 + min(size(im2,2)-xStart2, size(im1,2)-xStart1);
-yStart1 = max(1, minYROI1+ultimateDeltaY);
-yStart2 = max(1, minYROI2-ultimateDeltaY);
-yEnd1 = yStart1 + min(size(im1,1)-yStart1, size(im2,1)-yStart2);
-yEnd2 = yStart2 + min(size(im2,1)-yStart2, size(im1,1)-yStart1);
-zStart1 = max(1, 1+ultimateDeltaZ);
-zStart2 = max(1, 1-ultimateDeltaZ);
-zEnd1 = zStart1 + min(size(im1,3)-zStart1, size(im2,3)-zStart2);
-zEnd2 = zStart2 + min(size(im2,3)-zStart2, size(im1,3)-zStart1);
+if (c-maxIterX~=0 || r-maxIterY~=0)
+    fprintf('A better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', c-maxIterX,r-maxIterY,ultimateDeltaZ,maxNcovZ,maxNCV);
+end
 
-if (xEnd1-xStart1~=xEnd2-xStart2),error('Sizes dont`t match %d : %d!',xEnd1-xStart1,xEnd2-xStart2), end
-if (yEnd1-yStart1~=yEnd2-yStart2),error('Sizes dont`t match %d : %d!',yEnd1-yStart1,yEnd2-yStart2), end
-if (zEnd1-zStart1~=zEnd2-zStart2),error('Sizes dont`t match %d : %d!',zEnd1-zStart1,zEnd2-zStart2), end
+[xStart1,xStart2,xEnd1,xEnd2] = calculateROIs(ultimateDeltaX,imageROI1(1),imageROI2(1),size(im1,2),size(im2,2));
+[yStart1,yStart2,yEnd1,yEnd2] = calculateROIs(ultimateDeltaY,imageROI1(2),imageROI2(2),size(im1,1),size(im2,1));
+[zStart1,zStart2,zEnd1,zEnd2] = calculateROIs(ultimateDeltaZ,1,1,size(im1,3),size(im2,3));
+
+curCovar = CudaMex('NormalizedCovariance',...
+    max(im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,chan),[],3),...
+    max(im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,chan),[],3));
+
+if (maxNcovZ ~= curCovar)
+    warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
+    maxNcovZ = max(maxNcovZ,curCovar);
+end
+
+if (showDecisionSurf || c-maxIterX~=0 || r-maxIterY~=0 || maxNcovZ~=curCovar)
+    drawDecisionSurf(normCovarZ(:,:,z),c,r,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcovZ,curCovar,2,imageDataset1,imageDataset2);
+end
+
+if (visualize==1)
+    set(Rect1,'Position',[xStart1,yStart1,xEnd1-xStart1,yEnd1-yStart1]);
+    set(Rect2,'Position',[xStart2,yStart2,xEnd2-xStart2,yEnd2-yStart2]);
+    clear global normCovar normCovarZ Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
+end
 
 overlapSize = (xEnd1-xStart1) * (yEnd1-yStart1) * (zEnd1-zStart1);
 
-if (drawDecisionSurf==1)    
-    co = CudaMex('NormalizedCovariance',im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,chan),im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,chan));
+maxNCV = maxNcovZ;
+
+clear imROI1 imROI2
+end
+
+function normCoCube = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2)
+normCoCube = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
+
+parfor delta = 1:maxIterZ*2
+    curDelta = delta-maxIterZ;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,zStart1,zStart2,size(im1,3),size(im2,3));
     
-    figure
-    surf(normCovarZ(:,:,z),'EdgeColor','none');
-    hold on
-    text(c,r,maxNcor,sprintf('  \\Delta (%d,%d,%d):%.3f',ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,co),'Color','r','BackgroundColor','k','VerticalAlignment','bottom');
-    scatter3(c,r,maxNcor,'fill');
+    normCoCube(:,:,delta) = iterateOverX(maxIterX,maxIterY,im1(:,:,start1:end1),im2(:,:,start2:end2),xStart1,xStart2,yStart1,yStart2);
+end
+end
+
+function normCoCube = iterateOverZDraw(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2)
+normCoCube = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
+
+for delta = 1:maxIterZ*2
+    curDelta = delta-maxIterZ;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,zStart1,zStart2,size(im1,3),size(im2,3));
+    
+    normCoCube(:,:,delta) = iterateOverXDraw(maxIterX,maxIterY,im1(:,:,start1:end1),im2(:,:,start2:end2),xStart1,xStart2,yStart1,yStart2,curDelta);
+end
+end
+
+function normCoSquare = iterateOverX(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2)
+normCoSquare = zeros(maxIterY*2,maxIterX*2);
+parfor delta = 1:maxIterX*2
+    curDelta = delta-maxIterX;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,xStart1,xStart2,size(im1,2),size(im2,2));
+    
+    normCoSquare(:,delta) = iterateOverY(maxIterY,im1(:,start1:end1,:),im2(:,start2:end2,:),yStart1,yStart2);
+end
+end
+
+function normCoSquare = iterateOverXDraw(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,curDeltaZ)
+global Rect1 Rect2
+normCoSquare = zeros(maxIterY*2,maxIterX*2);
+for delta = 1:maxIterX*2
+    curDelta = delta-maxIterX;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,xStart1,xStart2,size(im1,2),size(im2,2));
+    pos1 = get(Rect1,'Position');
+    pos2 = get(Rect2,'Position');
+    set(Rect1,'Position',[start1,pos1(2),end1-start1,pos1(4)]);
+    set(Rect2,'Position',[start2,pos2(2),end2-start2,pos2(4)]);
+    
+    normCoSquare(:,delta) = iterateOverYDraw(maxIterY,im1(:,start1:end1,:),im2(:,start2:end2,:),curDelta,yStart1,yStart2,curDeltaZ);
+end
+end
+
+function normCoLine = iterateOverY(maxIterY,im1,im2,yStart1,yStart2)
+normCoLine = zeros(maxIterY*2,1);
+
+parfor delta = 1:maxIterY*2
+    curDelta = delta-maxIterY;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,yStart1,yStart2,size(im1,1),size(im2,1));
+    
+    normCoLine(delta) = CudaMex('NormalizedCovariance',im1(start1:end1,:,:),im2(start2:end2,:,:));
+end
+end
+
+function normCoLine = iterateOverYDraw(maxIterY,im1,im2,curDeltaX,yStart1,yStart2,curDeltaZ)
+global Rect1 Rect2
+normCoLine = zeros(maxIterY*2,1);
+
+for delta = 1:maxIterY*2
+    curDelta = delta-maxIterY;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,yStart1,yStart2,size(im1,1),size(im2,1));
+    
+    normCoLine(delta) = CudaMex('NormalizedCovariance',im1(start1:end1,:,:),im2(start2:end2,:,:));
+    pos1 = get(Rect1,'Position');
+    pos2 = get(Rect2,'Position');
+    set(Rect1,'Position',[pos1(1),start1,pos1(3),end1-start1]);
+    set(Rect2,'Position',[pos2(1),start2,pos2(3),end2-start2]);
+    updateXYviewer(im1(start1:end1,:,:),im2(start2:end2,:,:),normCoLine(delta),curDeltaX,curDelta,curDeltaZ);
+end
+end
+
+function [start1,start2,end1,end2] = calculateROIs(delta,oldStart1,oldStart2,size1,size2)
+if (oldStart1==1 && oldStart2~=1)
+    start1 = 1;
+else
+    start1 = max(1, oldStart1+delta);
+end
+
+if (oldStart2==1 && oldStart1~=1)
+    start2 = 1;
+else
+    start2 = max(1, oldStart2-delta);
+end
+
+minSize = min(size1-start1,size2-start2);
+end1 = start1 + minSize;
+end2 = start2 + minSize;
+
+if (end1-start1~=end2-start2),error('Sizes dont`t match %d : %d!',end1-start1,end2-start2), end
+end
+
+function setupVisualizer(im1,im2,image1ROI,image2ROI,imageData1,imageData2)
+global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar
+
+MaxCovar = -inf;
+Fig = figure;
+
+SubImOrg1 = subplot(2,2,1);
+imagesc(im1,'Parent',SubImOrg1);
+colormap(SubImOrg1,'gray');
+axis(SubImOrg1,'image');
+hold(SubImOrg1);
+rectangle('Position',[image1ROI(1),image1ROI(2),image1ROI(4)-image1ROI(1),image1ROI(5)-image1ROI(2)],'EdgeColor','r','Parent',SubImOrg1);
+Rect1 = rectangle('Position',[image1ROI(1),image1ROI(2),image1ROI(4)-image1ROI(1),image1ROI(5)-image1ROI(2)],'EdgeColor','g','Parent',SubImOrg1);
+title(SubImOrg1,imageData1.DatasetName,'Interpreter','none');
+
+SubImOrg2 = subplot(2,2,2);
+imagesc(im2,'Parent',SubImOrg2);
+colormap(SubImOrg2,'gray');
+axis(SubImOrg2,'image');
+hold(SubImOrg2);
+rectangle('Position',[image2ROI(1),image2ROI(2),image2ROI(4)-image2ROI(1),image2ROI(5)-image2ROI(2)],'EdgeColor','r','Parent',SubImOrg2);
+Rect2 = rectangle('Position',[image2ROI(1),image2ROI(2),image2ROI(4)-image2ROI(1),image2ROI(5)-image2ROI(2)],'EdgeColor','g','Parent',SubImOrg2);
+title(SubImOrg2,imageData2.DatasetName,'Interpreter','none');
+
+SubImBest1 = subplot(2,2,3);
+SubImBest2 = subplot(2,2,4);
+end
+
+function updateXYviewer(im1,im2,normCovar,curDeltaX,curDeltaY,curDeltaZ)
+global MaxCovar SubImBest1 SubImBest2
+
+if (MaxCovar<normCovar)
+    MaxCovar = normCovar;
+    imagesc(max(im1,[],3),'Parent',SubImBest1)
+    colormap(SubImBest1,'gray')
+    axis(SubImBest1,'image')
+    imagesc(max(im2,[],3),'Parent',SubImBest2)
+    colormap(SubImBest2,'gray')
+    axis(SubImBest2,'image')
+    titleText = sprintf('Best Deltas (%d,%d,%d):%1.3f',curDeltaX,curDeltaY,curDeltaZ,normCovar);
+    title(SubImBest1,titleText);
+    title(SubImBest2,titleText);
+end
+
+if (mod(curDeltaY,5)==0)
     drawnow
 end
 end
 
-% function maxCovar = updateXYviewer(rect1,rect2,xStart1,yStart1,xEnd1,yEnd1,xStart2,yStart2,xEnd2,yEnd2,im1Y,im2Y,maxCovar,normCoLine,deltaX,deltaY,maxIterX,maxIterY)
-% set(rect1,'Position',[xStart1,yStart1,xEnd1-xStart1,yEnd1-yStart1]);
-% set(rect2,'Position',[xStart2,yStart2,xEnd2-xStart2,yEnd2-yStart2]);
-% subplot(5,2,7)
-% imagesc(max(im1Y,[],3)),colormap gray, axis image
-% subplot(5,2,8)
-% imagesc(max(im2Y,[],3)),colormap gray, axis image
-% if (maxCovar<normCoLine(deltaY))
-%     maxCovar = normCoLine(deltaY);
-%     subplot(5,2,9)
-%     imagesc(max(im1Y,[],3)),colormap gray, axis image
-%     subplot(5,2,10)
-%     imagesc(max(im2Y,[],3)),colormap gray, axis image
-%     title(sprintf('(%d,%d):%1.3f',deltaX-maxIterX,deltaY-maxIterY,maxCovar));
-% end
-% drawnow
-% end
+function drawDecisionSurf(decisionArray,c,r,deltaX,deltaY,deltaZ,covariance1,covariance2,subPlotIdx,imageDataset1,imageDataset2)
+global DecisionFig DecisionAxes
+if (isempty(DecisionFig))
+    DecisionFig = figure;
+    subplot1 = subplot(1,2,1);
+    title(subplot1,imageDataset1.DatasetName,'Interpreter','none');
+    subplot2 = subplot(1,2,2);
+    title(subplot2,imageDataset2.DatasetName,'Interpreter','none');
+    DecisionAxes = [subplot1, subplot2];
+end
+
+surf(decisionArray,'EdgeColor','none','Parent',DecisionAxes(subPlotIdx));
+hold(DecisionAxes(subPlotIdx))
+text(c,r,covariance1,sprintf('  \\Delta (%d,%d,%d):%.3f',deltaX,deltaY,deltaZ,covariance2),...
+    'Color','r','BackgroundColor','k','VerticalAlignment','bottom','Parent',DecisionAxes(subPlotIdx));
+
+scatter3(c,r,covariance1,'fill','Parent',DecisionAxes(subPlotIdx));
+drawnow
+hold off
+end

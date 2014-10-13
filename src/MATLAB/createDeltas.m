@@ -1,6 +1,9 @@
 function imageDatasets = createDeltas(imageDatasets,chan)
+global minOverlap
 
+minOverlap = 50;
 n = length(imageDatasets);
+n = floor(n/4);
 
 edges = struct(...
     'normCovar',{},...
@@ -25,12 +28,11 @@ for i=1:n
         [imageDataset2,~] = readMetaData(fullfile(imageDatasets(j).imageDir,[imageDatasets(j).DatasetName,'.txt']));
         [image1ROI,image2ROI] = calculateOverlap(imageDataset1,imageDataset2);
         
-        if (any(image1ROI<1) || any(image2ROI<1)), continue, end
+        if (any(image1ROI([4,5])<minOverlap) || any(image2ROI([4,5])<minOverlap)), continue, end
         
         [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
         [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir);        
-        [deltaX,deltaY,deltaZ,normCovar,overlapSize]...
-            = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,10);
+        [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,10,100);
         edges(c).normCovar = normCovar;
         edges(c).deltaX = deltaX;
         edges(c).deltaY = deltaY;
@@ -41,18 +43,25 @@ for i=1:n
         
         nodes1(c) = i;
         nodes2(c) = j;
-        W(c) = -normCovar;
+        W(c) = normCovar;
         c = c+1;
     end
     fprintf('%s took:%4.3f sec\n',imageDatasets(i).DatasetName,toc(static));
 end
-fprintf('Graph took:%5.3f sec\n',toc(makeGraph));
+tm = toc(makeGraph);
+hr = floor(tm/3600);
+tmNew = tm - hr*3600;
+mn = floor(tmNew/60);
+tmNew = tmNew - mn*60;
+sc = tmNew;
+fprintf('Graph creation took: %d:%02d:%04.2f\n\t average per edge %5.3f sec\n\n',hr,mn,sc,tm/c);
 
 idx = find(nodes1~=0);
-
 nodes1 = nodes1(idx);
 nodes2 = nodes2(idx);
 W = W(idx);
+goodEdges = edges(idx);
+
 DG = sparse(nodes1,nodes2,W,n,n);
 UG = tril(DG + DG');
 view(biograph(UG,[],'ShowArrows','off','ShowWeights','on'));
