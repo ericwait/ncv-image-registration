@@ -32,3 +32,6 @@ _ReSharper*/
 *.opensdf
 *.sdf
 src/MATLAB/movieFiles
+*.avi
+*.mpeg
+*.mp4
