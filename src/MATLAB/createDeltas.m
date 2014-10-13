@@ -3,7 +3,6 @@ global minOverlap
 
 minOverlap = 50;
 n = length(imageDatasets);
-n = floor(n/4);
 
 edges = struct(...
     'normCovar',{},...
@@ -66,11 +65,19 @@ DG = sparse(nodes1,nodes2,W,n,n);
 UG = tril(DG + DG');
 view(biograph(UG,[],'ShowArrows','off','ShowWeights','on'));
 
-W = W - min(W(:)) + 0.001;
+minW = max(W(:)) - W + 0.001;
 
-DG = sparse(nodes1,nodes2,W,n,n);
+DG = sparse(nodes1,nodes2,minW,n,n);
 UG = tril(DG + DG');
 [ST,pred] = graphminspantree(UG);
+
+minTree = [pred;1:length(pred)].';
+minTree = minTree(minTree(:,1)~=0,:);
+DG = sparse(nodes1,nodes2,W,n,n);
+UG = (DG + DG');
+idx = sub2ind(size(UG),minTree(:,1),minTree(:,2));
+ST = sparse(minTree(:,1),minTree(:,2),UG(idx),n,n);
+
 view(biograph(ST,[],'ShowArrows','off','ShowWeights','on'));
 
 edges = applyParentDeltas(ST,0,1,0,0,0,edges);
