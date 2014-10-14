@@ -12,19 +12,24 @@ names = cellfun(@(x)([x '.']),names,'uniformOutput',0);
 for i=1:length(imageDatasets)
     filename = fullfile(root,[imageDatasets(i).DatasetName '_corrResults.txt']);
    
-    if ~exist(filename,'file')
-        continue
+    if exist(filename,'file') 
+        deltasPresent = 1;
+        fid = fopen(filename,'rt');
+        data = fscanf(fid,'deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%f\n');
+        deltaParent = [strtrim(fscanf(fid,'Parent:%255c\n')) '.'];
+        fclose(fid);
+        
+        imageDatasets(i).xDelta = data(1);
+        imageDatasets(i).yDelta = data(2);
+        imageDatasets(i).zDelta = data(3);
+        imageDatasets(i).NCV = data(4);
+    else
+        deltaParent = '';
+        imageDatasets(i).xDelta = 0;
+        imageDatasets(i).yDelta = 0;
+        imageDatasets(i).zDelta = 0;
+        imageDatasets(i).NCV = 0;
     end
-
-    deltasPresent = 1;
-    fid = fopen(filename,'rt');
-    data = fscanf(fid,'deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nMaxCorr:%f\n');
-    deltaParent = [strtrim(fscanf(fid,'Parent:%255c\n')) '.'];
-    fclose(fid);
-    
-    imageDatasets(i).xDelta = data(2);
-    imageDatasets(i).yDelta = data(1);
-    imageDatasets(i).zDelta = data(3);
     
     imageDatasets(i).xMinPos = ...
         imageDatasets(i).xDelta * imageDatasets(i).XPixelPhysicalSize + imageDatasets(i).YPosition*1e6;
