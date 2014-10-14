@@ -59,28 +59,31 @@ idx = find(nodes1~=0);
 nodes1 = nodes1(idx);
 nodes2 = nodes2(idx);
 W = W(idx);
-goodEdges = edges(idx);
 
 DG = sparse(nodes1,nodes2,W,n,n);
 UG = tril(DG + DG');
-view(biograph(UG,[],'ShowArrows','off','ShowWeights','on'));
+
+if (visualize)
+    view(biograph(UG,[],'ShowArrows','off','ShowWeights','on'));
+end
 
 minW = max(W(:)) - W + 0.001;
-
 DG = sparse(nodes1,nodes2,minW,n,n);
 UG = tril(DG + DG');
-[ST,pred] = graphminspantree(UG);
+[~,pred] = graphminspantree(UG);
 
-minTree = [pred;1:length(pred)].';
-minTree = minTree(minTree(:,1)~=0,:);
-DG = sparse(nodes1,nodes2,W,n,n);
-UG = (DG + DG');
-idx = sub2ind(size(UG),minTree(:,1),minTree(:,2));
-ST = sparse(minTree(:,1),minTree(:,2),UG(idx),n,n);
+if (visualize)
+    minTree = [pred;1:length(pred)].';
+    minTree = minTree(minTree(:,1)~=0,:);
+    DG = sparse(nodes1,nodes2,W,n,n);
+    UG = (DG + DG');
+    idx = sub2ind(size(UG),minTree(:,1),minTree(:,2));
+    ST = sparse(minTree(:,1),minTree(:,2),UG(idx),n,n);
+    
+    view(biograph(ST,[],'ShowArrows','off','ShowWeights','on'));
+end
 
-view(biograph(ST,[],'ShowArrows','off','ShowWeights','on'));
-
-edges = applyParentDeltas(ST,0,1,0,0,0,edges);
+save(fullfile(imageDatasets(i).imageDir,'graphEdges.mat'),'edges');
 
 for i=1:n
     parentNode = pred(i);
@@ -88,7 +91,7 @@ for i=1:n
         deltaX = 0;
         deltaY = 0;
         deltaZ = 0;
-        maxCorr = 0.0;
+        ncv = 0.0;
         parent = imageDatasets(i).DatasetName;
     else
         if (parentNode<i)
@@ -99,14 +102,15 @@ for i=1:n
         deltaX = edges(edgeIdx).deltaX;
         deltaY = edges(edgeIdx).deltaY;
         deltaZ = edges(edgeIdx).deltaZ;
-        maxCorr = edges(edgeIdx).normCovar;
+        ncv = edges(edgeIdx).normCovar;
         parent = imageDatasets(parentNode).DatasetName;
     end
+    
     f = fopen(fullfile(imageDatasets(i).imageDir,'..',[imageDatasets(i).DatasetName,'_corrResults.txt']),'w');
     fprintf(f,'deltaX:%d\n',deltaX);
     fprintf(f,'deltaY:%d\n',deltaY);
     fprintf(f,'deltaZ:%d\n',deltaZ);
-    fprintf(f,'MaxCorr:%f\n',maxCorr);
+    fprintf(f,'NCV:%f\n',ncv);
     fprintf(f,'Parent:%s\n',parent);
     fclose(f);
 end
