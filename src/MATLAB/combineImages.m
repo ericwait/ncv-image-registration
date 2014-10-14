@@ -92,8 +92,8 @@ clear im
 %for chan=1:imageData.NumberOfChannels
 for chan=[3,5]
     chanStart = tic;
-    outImage = zeros(imageWidth,imageHeight,imageDepth,w.class);
-    outImageColor = zeros(imageWidth,imageHeight,imageDepth,w.class);
+    outImage = zeros(imageHeight,imageWidth,imageDepth,w.class);
+    outImageColor = zeros(imageHeight,imageWidth,imageDepth,w.class);
     fprintf('Chan:%d\n',chan);
     for datasetIdx=1:length(imageDatasets)
         if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
@@ -108,7 +108,7 @@ for chan=[3,5]
                 startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,2))-1,...
                 startZind+min(imageDatasets(datasetIdx).ZDimension,size(nextIm,3))-1];
             
-            outRoi = outImage(roi(1):roi(4),roi(2):roi(5),roi(3):roi(6));
+            outRoi = outImage(roi(2):roi(5),roi(1):roi(4),roi(3):roi(6));
             difInd = outRoi>0;
             nextSum = sum(sum(sum(nextIm(difInd))));
             outSum = sum(sum(sum(outRoi(difInd))));
@@ -119,14 +119,14 @@ for chan=[3,5]
             
             clear outRoi
             
-            outImage(roi(1):roi(4),roi(2):roi(5),roi(3):roi(6)) = nextIm;
+            outImage(roi(2):roi(5),roi(1):roi(4),roi(3):roi(6)) = nextIm;
             
             clear nextIm
             
-            outImageColor(startXind:startXind+imageDatasets(datasetIdx).XDimension-1,...
-                startYind:startYind+imageDatasets(datasetIdx).YDimension-1,...
-                startZind:startZind+imageDatasets(datasetIdx).ZDimension-1) = ones(imageDatasets(datasetIdx).XDimension,...
-                imageDatasets(datasetIdx).YDimension,imageDatasets(datasetIdx).ZDimension)*datasetIdx;
+            outImageColor(startYind:startYind+imageDatasets(datasetIdx).YDimension-1,...
+                startXind:startXind+imageDatasets(datasetIdx).XDimension-1,...
+                startZind:startZind+imageDatasets(datasetIdx).ZDimension-1) = ones(imageDatasets(datasetIdx).YDimension,...
+                imageDatasets(datasetIdx).XDimension,imageDatasets(datasetIdx).ZDimension)*datasetIdx;
         end
     end
     

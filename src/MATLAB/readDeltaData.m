@@ -27,13 +27,13 @@ for i=1:length(imageDatasets)
     imageDatasets(i).zDelta = data(3);
     
     imageDatasets(i).xMinPos = ...
-        imageDatasets(i).xDelta * imageDatasets(i).XPixelPhysicalSize + imageDatasets(i).XPosition*1e6;
+        imageDatasets(i).xDelta * imageDatasets(i).XPixelPhysicalSize + imageDatasets(i).YPosition*1e6;
     
     imageDatasets(i).xMaxPos = ...
         imageDatasets(i).xMinPos + imageDatasets(i).XDimension * imageDatasets(i).XPixelPhysicalSize;
     
     imageDatasets(i).yMinPos = ...
-        imageDatasets(i).yDelta * imageDatasets(i).YPixelPhysicalSize + imageDatasets(i).YPosition*1e6;
+        imageDatasets(i).yDelta * imageDatasets(i).YPixelPhysicalSize + imageDatasets(i).XPosition*1e6;
     
     imageDatasets(i).yMaxPos = ...
         imageDatasets(i).yMinPos + imageDatasets(i).YDimension * imageDatasets(i).YPixelPhysicalSize;
