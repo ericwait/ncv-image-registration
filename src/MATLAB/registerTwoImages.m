@@ -83,7 +83,7 @@ if (maxNCV ~= curCovar)
     warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
 end
 
-if (showDecisionSurf || maxNCV~=curCovar)
+if (showDecisionSurf)% || maxNCV~=curCovar)
     drawDecisionSurf(normCovar,c,r,bestDeltaX,bestDeltaY,0,maxNCV,curCovar,1,imageDataset1,imageDataset2);
 end
 
@@ -140,7 +140,7 @@ if (maxNcovZ ~= curCovar)
     maxNcovZ = max(maxNcovZ,curCovar);
 end
 
-if (showDecisionSurf || c-maxIterX~=0 || r-maxIterY~=0 || maxNcovZ~=curCovar)
+if (showDecisionSurf)% || c-maxIterX~=0 || r-maxIterY~=0 || maxNcovZ~=curCovar)
     drawDecisionSurf(normCovarZ(:,:,z),c,r,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcovZ,curCovar,2,imageDataset1,imageDataset2);
 end
 
@@ -319,5 +319,5 @@ text(c,r,covariance1,sprintf('  \\Delta (%d,%d,%d):%.3f',deltaX,deltaY,deltaZ,co
 
 scatter3(c,r,covariance1,'fill','Parent',DecisionAxes(subPlotIdx));
 drawnow
-hold off
+hold(DecisionAxes(subPlotIdx),'off');
 end
