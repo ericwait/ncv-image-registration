@@ -96,12 +96,14 @@ for i=1:n
     else
         if (parentNode<i)
             edgeIdx = find([edges(:).nodeIdx1]==parentNode & [edges(:).nodeIdx2]==i);
+            sgn = 1;
         else
             edgeIdx = find([edges(:).nodeIdx2]==parentNode & [edges(:).nodeIdx1]==i);
+            sgn = -1;
         end
-        deltaX = edges(edgeIdx).deltaX;
-        deltaY = edges(edgeIdx).deltaY;
-        deltaZ = edges(edgeIdx).deltaZ;
+        deltaX = sgn*edges(edgeIdx).deltaX;
+        deltaY = sgn*edges(edgeIdx).deltaY;
+        deltaZ = sgn*edges(edgeIdx).deltaZ;
         ncv = edges(edgeIdx).normCovar;
         parent = imageDatasets(parentNode).DatasetName;
     end
