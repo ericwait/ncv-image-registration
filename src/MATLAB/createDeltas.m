@@ -1,4 +1,4 @@
-function imageDatasets = createDeltas(imageDatasets,chan)
+function imageDatasets = createDeltas(imageDatasets,chan,visualize)
 global minOverlap
 
 minOverlap = 50;
@@ -31,7 +31,7 @@ for i=1:n
         
         [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
         [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir);        
-        [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,10,100);
+        [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,10,100,visualize,visualize);
         edges(c).normCovar = normCovar;
         edges(c).deltaX = deltaX;
         edges(c).deltaY = deltaY;
