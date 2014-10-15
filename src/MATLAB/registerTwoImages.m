@@ -157,14 +157,15 @@ maxNCV = maxNcovZ;
 clear imROI1 imROI2
 end
 
-function normCoCube = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2)
+function normCoCube = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2,minOverlap)
 normCoCube = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
 
 parfor delta = 1:maxIterZ*2
     curDelta = delta-maxIterZ;
     [start1,start2,end1,end2] = calculateROIs(curDelta,zStart1,zStart2,size(im1,3),size(im2,3));
+    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
-    normCoCube(:,:,delta) = iterateOverX(maxIterX,maxIterY,im1(:,:,start1:end1),im2(:,:,start2:end2),xStart1,xStart2,yStart1,yStart2);
+    normCoCube(:,:,delta) = iterateOverX(maxIterX,maxIterY,im1(:,:,start1:end1),im2(:,:,start2:end2),xStart1,xStart2,yStart1,yStart2,minOverlap);
 end
 end
 
@@ -174,6 +175,7 @@ normCoCube = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
 for delta = 1:maxIterZ*2
     curDelta = delta-maxIterZ;
     [start1,start2,end1,end2] = calculateROIs(curDelta,zStart1,zStart2,size(im1,3),size(im2,3));
+    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
     normCoCube(:,:,delta) = iterateOverXDraw(maxIterX,maxIterY,im1(:,:,start1:end1),im2(:,:,start2:end2),xStart1,xStart2,yStart1,yStart2,curDelta);
 end
@@ -184,6 +186,7 @@ normCoSquare = zeros(maxIterY*2,maxIterX*2);
 parfor delta = 1:maxIterX*2
     curDelta = delta-maxIterX;
     [start1,start2,end1,end2] = calculateROIs(curDelta,xStart1,xStart2,size(im1,2),size(im2,2));
+    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
     normCoSquare(:,delta) = iterateOverY(maxIterY,im1(:,start1:end1,:),im2(:,start2:end2,:),yStart1,yStart2);
 end
@@ -195,6 +198,8 @@ normCoSquare = zeros(maxIterY*2,maxIterX*2);
 for delta = 1:maxIterX*2
     curDelta = delta-maxIterX;
     [start1,start2,end1,end2] = calculateROIs(curDelta,xStart1,xStart2,size(im1,2),size(im2,2));
+    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
+    
     pos1 = get(Rect1,'Position');
     pos2 = get(Rect2,'Position');
     set(Rect1,'Position',[start1,pos1(2),end1-start1,pos1(4)]);
@@ -210,8 +215,10 @@ normCoLine = zeros(maxIterY*2,1);
 parfor delta = 1:maxIterY*2
     curDelta = delta-maxIterY;
     [start1,start2,end1,end2] = calculateROIs(curDelta,yStart1,yStart2,size(im1,1),size(im2,1));
+    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
     normCoLine(delta) = CudaMex('NormalizedCovariance',im1(start1:end1,:,:),im2(start2:end2,:,:));
+    if (normCoLine(delta)>1 || normCoLine(delta)<-1), warning('Recived a NCV out of bounds: %f',normCoLine(delta)); end
 end
 end
 
@@ -222,8 +229,11 @@ normCoLine = zeros(maxIterY*2,1);
 for delta = 1:maxIterY*2
     curDelta = delta-maxIterY;
     [start1,start2,end1,end2] = calculateROIs(curDelta,yStart1,yStart2,size(im1,1),size(im2,1));
+    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
     normCoLine(delta) = CudaMex('NormalizedCovariance',im1(start1:end1,:,:),im2(start2:end2,:,:));
+    if (normCoLine(delta)>1 || normCoLine(delta)<-1), warning('Recived a NCV out of bounds: %f',normCoLine(delta)); end
+    
     pos1 = get(Rect1,'Position');
     pos2 = get(Rect2,'Position');
     set(Rect1,'Position',[pos1(1),start1,pos1(3),end1-start1]);
