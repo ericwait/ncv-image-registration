@@ -47,9 +47,9 @@ totalTm = tic;
 
 if (visualize==1)
     setupVisualizer(imMax1,imMax2,imageROI1,imageROI2,imageDataset1,imageDataset2);
-    normCovar = iterateOverXDraw(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0);
+    normCovar = iterateOverXDraw(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap);
 else
-    normCovar = iterateOverX(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2));
+    normCovar = iterateOverX(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),minOverlap);
 end
 
 tm = toc(totalTm);
@@ -101,9 +101,9 @@ totalTm = tic;
 
 if (visualize==1)
     setupVisualizer(imMax1,imMax2,newROI1,newROI2,imageDataset1,imageDataset2);
-    normCovarZ = iterateOverZDraw(maxIterZ,maxIterX,maxIterY,imC1,imC2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),newROI2(3));
+    normCovarZ = iterateOverZDraw(maxIterZ,maxIterX,maxIterY,imC1,imC2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),newROI2(3),minOverlap);
 else
-    normCovarZ = iterateOverZ(maxIterZ,maxIterX,maxIterY,imC1,imC2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),newROI2(3));
+    normCovarZ = iterateOverZ(maxIterZ,maxIterX,maxIterY,imC1,imC2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),newROI2(3),minOverlap);
 end
 
 tm = toc(totalTm);
@@ -169,7 +169,7 @@ parfor delta = 1:maxIterZ*2
 end
 end
 
-function normCoCube = iterateOverZDraw(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2)
+function normCoCube = iterateOverZDraw(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2,minOverlap)
 normCoCube = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
 
 for delta = 1:maxIterZ*2
@@ -177,22 +177,22 @@ for delta = 1:maxIterZ*2
     [start1,start2,end1,end2] = calculateROIs(curDelta,zStart1,zStart2,size(im1,3),size(im2,3));
     if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
-    normCoCube(:,:,delta) = iterateOverXDraw(maxIterX,maxIterY,im1(:,:,start1:end1),im2(:,:,start2:end2),xStart1,xStart2,yStart1,yStart2,curDelta);
+    normCoCube(:,:,delta) = iterateOverXDraw(maxIterX,maxIterY,im1(:,:,start1:end1),im2(:,:,start2:end2),xStart1,xStart2,yStart1,yStart2,curDelta,minOverlap);
 end
 end
 
-function normCoSquare = iterateOverX(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2)
+function normCoSquare = iterateOverX(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,minOverlap)
 normCoSquare = zeros(maxIterY*2,maxIterX*2);
 parfor delta = 1:maxIterX*2
     curDelta = delta-maxIterX;
     [start1,start2,end1,end2] = calculateROIs(curDelta,xStart1,xStart2,size(im1,2),size(im2,2));
     if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
-    normCoSquare(:,delta) = iterateOverY(maxIterY,im1(:,start1:end1,:),im2(:,start2:end2,:),yStart1,yStart2);
+    normCoSquare(:,delta) = iterateOverY(maxIterY,im1(:,start1:end1,:),im2(:,start2:end2,:),yStart1,yStart2,minOverlap);
 end
 end
 
-function normCoSquare = iterateOverXDraw(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,curDeltaZ)
+function normCoSquare = iterateOverXDraw(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,curDeltaZ,minOverlap)
 global Rect1 Rect2
 normCoSquare = zeros(maxIterY*2,maxIterX*2);
 for delta = 1:maxIterX*2
@@ -205,11 +205,11 @@ for delta = 1:maxIterX*2
     set(Rect1,'Position',[start1,pos1(2),end1-start1,pos1(4)]);
     set(Rect2,'Position',[start2,pos2(2),end2-start2,pos2(4)]);
     
-    normCoSquare(:,delta) = iterateOverYDraw(maxIterY,im1(:,start1:end1,:),im2(:,start2:end2,:),curDelta,yStart1,yStart2,curDeltaZ);
+    normCoSquare(:,delta) = iterateOverYDraw(maxIterY,im1(:,start1:end1,:),im2(:,start2:end2,:),curDelta,yStart1,yStart2,curDeltaZ,minOverlap);
 end
 end
 
-function normCoLine = iterateOverY(maxIterY,im1,im2,yStart1,yStart2)
+function normCoLine = iterateOverY(maxIterY,im1,im2,yStart1,yStart2,minOverlap)
 normCoLine = zeros(maxIterY*2,1);
 
 parfor delta = 1:maxIterY*2
@@ -222,7 +222,7 @@ parfor delta = 1:maxIterY*2
 end
 end
 
-function normCoLine = iterateOverYDraw(maxIterY,im1,im2,curDeltaX,yStart1,yStart2,curDeltaZ)
+function normCoLine = iterateOverYDraw(maxIterY,im1,im2,curDeltaX,yStart1,yStart2,curDeltaZ,minOverlap)
 global Rect1 Rect2
 normCoLine = zeros(maxIterY*2,1);
 
