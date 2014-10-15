@@ -218,7 +218,10 @@ parfor delta = 1:maxIterY*2
     if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
     normCoLine(delta) = CudaMex('NormalizedCovariance',im1(start1:end1,:,:),im2(start2:end2,:,:));
-    if (normCoLine(delta)>1 || normCoLine(delta)<-1), warning('Recived a NCV out of bounds: %f',normCoLine(delta)); end
+    if (normCoLine(delta)>1 || normCoLine(delta)<-1)
+        warning('Recived a NCV out of bounds: %f',normCoLine(delta));
+        normCoLine(delta) = 0;
+    end
 end
 end
 
@@ -232,13 +235,17 @@ for delta = 1:maxIterY*2
     if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
     
     normCoLine(delta) = CudaMex('NormalizedCovariance',im1(start1:end1,:,:),im2(start2:end2,:,:));
-    if (normCoLine(delta)>1 || normCoLine(delta)<-1), warning('Recived a NCV out of bounds: %f',normCoLine(delta)); end
     
     pos1 = get(Rect1,'Position');
     pos2 = get(Rect2,'Position');
     set(Rect1,'Position',[pos1(1),start1,pos1(3),end1-start1]);
     set(Rect2,'Position',[pos2(1),start2,pos2(3),end2-start2]);
     updateXYviewer(im1(start1:end1,:,:),im2(start2:end2,:,:),normCoLine(delta),curDeltaX,curDelta,curDeltaZ);
+    
+    if (normCoLine(delta)>1 || normCoLine(delta)<-1)
+        warning('Recived a NCV out of bounds: %f',normCoLine(delta));
+        normCoLine(delta) = 0;
+    end
 end
 end
 
