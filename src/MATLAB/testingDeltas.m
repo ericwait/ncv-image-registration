@@ -62,7 +62,9 @@ for i=1:length(imageDatasets)
         (imageDatasets(imageDatasets(i).ParentDelta).yMinPos-minYPos)/imageDatasets(imageDatasets(i).ParentDelta).YPixelPhysicalSize + imageDatasets(imageDatasets(i).ParentDelta).YDimension/2];
     
     text(centerCur(1)+20,centerCur(2)-20,num2str(i),'color','r','FontSize',14,'BackgroundColor',gry,'Parent',axisHandle);
-    text((centerParent(1)+centerCur(1))/2,(centerParent(2)+centerCur(2))/2,num2str(imageDatasets(i).NCV),'color','b','FontSize',10,'BackgroundColor',gry,'Parent',axisHandle);
+    text((centerParent(1)+centerCur(1))/2,(centerParent(2)+centerCur(2))/2,...
+        sprintf('(%d,%d,%d):%04.2f',imageDatasets(i).xDelta,imageDatasets(i).yDelta,imageDatasets(i).zDelta,imageDatasets(i).NCV),...
+        'color',[0.749,0.749,0],'FontSize',10,'BackgroundColor',gry,'Parent',axisHandle);
 end
 
 title(axisHandle,sprintf('Cannel:%d',chan),'Interpreter','none','Color','w');
