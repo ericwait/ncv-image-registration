@@ -55,6 +55,8 @@ tmNew = tmNew - mn*60;
 sc = tmNew;
 fprintf('Graph creation took: %d:%02d:%04.2f\n\t average per edge %5.3f sec\n\n',hr,mn,sc,tm/c);
 
+save(fullfile(imageDatasets(i).imageDir,'..','graphEdges.mat'),'edges');
+
 idx = find(nodes1~=0);
 nodes1 = nodes1(idx);
 nodes2 = nodes2(idx);
@@ -82,8 +84,6 @@ if (visualize)
     
     view(biograph(ST,[],'ShowArrows','off','ShowWeights','on'));
 end
-
-save(fullfile(imageDatasets(i).imageDir,'graphEdges.mat'),'edges');
 
 for i=1:n
     parentNode = pred(i);
