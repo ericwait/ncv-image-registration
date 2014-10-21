@@ -91,7 +91,7 @@ fclose(fid);
 
 
 for z=1:size(im1,3)
-    imageNameStr = '_c%d_t%04d_z%04d.tif';
+    imageNameStr = '_c%02d_t%04d_z%04d.tif';
     
     imageNameSuffix = sprintf(imageNameStr, 1, 1, z);
     imwrite(im1(:,:,z), fullfile('testRegistration1',['testRegistration1' imageNameSuffix]), 'TIF');

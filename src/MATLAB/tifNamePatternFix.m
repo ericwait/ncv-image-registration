@@ -1,6 +1,6 @@
 function tifNamePatternFix(root)
 %Lever needs a file pattern of
-% DatasetName_c%d_t%03d_z%03d.tif
+% DatasetName_c%02d_t%03d_z%03d.tif
 % all three fields should start at 1 not 0
 global imageData
 
@@ -22,7 +22,7 @@ chString = isletter(fileList(1).name(cLoc+2));
 tLoc = strfind(fileList(1).name,'_t');
 extLoc = strfind(fileList(1).name,'.tif');
 
-%_c%d_t%03d_z%03d.tif
+%_c%02d_t%03d_z%03d.tif
 if (length(fileList(1).name)-cLoc==18 &&...
         length(fileList(1).name)-tLoc==15 &&...
         length(fileList(1).name)-zLoc==9)
@@ -130,7 +130,7 @@ for i=1:length(fileList)
         end
     end
     
-    newFileName = sprintf('%s\\%s_c%d_t%04d_z%04d.tif',root,datasetName,c,t,z);
+    newFileName = sprintf('%s\\%s_c%02d_t%04d_z%04d.tif',root,datasetName,c,t,z);
     oldFileName = fullfile(root,fileList(i).name);
     
     if strcmpi(newFileName,oldFileName)
