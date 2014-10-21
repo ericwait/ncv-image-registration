@@ -36,17 +36,8 @@ end
 [deltasPresent,imageDatasets] = readDeltaData(pathName,imageDatasets);
 
 if (0==deltasPresent)
-    result = questdlg('Would you like to refine registration or use microscope data?','Refine Deltas?','Refine','Microscope','Refine W/ Visualizer','Microscope');
-    if (strcmp(result,'Refine') || strcmp(result,'Refine W/ Visualizer'))
-        prefix = [datasetName '_Montage_wDelta'];
-        answer = inputdlg('Channel to register:','Channel Chooser',1,{'3'});
-        imageDatasets = createDeltas(imageDatasets,str2double(answer),strcmp(result,'Refine W/ Visualizer'));
-        [~,imageDatasets] = readDeltaData(pathName,imageDatasets);
-    else
-        prefix = [datasetName '_Montage'];
-    end
+    refine = questdlg('Would you like to refine registration or use microscope data?','Refine Deltas?','Refine','Microscope','Refine W/ Visualizer','Microscope');
 else
-    
     prefix = [datasetName '_Montage_wDelta'];
 end
 
@@ -55,6 +46,15 @@ if (strcmp(visualize,'Visualize Only')==0)
     reducIms = questdlg('Would you like to create reduced images?','Reduce Images','Yes','No','No');
 else
     reducIms = 'No';
+end
+
+if (strcmp(refine,'Refine') || strcmp(refine,'Refine W/ Visualizer'))
+    prefix = [datasetName '_Montage_wDelta'];
+    answer = inputdlg('Channel to register:','Channel Chooser',1,{'3'});
+    imageDatasets = createDeltas(imageDatasets,str2double(answer),strcmp(refine,'Refine W/ Visualizer'));
+    [~,imageDatasets] = readDeltaData(pathName,imageDatasets);
+elseif (0==deltasPresent)
+    prefix = [datasetName '_Montage'];
 end
 
 %% make mosiac
