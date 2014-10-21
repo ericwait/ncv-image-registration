@@ -4,6 +4,12 @@ global minOverlap
 minOverlap = 50;
 n = length(imageDatasets);
 
+if (exist(fullfile(imageDatasets(1).imageDir,'..','graphEdges.mat'),'file'))
+    reRun = questdlg('Rerun registration or use old graph?','Rerun Registration','Rerun','Old','Old');
+else
+    reRun = 'Rerun';
+end
+
 edges = struct(...
     'normCovar',{},...
     'deltaX',{},...
@@ -14,48 +20,64 @@ edges = struct(...
     'nodeIdx2',{});
 
 edges(n*(n-1)/2).normCovar = -inf;
-W = ones(1,n*(n-1)/2) * -inf;
-nodes1 = zeros(1,n*(n-1)/2);
-nodes2 = zeros(1,n*(n-1)/2);
 
-makeGraph = tic;
-c = 1;
-for i=1:n
-    static = tic;
-    for j=i+1:n
-        [imageDataset1,~] = readMetaData(fullfile(imageDatasets(i).imageDir,[imageDatasets(i).DatasetName,'.txt']));
-        [imageDataset2,~] = readMetaData(fullfile(imageDatasets(j).imageDir,[imageDatasets(j).DatasetName,'.txt']));
-        [image1ROI,image2ROI] = calculateOverlap(imageDataset1,imageDataset2);
-        
-        if (any(image1ROI([4,5])<minOverlap) || any(image2ROI([4,5])<minOverlap)), continue, end
-        
-        [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
-        [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir);        
-        [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,10,100,visualize,visualize);
-        edges(c).normCovar = normCovar;
-        edges(c).deltaX = deltaX;
-        edges(c).deltaY = deltaY;
-        edges(c).deltaZ = deltaZ;
-        edges(c).overlapSize = overlapSize;
-        edges(c).nodeIdx1 = i;
-        edges(c).nodeIdx2 = j;
-        
-        nodes1(c) = i;
-        nodes2(c) = j;
-        W(c) = normCovar;
-        c = c+1;
+if (strcmp(reRun,'Rerun'))
+    W = ones(1,n*(n-1)/2) * -inf;
+    nodes1 = zeros(1,n*(n-1)/2);
+    nodes2 = zeros(1,n*(n-1)/2);
+    
+    makeGraph = tic;
+    c = 1;
+    for i=1:n
+        static = tic;
+        for j=i+1:n
+            [imageDataset1,~] = readMetaData(fullfile(imageDatasets(i).imageDir,[imageDatasets(i).DatasetName,'.txt']));
+            [imageDataset2,~] = readMetaData(fullfile(imageDatasets(j).imageDir,[imageDatasets(j).DatasetName,'.txt']));
+            [image1ROI,image2ROI] = calculateOverlap(imageDataset1,imageDataset2);
+            
+            if (any(image1ROI([4,5])<minOverlap) || any(image2ROI([4,5])<minOverlap)), continue, end
+            
+            [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
+            [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir);
+            [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,10,100,visualize,visualize);
+            edges(c).normCovar = normCovar;
+            edges(c).deltaX = deltaX;
+            edges(c).deltaY = deltaY;
+            edges(c).deltaZ = deltaZ;
+            edges(c).overlapSize = overlapSize;
+            edges(c).nodeIdx1 = i;
+            edges(c).nodeIdx2 = j;
+            
+            nodes1(c) = i;
+            nodes2(c) = j;
+            W(c) = normCovar;
+            c = c+1;
+        end
+        fprintf('%s took:%4.3f sec\n',imageDatasets(i).DatasetName,toc(static));
     end
-    fprintf('%s took:%4.3f sec\n',imageDatasets(i).DatasetName,toc(static));
+    tm = toc(makeGraph);
+    hr = floor(tm/3600);
+    tmNew = tm - hr*3600;
+    mn = floor(tmNew/60);
+    tmNew = tmNew - mn*60;
+    sc = tmNew;
+    fprintf('Graph creation took: %d:%02d:%04.2f\n\t average per edge %5.3f sec\n\n',hr,mn,sc,tm/c);
+    
+    save(fullfile(imageDatasets(i).imageDir,'..','graphEdges.mat'),'edges');
+else
+    load(fullfile(imageDatasets(1).imageDir,'..','graphEdges.mat'));
+    nodes1 = zeros(1,length(edges));
+    nodes2 = zeros(1,length(edges));
+    W = zeros(1,length(edges));
+    
+    for i=1:length(edges)
+        if (~isempty(edges(i).nodeIdx1))
+            nodes1(i)=edges(i).nodeIdx1;
+            nodes2(i)=edges(i).nodeIdx2;
+            W(i)=edges(i).normCovar;
+        end
+    end
 end
-tm = toc(makeGraph);
-hr = floor(tm/3600);
-tmNew = tm - hr*3600;
-mn = floor(tmNew/60);
-tmNew = tmNew - mn*60;
-sc = tmNew;
-fprintf('Graph creation took: %d:%02d:%04.2f\n\t average per edge %5.3f sec\n\n',hr,mn,sc,tm/c);
-
-save(fullfile(imageDatasets(i).imageDir,'..','graphEdges.mat'),'edges');
 
 idx = find(nodes1~=0);
 nodes1 = nodes1(idx);
