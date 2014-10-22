@@ -35,6 +35,14 @@ if (strcmp(reRun,'Rerun'))
             [imageDataset2,~] = readMetaData(fullfile(imageDatasets(j).imageDir,[imageDatasets(j).DatasetName,'.txt']));
             [image1ROI,image2ROI] = calculateOverlap(imageDataset1,imageDataset2);
             
+            edges(c).normCovar = -inf;
+            edges(c).deltaX = 0;
+            edges(c).deltaY = 0;
+            edges(c).deltaZ = 0;
+            edges(c).overlapSize = 0;
+            edges(c).nodeIdx1 = i;
+            edges(c).nodeIdx2 = j;
+            
             if (any(image1ROI([4,5])<minOverlap) || any(image2ROI([4,5])<minOverlap)), continue, end
             
             [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
@@ -45,8 +53,6 @@ if (strcmp(reRun,'Rerun'))
             edges(c).deltaY = deltaY;
             edges(c).deltaZ = deltaZ;
             edges(c).overlapSize = overlapSize;
-            edges(c).nodeIdx1 = i;
-            edges(c).nodeIdx2 = j;
             
             nodes1(c) = i;
             nodes2(c) = j;
