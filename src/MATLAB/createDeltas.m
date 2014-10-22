@@ -1,6 +1,4 @@
 function imageDatasets = createDeltas(imageDatasets,chan,visualize)
-global minOverlap
-
 minOverlap = 50;
 n = length(imageDatasets);
 
@@ -11,77 +9,66 @@ else
 end
 
 edges = struct(...
-    'normCovar',{},...
-    'deltaX',{},...
-    'deltaY',{},...
-    'deltaZ',{},...
-    'overlapSize',{},...
-    'nodeIdx1',{},...
-    'nodeIdx2',{});
+    'normCovar',-inf,...
+    'deltaX',0,...
+    'deltaY',0,...
+    'deltaZ',0,...
+    'overlapSize',0);
 
-edges(n*(n-1)/2).normCovar = -inf;
+edges(n,n).normCovar = -inf;
 
 if (strcmp(reRun,'Rerun'))
-    W = ones(1,n*(n-1)/2) * -inf;
-    nodes1 = zeros(1,n*(n-1)/2);
-    nodes2 = zeros(1,n*(n-1)/2);
+    poolobj = gcp();
+    edges = distributed(edges);
+    numCudaDevices = CudaMex('DeviceCount');
     
-    makeGraph = tic;
-    c = 1;
-    for i=1:n
-        static = tic;
-        for j=i+1:n
-            [imageDataset1,~] = readMetaData(fullfile(imageDatasets(i).imageDir,[imageDatasets(i).DatasetName,'.txt']));
-            [imageDataset2,~] = readMetaData(fullfile(imageDatasets(j).imageDir,[imageDatasets(j).DatasetName,'.txt']));
-            [image1ROI,image2ROI] = calculateOverlap(imageDataset1,imageDataset2);
-            
-            edges(c).normCovar = -inf;
-            edges(c).deltaX = 0;
-            edges(c).deltaY = 0;
-            edges(c).deltaZ = 0;
-            edges(c).overlapSize = 0;
-            edges(c).nodeIdx1 = i;
-            edges(c).nodeIdx2 = j;
-            
-            if (any(image1ROI([4,5])<minOverlap) || any(image2ROI([4,5])<minOverlap)), continue, end
-            
-            [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
-            [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir);
-            [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,10,100,visualize,visualize);
-            edges(c).normCovar = normCovar;
-            edges(c).deltaX = deltaX;
-            edges(c).deltaY = deltaY;
-            edges(c).deltaZ = deltaZ;
-            edges(c).overlapSize = overlapSize;
-            
-            nodes1(c) = i;
-            nodes2(c) = j;
-            W(c) = normCovar;
-            c = c+1;
+    spmd
+        if (numCudaDevices>0)
+            device = mod(labindex,numCudaDevices)+1;
+        else
+            device = 0;
         end
-        fprintf('%s took:%4.3f sec\n',imageDatasets(i).DatasetName,toc(static));
+        
+        makeGraph = tic;
+        for i=labindex:numlabs:n
+            static = tic;
+            [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
+            
+            for j=i+1:n                
+                [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir);
+                [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,...
+                    25,100,visualize,visualize,device);
+
+                ed.normCovar = normCovar;
+                ed.deltaX = deltaX;
+                ed.deltaY = deltaY;
+                ed.deltaZ = deltaZ;
+                ed.overlapSize = overlapSize;
+                idx = sub2ind(size(edges),i,j);
+                edges(idx) = ed;
+            end
+            fprintf('%s took:%4.3f sec\n',imageDatasets(i).DatasetName,toc(static));
+        end
+        
     end
     tm = toc(makeGraph);
-    hr = floor(tm/3600);
-    tmNew = tm - hr*3600;
-    mn = floor(tmNew/60);
-    tmNew = tmNew - mn*60;
-    sc = tmNew;
-    fprintf('Graph creation took: %d:%02d:%04.2f\n\t average per edge %5.3f sec\n\n',hr,mn,sc,tm/c);
+    fprintf('Graph creation took: %s, per edge %06.3f sec\n',printTime(tm),tm/c);
+    delete(poolobj);
     
     save(fullfile(imageDatasets(i).imageDir,'..','graphEdges.mat'),'edges');
 else
     load(fullfile(imageDatasets(1).imageDir,'..','graphEdges.mat'));
-    nodes1 = zeros(1,length(edges));
-    nodes2 = zeros(1,length(edges));
-    W = zeros(1,length(edges));
-    
-    for i=1:length(edges)
-        if (~isempty(edges(i).nodeIdx1))
-            nodes1(i)=edges(i).nodeIdx1;
-            nodes2(i)=edges(i).nodeIdx2;
-            W(i)=edges(i).normCovar;
-        end
+end
+
+nodes1 = zeros(1,length(edges));
+nodes2 = zeros(1,length(edges));
+W = zeros(1,length(edges));
+
+for i=1:length(edges)
+    if (~isempty(edges(i).nodeIdx1))
+        nodes1(i)=edges(i).nodeIdx1;
+        nodes2(i)=edges(i).nodeIdx2;
+        W(i)=edges(i).normCovar;
     end
 end
 
