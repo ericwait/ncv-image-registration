@@ -92,44 +92,28 @@ else
     load(fullfile(logDir,'graphEdges.mat'));
 end
 
-nodes1 = zeros(1,length(edges));
-nodes2 = zeros(1,length(edges));
-W = zeros(1,length(edges));
+bEmpty = arrayfun(@(x)(isempty(x.normCovar)),edges);
+ncv = -inf*ones(n,n);
+ncv(~bEmpty) = [edges.normCovar];
 
-for i=1:length(edges)
-    if (~isempty(edges(i).nodeIdx1))
-        nodes1(i)=edges(i).nodeIdx1;
-        nodes2(i)=edges(i).nodeIdx2;
-        W(i)=edges(i).normCovar;
-    end
-end
-
-idx = find(nodes1~=0);
-nodes1 = nodes1(idx);
-nodes2 = nodes2(idx);
-W = W(idx);
-
-DG = sparse(nodes1,nodes2,W,n,n);
-UG = tril(DG + DG');
+[nodes1,nodes2] = find(~isinf(ncv));
+ncvGraph = sparse(nodes1,nodes2,ncv(~isinf(ncv)),n,n);
+minW = max(ncv(~isinf(ncv))) - ncv(~isinf(ncv)) + 0.001;
+weightGraph = sparse(nodes1,nodes2,minW,n,n);
 
 if (visualize)
-    view(biograph(UG,[],'ShowArrows','off','ShowWeights','on'));
+    ugOrg = tril(ncvGraph + ncvGraph');
+    view(biograph(ugOrg,[],'ShowArrows','off','ShowWeights','on'));
 end
 
-minW = max(W(:)) - W + 0.001;
-DG = sparse(nodes1,nodes2,minW,n,n);
-UG = tril(DG + DG');
-[~,pred] = graphminspantree(UG);
+ugW = tril(weightGraph + weightGraph');
+[minSpanTree,pred] = graphminspantree(ugW);
+ncvSem = ncvGraph - ncvGraph';
 
 if (visualize)
-    minTree = [pred;1:length(pred)].';
-    minTree = minTree(minTree(:,1)~=0,:);
-    DG = sparse(nodes1,nodes2,W,n,n);
-    UG = (DG + DG');
-    idx = sub2ind(size(UG),minTree(:,1),minTree(:,2));
-    ST = sparse(minTree(:,1),minTree(:,2),UG(idx),n,n);
-    
-    view(biograph(ST,[],'ShowArrows','off','ShowWeights','on'));
+    nzEdge = minSpanTree~=0;
+    minSpanTree(nzEdge) = ncvSem(nzEdge);
+    view(biograph(minSpanTree,[],'ShowArrows','off','ShowWeights','on'));
 end
 
 for i=1:n
@@ -142,10 +126,10 @@ for i=1:n
         parent = imageDatasets(i).DatasetName;
     else
         if (parentNode<i)
-            edgeIdx = find([edges(:).nodeIdx1]==parentNode & [edges(:).nodeIdx2]==i);
+            edgeIdx = sub2ind(size(edges),parentNode,i);
             sgn = 1;
         else
-            edgeIdx = find([edges(:).nodeIdx2]==parentNode & [edges(:).nodeIdx1]==i);
+            edgeIdx = sub2ind(size(edges),i,parentNode);
             sgn = -1;
         end
         deltaX = sgn*edges(edgeIdx).deltaX;
