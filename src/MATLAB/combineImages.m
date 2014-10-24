@@ -48,7 +48,7 @@ else
 end
 
 visualize = questdlg('Would you like to see the results?','Results Visualizer','Yes','No','Visualize Only','No');
-if (visulize==0), return, end
+if (visualize==0), return, end
 numCudaDevices = CudaMex('DeviceCount');
 if (strcmp(visualize,'Visualize Only')==0 && numCudaDevices>0)
     reducIms = questdlg('Would you like to create reduced images?','Reduce Images','Yes','No','No');
@@ -60,7 +60,6 @@ end
 if (strcmp(refine,'Refine') || strcmp(refine,'Refine W/ Visualizer'))
     prefix = [datasetName '_Montage_wDelta'];
     answer = inputdlg('Channel to register:','Channel Chooser',1,{'3'});
-    if (answer==0), return, end
     imageDatasets = createDeltas(imageDatasets,str2double(answer),strcmp(refine,'Refine W/ Visualizer'));
     [~,imageDatasets] = readDeltaData(pathName,imageDatasets);
 elseif (0==deltasPresent)
