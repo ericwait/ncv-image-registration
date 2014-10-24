@@ -3,8 +3,16 @@ minOverlap = 50;
 maxSearchSize = 100;
 n = length(imageDatasets);
 
-if (exist(fullfile(imageDatasets(1).imageDir,'..','graphEdges.mat'),'file'))
+logDir = fullfile(imageDatasets(1).imageDir,'..','_GraphLog');
+if (~exist(logDir,'dir'))
+    mkdir(logDir);
+end
+
+if (exist(fullfile(logDir,'graphEdges.mat'),'file'))
     reRun = questdlg('Rerun registration or use old graph?','Rerun Registration','Rerun','Old','Old');
+    if (reRun==0)
+        return
+    end
 else
     reRun = 'Rerun';
 end
@@ -21,6 +29,14 @@ edges(n,n).normCovar = -inf;
 if (strcmp(reRun,'Rerun'))
     poolobj = gcp();
     
+    [~, sysName] = system('hostname');
+    logFile = fullfile(logDir,sprintf('graphBuild_%s.txt',sysName(1:end-1)));
+    
+    c = clock;
+    fHand = fopen(logFile,'wt');
+    fprintf(fHand,'%d-%02d-%02d %02d:%02d Workers:%d\n',c(1),c(2),c(3),c(4),c(5),poolobj.NumWorkers);
+    fclose(fHand);
+    
     e = 0;
     makeGraph = tic;
     for i=1:n
@@ -33,7 +49,6 @@ if (strcmp(reRun,'Rerun'))
             [~,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
             
             if (minXdist>maxSearchSize-minOverlap || minYdist>maxSearchSize-minOverlap)
-                fprintf('%s \n\t--> %s Does not meet minimums\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
                 ed.normCovar = -inf;
                 ed.deltaX = 0;
                 ed.deltaY = 0;
@@ -43,7 +58,7 @@ if (strcmp(reRun,'Rerun'))
                 edges(idx) = ed;
             else
                 [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,...
-                    minOverlap,maxSearchSize,visualize,visualize);
+                    minOverlap,maxSearchSize,logFile,visualize,visualize);
                 
                 ed.normCovar = normCovar;
                 ed.deltaX = deltaX;
@@ -53,21 +68,28 @@ if (strcmp(reRun,'Rerun'))
                 idx = sub2ind(size(edges),i,j);
                 edges(idx) = ed;
                 e = e+1;
+                fprintf(1,'.');
             end
         end
         clear('im1');
         clear('im2');
         tm = toc(static);
-        fprintf('%s took %s\n',imageDatasets(i).DatasetName,printTime(tm));
+        fHand = fopen(logFile,'at');
+        fprintf(fHand,'%s took %s\n',imageDatasets(i).DatasetName,printTime(tm));
+        fprintf(1,'\n%s took %s\n',imageDatasets(i).DatasetName,printTime(tm));
+        fclose(fHand);
     end
     
     tm = toc(makeGraph);
-    fprintf('Graph creation took: %s, per edge %06.3f sec\n',printTime(tm),tm/e);
+
+    fHand = fopen(logFile,'at');
+    fprintf(fHand,'Graph creation took: %s, per edge %06.3f sec\n',printTime(tm),tm/e);
+    fclose(fHand);
     delete(poolobj);
     
-    save(fullfile(imageDatasets(i).imageDir,'..','graphEdges.mat'),'edges');
+    save(fullfile(logDir,'graphEdges.mat'),'edges');
 else
-    load(fullfile(imageDatasets(1).imageDir,'..','graphEdges.mat'));
+    load(fullfile(logDir,'graphEdges.mat'));
 end
 
 nodes1 = zeros(1,length(edges));
