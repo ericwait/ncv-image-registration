@@ -1,4 +1,5 @@
-function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,minOverlap,maxSearchSize,showDecisionSurf,visualize,device)
+function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = registerTwoImages(im1,imageDataset1,im2,...
+    imageDataset2,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize)
 clear global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
 global Rect1 Rect2
 
@@ -9,18 +10,27 @@ end
 if (~exist('maxSearchSize','var') || isempty(maxSearchSize))
     maxSearchSize = 100;
 end
-
+if (~exist('logFile','var') || isempty(logFile))
+    logFile = 1;
+end
 if (~exist('showDecisionSurf','var') || isempty(showDecisionSurf))
     showDecisionSurf = 0;
 end
-
 if (~exist('visualize','var') || isempty(visualize))
     visualize = 0;
 end
 
 %% setup and early out
 
-fprintf('%s \n\t--> %s\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
+if (logFile~=1)
+    fHand = fopen(logFile,'at');
+else
+    fHand = 1;
+end
+fprintf(fHand,'%s \n\t--> %s\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
+if (fHand~=1)
+    fclose(fHand);
+end
 
 [imageROI1,imageROI2,~,~] = calculateOverlap(imageDataset1,imageDataset2);
 
@@ -48,8 +58,16 @@ tm = toc(totalTm);
 bestDeltaX = c-maxIterX;
 bestDeltaY = r-maxIterY;
 
-fprintf(1,'%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d)\n',...
+if (logFile~=1)
+    fHand = fopen(logFile,'at');
+else
+    fHand = 1;
+end
+fprintf(fHand,'%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d)\n',...
     printTime(tm),tm/(maxIterX*2*maxIterY*2),tm/(maxIterX*2),maxNCV,bestDeltaX,bestDeltaY);
+if (fHand~=1)
+    fclose(fHand);
+end
 
 [xStart1,xStart2,xEnd1,xEnd2] = calculateROIs(bestDeltaX,imageROI1(1),imageROI2(1),size(im1,2),size(im2,2));
 [yStart1,yStart2,yEnd1,yEnd2] = calculateROIs(bestDeltaY,imageROI1(2),imageROI2(2),size(im1,1),size(im2,1));
@@ -99,11 +117,19 @@ ultimateDeltaX = bestDeltaX + c-maxIterX;
 ultimateDeltaY = bestDeltaY + r-maxIterY;
 ultimateDeltaZ = z - maxIterZ;
 
-fprintf('%s, per step %5.3f, per scan line %5.3f, per scan box %5.3f, NVC:%04.3f at (%d,%d,%d)\n',...
+if (logFile~=1)
+    fHand = fopen(logFile,'at');
+else
+    fHand = 1;
+end
+fprintf(fHand,'%s, per step %5.3f, per scan line %5.3f, per scan box %5.3f, NVC:%04.3f at (%d,%d,%d)\n',...
     printTime(tm),tm/(maxIterZ*2*maxIterX*2*maxIterY*2),tm/(maxIterZ*2*maxIterX*2),tm/(maxIterZ*2),maxNcovZ,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ);
 
 if (c-maxIterX~=0 || r-maxIterY~=0)
-    fprintf('A better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', c-maxIterX,r-maxIterY,ultimateDeltaZ,maxNcovZ,maxNCV);
+    fprintf(fHand,'A better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', c-maxIterX,r-maxIterY,ultimateDeltaZ,maxNcovZ,maxNCV);
+end
+if (fHand~=1)
+    fclose(fHand);
 end
 
 [xStart1,xStart2,xEnd1,xEnd2] = calculateROIs(ultimateDeltaX,imageROI1(1),imageROI2(1),size(im1,2),size(im2,2));
