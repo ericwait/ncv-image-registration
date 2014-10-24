@@ -63,7 +63,7 @@ curCovar = NormalizedCovariance(...
     max(im1(yStart1:yEnd1,xStart1:xEnd1,:),[],3),...
     max(im2(yStart2:yEnd2,xStart2:xEnd2,:),[],3));
 
-if (maxNCV ~= curCovar)
+if (abs(maxNCV-curCovar)>0.00001)
     warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
 end
 
@@ -114,7 +114,7 @@ curCovar = NormalizedCovariance(...
     im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1),...
     im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2));
 
-if (maxNcovZ ~= curCovar)
+if (abs(maxNcovZ-curCovar)>0.00001)
     warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNcovZ);
     maxNcovZ = max(maxNcovZ,curCovar);
 end
