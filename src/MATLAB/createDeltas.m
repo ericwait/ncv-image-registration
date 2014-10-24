@@ -21,6 +21,7 @@ edges(n,n).normCovar = -inf;
 if (strcmp(reRun,'Rerun'))
     poolobj = gcp();
     
+    e = 0;
     makeGraph = tic;
     for i=1:n
         static = tic;
@@ -51,6 +52,7 @@ if (strcmp(reRun,'Rerun'))
                 ed.overlapSize = overlapSize;
                 idx = sub2ind(size(edges),i,j);
                 edges(idx) = ed;
+                e = e+1;
             end
         end
         clear('im1');
@@ -60,7 +62,7 @@ if (strcmp(reRun,'Rerun'))
     end
     
     tm = toc(makeGraph);
-    fprintf('Graph creation took: %s, per edge %06.3f sec\n',printTime(tm),tm/c);
+    fprintf('Graph creation took: %s, per edge %06.3f sec\n',printTime(tm),tm/e);
     delete(poolobj);
     
     save(fullfile(imageDatasets(i).imageDir,'..','graphEdges.mat'),'edges');
