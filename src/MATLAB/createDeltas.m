@@ -34,7 +34,7 @@ if (strcmp(reRun,'Rerun'))
     
     c = clock;
     fHand = fopen(logFile,'wt');
-    fprintf(fHand,'%d-%02d-%02d %02d:%02d Workers:%d\n',c(1),c(2),c(3),c(4),c(5),poolobj.NumWorkers);
+    fprintf(fHand,'\n%d-%02d-%02d %02d:%02d Workers:%d\n',c(1),c(2),c(3),c(4),c(5),poolobj.NumWorkers);
     fclose(fHand);
     
     e = 0;
