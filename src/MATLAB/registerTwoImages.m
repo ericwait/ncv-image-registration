@@ -1,4 +1,4 @@
-function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,minOverlap,maxSearchSize,showDecisionSurf,visualize,device)
+function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,minOverlap,maxSearchSize,showDecisionSurf,visualize,device)
 clear global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
 global Rect1 Rect2
 
@@ -18,40 +18,27 @@ if (~exist('visualize','var') || isempty(visualize))
     visualize = 0;
 end
 
-if (~exist('device','var') || isempty(device))
-    device = 1;
-end
-
 %% setup and early out
 
-fprintf('%s --> %s\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
+fprintf('%s \n\t--> %s\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
 
-[imageROI1,imageROI2,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
+[imageROI1,imageROI2,~,~] = calculateOverlap(imageDataset1,imageDataset2);
 
 maxIterX = maxSearchSize;
 maxIterY = maxSearchSize;
 
-if (minXdist>maxSearchSize-minOverlap || minYdist>maxSearchSize-minOverlap)
-    ultimateDeltaX = 0;
-    ultimateDeltaY = 0;
-    ultimateDeltaZ = 0;
-    maxNCV = -inf;
-    overlapSize = 0;
-    fprintf('%s --> %s Does not meet minimums\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
-    return
-end
-
-imMax1 = max(im1(:,:,:,chan),[],3);
-imMax2 = max(im2(:,:,:,chan),[],3);
+imMax1 = max(im1,[],3);
+imMax2 = max(im2,[],3);
 
 %% run 2-D case
 totalTm = tic;
 
 if (visualize==1)
     setupVisualizer(imMax1,imMax2,imageROI1,imageROI2,imageDataset1,imageDataset2);
+    normCovar = iterateOverX(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap,visualize);
+else
+    normCovar = iterateOverXpar(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap,visualize);
 end
-
-normCovar = iterateOverX(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap,visualize,device);
 
 tm = toc(totalTm);
 
@@ -61,7 +48,7 @@ tm = toc(totalTm);
 bestDeltaX = c-maxIterX;
 bestDeltaY = r-maxIterY;
 
-fprintf('%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d)\n',...
+fprintf(1,'%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d)\n',...
     printTime(tm),tm/(maxIterX*2*maxIterY*2),tm/(maxIterX*2),maxNCV,bestDeltaX,bestDeltaY);
 
 [xStart1,xStart2,xEnd1,xEnd2] = calculateROIs(bestDeltaX,imageROI1(1),imageROI2(1),size(im1,2),size(im2,2));
@@ -73,8 +60,8 @@ if (visualize==1)
 end
 
 curCovar = CudaMex('NormalizedCovariance',...
-    max(im1(yStart1:yEnd1,xStart1:xEnd1,:,chan),[],3),...
-    max(im2(yStart2:yEnd2,xStart2:xEnd2,:,chan),[],3));
+    max(im1(yStart1:yEnd1,xStart1:xEnd1,:),[],3),...
+    max(im2(yStart2:yEnd2,xStart2:xEnd2,:),[],3));
 
 if (maxNCV ~= curCovar)
     warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
@@ -88,9 +75,6 @@ end
 newROI1 = [xStart1,yStart1,imageROI1(3),xEnd1,yEnd1,imageROI1(6)];
 newROI2 = [xStart2,yStart2,imageROI2(3),xEnd2,yEnd2,imageROI2(6)];
 
-imC1 = squeeze(im1(:,:,:,chan));
-imC2 = squeeze(im2(:,:,:,chan));
-
 maxIterZ = floor(min(newROI1(6)-newROI1(3),newROI2(6)-newROI2(3))/2);
 maxIterX = 5;
 maxIterY = 5;
@@ -98,10 +82,12 @@ totalTm = tic;
 
 if (visualize==1)
     setupVisualizer(imMax1,imMax2,newROI1,newROI2,imageDataset1,imageDataset2);
+    normCovarZ = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1,im2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),...
+    newROI2(3),minOverlap,visualize);
+else
+   normCovarZ = iterateOverZpar(maxIterZ,maxIterX,maxIterY,im1,im2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),...
+    newROI2(3),minOverlap,visualize); 
 end
-
-normCovarZ = iterateOverZ(maxIterZ,maxIterX,maxIterY,imC1,imC2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),...
-    newROI2(3),minOverlap,visualize,device);
 
 tm = toc(totalTm);
 
@@ -125,11 +111,11 @@ end
 [zStart1,zStart2,zEnd1,zEnd2] = calculateROIs(ultimateDeltaZ,1,1,size(im1,3),size(im2,3));
 
 curCovar = CudaMex('NormalizedCovariance',...
-    im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,chan),...
-    im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,chan));
+    im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1),...
+    im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2));
 
 if (maxNcovZ ~= curCovar)
-    warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
+    warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNcovZ);
     maxNcovZ = max(maxNcovZ,curCovar);
 end
 
@@ -150,29 +136,45 @@ maxNCV = maxNcovZ;
 clear imROI1 imROI2
 end
 
-function normCoCube = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2,minOverlap,visualize,device)
+%% dimention iterations
+function normCoCube = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2,minOverlap,visualize)
 normCoCube = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
-imZ1 = [];
-imZ2 = [];
+
 for delta = 1:maxIterZ*2
     curDelta = delta-maxIterZ;
     [start1,start2,end1,end2] = calculateROIs(curDelta,zStart1,zStart2,size(im1,3),size(im2,3));
-    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
+    if (end1-start1<minOverlap/5 || end2-start2<minOverlap/5), continue, end
     
     imZ1 = im1(:,:,start1:end1);
     imZ2 = im2(:,:,start2:end2);
     normCoCube(:,:,delta) = iterateOverX(maxIterX,maxIterY,imZ1,imZ2,xStart1,xStart2,...
-        yStart1,yStart2,curDelta,minOverlap,visualize,device);
+        yStart1,yStart2,curDelta,minOverlap,visualize);
 end
-clear('imZ1');
-clear('imZ2');
+imZ1 = [];
+imZ2 = [];
 end
 
-function normCoSquare = iterateOverX(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,curDeltaZ,minOverlap,visualize,device)
+function normCoCube = iterateOverZpar(maxIterZ,maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,zStart1,zStart2,minOverlap,visualize)
+normCoCube = zeros(maxIterY*2,maxIterX*2,maxIterZ*2);
+
+parfor delta = 1:maxIterZ*2
+    curDelta = delta-maxIterZ;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,zStart1,zStart2,size(im1,3),size(im2,3));
+    if (end1-start1<minOverlap/5 || end2-start2<minOverlap/5), continue, end
+    
+    imZ1 = im1(:,:,start1:end1);
+    imZ2 = im2(:,:,start2:end2);
+    normCoCube(:,:,delta) = iterateOverX(maxIterX,maxIterY,imZ1,imZ2,xStart1,xStart2,...
+        yStart1,yStart2,curDelta,minOverlap,visualize);
+end
+imZ1 = [];
+imZ2 = [];
+end
+
+function normCoSquare = iterateOverX(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,curDeltaZ,minOverlap,visualize)
 global Rect1 Rect2
 normCoSquare = zeros(maxIterY*2,maxIterX*2);
-imX1 = [];
-imX2 = [];
+
 for delta = 1:maxIterX*2
     curDelta = delta-maxIterX;
     [start1,start2,end1,end2] = calculateROIs(curDelta,xStart1,xStart2,size(im1,2),size(im2,2));
@@ -187,17 +189,40 @@ for delta = 1:maxIterX*2
     
     imX1 = im1(:,start1:end1,:);
     imX2 = im2(:,start2:end2,:);
-    normCoSquare(:,delta) = iterateOverY(maxIterY,imX1,imX2,curDelta,yStart1,yStart2,curDeltaZ,minOverlap,visualize,device);
+    normCoSquare(:,delta) = iterateOverY(maxIterY,imX1,imX2,curDelta,yStart1,yStart2,curDeltaZ,minOverlap,visualize);
 end
-clear('imX1');
-clear('imX2');
+imX1 = [];
+imX2 = [];
 end
 
-function normCoLine = iterateOverY(maxIterY,im1,im2,curDeltaX,yStart1,yStart2,curDeltaZ,minOverlap,visualize,device)
+function normCoSquare = iterateOverXpar(maxIterX,maxIterY,im1,im2,xStart1,xStart2,yStart1,yStart2,curDeltaZ,minOverlap,visualize)
+global Rect1 Rect2
+normCoSquare = zeros(maxIterY*2,maxIterX*2);
+
+parfor delta = 1:maxIterX*2
+    curDelta = delta-maxIterX;
+    [start1,start2,end1,end2] = calculateROIs(curDelta,xStart1,xStart2,size(im1,2),size(im2,2));
+    if (end1-start1<minOverlap || end2-start2<minOverlap), continue, end
+    
+    if (visualize==1)
+        pos1 = get(Rect1,'Position');
+        pos2 = get(Rect2,'Position');
+        set(Rect1,'Position',[start1,pos1(2),end1-start1,pos1(4)]);
+        set(Rect2,'Position',[start2,pos2(2),end2-start2,pos2(4)]);
+    end
+    
+    imX1 = im1(:,start1:end1,:);
+    imX2 = im2(:,start2:end2,:);
+    normCoSquare(:,delta) = iterateOverY(maxIterY,imX1,imX2,curDelta,yStart1,yStart2,curDeltaZ,minOverlap,visualize);
+end
+imX1 = [];
+imX2 = [];
+end
+
+function normCoLine = iterateOverY(maxIterY,im1,im2,curDeltaX,yStart1,yStart2,curDeltaZ,minOverlap,visualize)
 global Rect1 Rect2
 normCoLine = zeros(maxIterY*2,1);
-imY1 = [];
-imY2 = [];
+
 for delta = 1:maxIterY*2
     curDelta = delta-maxIterY;
     [start1,start2,end1,end2] = calculateROIs(curDelta,yStart1,yStart2,size(im1,1),size(im2,1));
@@ -206,26 +231,7 @@ for delta = 1:maxIterY*2
     imY1 = im1(start1:end1,:,:);
     imY2 = im2(start2:end2,:,:);
     
-    if (device~=0)
-        normCoLine(delta) = CudaMex('NormalizedCovariance',imY1,imY2,device);
-    else
-        imY1 = double(imY1);
-        imY2 = double(imY2);
-        sig1 = sqrt(var(imY1(:)));
-        sig2 = sqrt(var(imY2(:)));
-        
-        mean1 = mean(imY1(:));
-        mean2 = mean(imY2(:));
-        
-        imSub1 = imY1 - mean1;
-        imSub2 = imY2 - mean2;
-        
-        imMul = imSub1.*imSub2;
-        
-        numerator = sum(imMul(:));
-        
-        normCoLine(delta) = numerator / (numel(imY1)*sig1*sig2);
-    end
+    normCoLine(delta) = NormalizedCovariance(imY1, imY2);
     
     if (visualize==1)
         pos1 = get(Rect1,'Position');
@@ -240,10 +246,11 @@ for delta = 1:maxIterY*2
         normCoLine(delta) = 0;
     end
 end
-clear('imY1');
-clear('imY2');
+imY1 = [];
+imY2 = [];
 end
 
+%% helper function
 function [start1,start2,end1,end2] = calculateROIs(delta,oldStart1,oldStart2,size1,size2)
 if (oldStart1==1 && oldStart2~=1)
     start1 = 1;
@@ -292,6 +299,7 @@ SubImBest1 = subplot(2,2,3);
 SubImBest2 = subplot(2,2,4);
 end
 
+%% UI drawing
 function updateXYviewer(im1,im2,normCovar,curDeltaX,curDeltaY,curDeltaZ)
 global MaxCovar SubImBest1 SubImBest2
 

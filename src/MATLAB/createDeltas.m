@@ -1,5 +1,6 @@
 function imageDatasets = createDeltas(imageDatasets,chan,visualize)
 minOverlap = 50;
+maxSearchSize = 100;
 n = length(imageDatasets);
 
 if (exist(fullfile(imageDatasets(1).imageDir,'..','graphEdges.mat'),'file'))
@@ -19,26 +20,30 @@ edges(n,n).normCovar = -inf;
 
 if (strcmp(reRun,'Rerun'))
     poolobj = gcp();
-    edges = distributed(edges);
-    numCudaDevices = CudaMex('DeviceCount');
     
-    spmd
-        if (numCudaDevices>0)
-            device = mod(labindex,numCudaDevices)+1;
-        else
-            device = 0;
-        end
+    makeGraph = tic;
+    for i=1:n
+        static = tic;
+        [im1,imageDataset1] = tiffReader([],chan,[],[],imageDatasets(i).imageDir);
         
-        makeGraph = tic;
-        for i=labindex:numlabs:n
-            static = tic;
-            [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir);
+        for j=i+1:n
+            [im2,imageDataset2] = tiffReader([],chan,[],[],imageDatasets(j).imageDir);
             
-            for j=i+1:n                
-                [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir);
-                [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,chan,...
-                    25,100,visualize,visualize,device);
-
+            [~,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
+            
+            if (minXdist>maxSearchSize-minOverlap || minYdist>maxSearchSize-minOverlap)
+                fprintf('%s \n\t--> %s Does not meet minimums\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
+                ed.normCovar = -inf;
+                ed.deltaX = 0;
+                ed.deltaY = 0;
+                ed.deltaZ = 0;
+                ed.overlapSize = 0;
+                idx = sub2ind(size(edges),i,j);
+                edges(idx) = ed;
+            else
+                [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,...
+                    minOverlap,maxSearchSize,visualize,visualize);
+                
                 ed.normCovar = normCovar;
                 ed.deltaX = deltaX;
                 ed.deltaY = deltaY;
@@ -47,10 +52,13 @@ if (strcmp(reRun,'Rerun'))
                 idx = sub2ind(size(edges),i,j);
                 edges(idx) = ed;
             end
-            fprintf('%s took:%4.3f sec\n',imageDatasets(i).DatasetName,toc(static));
         end
-        
+        clear('im1');
+        clear('im2');
+        tm = toc(static);
+        fprintf('%s took %s\n',imageDatasets(i).DatasetName,printTime(tm));
     end
+    
     tm = toc(makeGraph);
     fprintf('Graph creation took: %s, per edge %06.3f sec\n',printTime(tm),tm/c);
     delete(poolobj);
