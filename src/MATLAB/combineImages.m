@@ -42,7 +42,8 @@ else
 end
 
 visualize = questdlg('Would you like to see the results?','Results Visualizer','Yes','No','Visualize Only','No');
-if (strcmp(visualize,'Visualize Only')==0)
+numCudaDevices = CudaMex('DeviceCount');
+if (strcmp(visualize,'Visualize Only')==0 && numCudaDevices>0)
     reducIms = questdlg('Would you like to create reduced images?','Reduce Images','Yes','No','No');
 else
     reducIms = 'No';
