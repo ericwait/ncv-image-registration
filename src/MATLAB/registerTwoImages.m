@@ -63,7 +63,7 @@ if (logFile~=1)
 else
     fHand = 1;
 end
-fprintf(fHand,'%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d)\n',...
+fprintf(fHand,'\t%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d)\n',...
     printTime(tm),tm/(maxIterX*2*maxIterY*2),tm/(maxIterX*2),maxNCV,bestDeltaX,bestDeltaY);
 if (fHand~=1)
     fclose(fHand);
@@ -122,11 +122,11 @@ if (logFile~=1)
 else
     fHand = 1;
 end
-fprintf(fHand,'%s, per step %5.3f, per scan line %5.3f, per scan box %5.3f, NVC:%04.3f at (%d,%d,%d)\n',...
+fprintf(fHand,'\t%s, per step %5.3f, per scan line %5.3f, per scan box %5.3f, NVC:%04.3f at (%d,%d,%d)\n',...
     printTime(tm),tm/(maxIterZ*2*maxIterX*2*maxIterY*2),tm/(maxIterZ*2*maxIterX*2),tm/(maxIterZ*2),maxNcovZ,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ);
 
 if (c-maxIterX~=0 || r-maxIterY~=0)
-    fprintf(fHand,'A better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', c-maxIterX,r-maxIterY,ultimateDeltaZ,maxNcovZ,maxNCV);
+    fprintf(fHand,'\tA better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', c-maxIterX,r-maxIterY,ultimateDeltaZ,maxNcovZ,maxNCV);
 end
 if (fHand~=1)
     fclose(fHand);
