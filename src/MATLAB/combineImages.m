@@ -175,7 +175,7 @@ for chan=1:imageData.NumberOfChannels
     end
     
     if (strcmp(reducIms,'Yes'))
-        maxReduction = ceil(max(size(outImage))/1024);
+        maxReduction = ceil(size(outImage,2)/2048);
         
         for reduce=1:maxReduction
             fprintf('\nReduce x%d...',reduce);
