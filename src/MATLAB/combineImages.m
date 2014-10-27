@@ -228,8 +228,10 @@ for chan=1:imageData.NumberOfChannels
     if (strcmp(visualize,'No')~=0)
         clear outImageColor;
     end
-    fprintf('Chan:%d done in %f sec\n',chan,toc(chanStart));
+    tm = toc(chanStart);
+    fprintf('Chan:%d done in %s\n',chan,printTime(tm));
 end
-fprintf('Completed in %f sec\n',toc(totalTime));
+tm = toc(totalTime);
+fprintf('Completed in %s\n',printTime(tm));
 
 clear mex
