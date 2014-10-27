@@ -180,8 +180,10 @@ for chan=1:imageData.NumberOfChannels
     if (strcmp(reducIms,'Yes'))
         maxReduction = ceil(size(outImage,2)/2048);
         
-        delete(gcp('nocreate'));
-        if (numCudaDevices<1)
+        poolObj = gcp('nocreate');
+        if (poolObj.NumWorkers~=numCudaDevices || (numCudaDevices<1 && parpool>1))
+            delete(gcp('nocreate'));
+        elseif (numCudaDevices<1)
             parpool(1);
         else
             parpool(numCudaDevices)
@@ -194,7 +196,7 @@ for chan=1:imageData.NumberOfChannels
                     imR = outImage;
                     imDataReduced = tmpImageData;
                 else
-                    device = mod(reduce,numCudaDevices)+1;
+                    device = 1;
                     fprintf('\nReduce x%d...',reduce);
                     imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1],'mean',device);
                     imDataReduced = tmpImageData;
@@ -221,7 +223,6 @@ for chan=1:imageData.NumberOfChannels
                 fprintf(' done.\n');
             end
         end
-        delete(gcp('nocreate'));
     end
     
     clear outImage;
@@ -232,6 +233,7 @@ for chan=1:imageData.NumberOfChannels
     fprintf('Chan:%d done in %s\n',chan,printTime(tm));
 end
 tm = toc(totalTime);
+delete(gcp('nocreate'));
 fprintf('Completed in %s\n',printTime(tm));
 
 clear mex
