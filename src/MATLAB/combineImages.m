@@ -146,6 +146,18 @@ for chan=1:imageData.NumberOfChannels
         end
     end
     
+    if (strcmp(visualize,'Yes') || strcmp(visualize,'Visualize Only'))
+        figure,imagesc(max(outImage,[],3)),colormap gray, axis image
+        title(sprintf('Cannel:%d',chan),'Interpreter','none','Color','w');
+        testingDeltas(outImage, outImageColor,imageDatasets,chan);
+    else
+        [fig,ax] = testingDeltas(outImage,[],imageDatasets,chan);
+        set(fig,'Units','normalized','Position',[0 0 1 1]);
+        frm = getframe(ax);
+        imwrite(frm.cdata,fullfile(logDir,sprintf('%s_c%02d_minSpanTree.tif',datasetName,chan)),'tif','Compression','lzw');
+        close(fig);
+    end
+    
     tmpImageData = imageData;
     if (size(outImage,1)>size(outImage,2))
         outImage = permute(outImage(end:-1:1,:,:),[2,1,3]);
@@ -163,18 +175,6 @@ for chan=1:imageData.NumberOfChannels
                 fprintf('.');
             end
         end
-    end
-    
-    if (strcmp(visualize,'Yes') || strcmp(visualize,'Visualize Only'))
-        figure,imagesc(max(outImage,[],3)),colormap gray, axis image
-        title(sprintf('Cannel:%d',chan),'Interpreter','none','Color','w');
-        testingDeltas(outImage, outImageColor,imageDatasets,chan);
-    else
-        [fig,ax] = testingDeltas(outImage,[],imageDatasets,chan);
-        set(fig,'Units','normalized','Position',[0 0 1 1]);
-        frm = getframe(ax);
-        imwrite(frm.cdata,fullfile(logDir,sprintf('%s_c%02d_minSpanTree.tif',datasetName,chan)),'tif','Compression','lzw');
-        close(fig);
     end
     
     if (strcmp(reducIms,'Yes'))
