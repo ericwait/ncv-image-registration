@@ -233,7 +233,10 @@ for chan=1:imageData.NumberOfChannels
     fprintf('Chan:%d done in %s\n',chan,printTime(tm));
 end
 tm = toc(totalTime);
-delete(gcp('nocreate'));
+poolObj = gcp('nocreate');
+if (~isempty(poolObj))
+    delete(poolObj);
+end
 fprintf('Completed in %s\n',printTime(tm));
 
 clear mex
