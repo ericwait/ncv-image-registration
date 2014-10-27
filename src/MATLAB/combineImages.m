@@ -181,12 +181,12 @@ for chan=1:imageData.NumberOfChannels
         maxReduction = ceil(size(outImage,2)/2048);
         
         poolObj = gcp('nocreate');
-        if (poolObj.NumWorkers~=numCudaDevices || (numCudaDevices<1 && parpool>1))
+        if ((~isempty(poolObj)) && (poolObj.NumWorkers~=numCudaDevices || (numCudaDevices<1 && parpool>1)))
             delete(gcp('nocreate'));
         elseif (numCudaDevices<1)
             parpool(1);
-        else
-            parpool(numCudaDevices)
+        elseif (isempty(poolObj))
+            parpool(numCudaDevices);
         end
         
         spmd
