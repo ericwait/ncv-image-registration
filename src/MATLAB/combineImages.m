@@ -180,32 +180,48 @@ for chan=1:imageData.NumberOfChannels
     if (strcmp(reducIms,'Yes'))
         maxReduction = ceil(size(outImage,2)/2048);
         
-        for reduce=1:maxReduction
-            fprintf('\nReduce x%d...',reduce);
-            imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1]);
-            imDataReduced = tmpImageData;
-            imDataReduced.XDimension = size(imR,2);
-            imDataReduced.YDimension = size(imR,1);
-            imDataReduced.ZDimension = size(imR,3);
-            imDataReduced.XPixelPhysicalSize = tmpImageData.XPixelPhysicalSize*reduce;
-            imDataReduced.YPixelPhysicalSize = tmpImageData.YPixelPhysicalSize*reduce;
-            % ZPixelPhysicalSize is same as orginal
-            
-            if ~isdir(fullfile(pathName,prefix,['x' num2str(reduce)]))
-                mkdir(fullfile(pathName,prefix),['x' num2str(reduce)]);
-            end
-            
-            createMetadata(fullfile(pathName, prefix, ['x' num2str(reduce)]),imDataReduced);
-            for z=1:size(outImage,3)
-                imwrite(imR(:,:,z),fullfile(pathName, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%02d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
-                if (mod(z,modZ)==0)
-                    fprintf('.');
-                end
-            end
-            
-            fprintf(' done.\n');
-            clear imR;
+        delete(gcp('nocreate'));
+        if (numCudaDevices<1)
+            parpool(1);
+        else
+            parpool(numCudaDevices)
         end
+        
+        spmd
+            for reduce=labindex:numlabs:maxReduction
+                if (reduce==1)
+                    fprintf('\nReduce x%d...',reduce);
+                    imR = outImage;
+                    imDataReduced = tmpImageData;
+                else
+                    device = mod(reduce,numCudaDevices)+1;
+                    fprintf('\nReduce x%d...',reduce);
+                    imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1],'mean',device);
+                    imDataReduced = tmpImageData;
+                    imDataReduced.XDimension = size(imR,2);
+                    imDataReduced.YDimension = size(imR,1);
+                    imDataReduced.ZDimension = size(imR,3);
+                    imDataReduced.XPixelPhysicalSize = tmpImageData.XPixelPhysicalSize*reduce;
+                    imDataReduced.YPixelPhysicalSize = tmpImageData.YPixelPhysicalSize*reduce;
+                    % ZPixelPhysicalSize is same as orginal
+                end
+                
+                if ~isdir(fullfile(pathName,prefix,['x' num2str(reduce)]))
+                    mkdir(fullfile(pathName,prefix),['x' num2str(reduce)]);
+                end
+                
+                createMetadata(fullfile(pathName, prefix, ['x' num2str(reduce)]),imDataReduced);
+                for z=1:size(outImage,3)
+                    imwrite(imR(:,:,z),fullfile(pathName, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%02d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
+                    if (mod(z,modZ)==0)
+                        fprintf('.');
+                    end
+                end
+                
+                fprintf(' done.\n');
+            end
+        end
+        delete(gcp('nocreate'));
     end
     
     clear outImage;
