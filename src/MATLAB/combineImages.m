@@ -181,13 +181,22 @@ for chan=1:imageData.NumberOfChannels
         maxReduction = ceil(size(outImage,2)/2048);
         
         poolObj = gcp('nocreate');
-        if ((~isempty(poolObj)) && (poolObj.NumWorkers~=numCudaDevices || (numCudaDevices<1 && parpool>1)))
-            delete(gcp('nocreate'));
-        elseif (numCudaDevices<1)
-            parpool(1);
-        elseif (isempty(poolObj))
-            parpool(numCudaDevices);
+        if (isempty(poolObj))
+            if (numCudaDevices<1)
+                poolObj = parpool(1);
+            else
+                poolObj = parpool(numCudaDevices);
+            end
+        elseif (poolObj.NumWorkers>numCudaDevices)
+            delete(poolObj);
+            if (numCudaDevices<1)
+                poolObj = parpool(1);
+            else
+                poolObj = parpool(numCudaDevices);
+            end
         end
+
+        if (isempty(poolObj)), error('No pool for Cuda Reduce!'); end
         
         spmd
             for reduce=labindex:numlabs:maxReduction
@@ -196,7 +205,7 @@ for chan=1:imageData.NumberOfChannels
                     imR = outImage;
                     imDataReduced = tmpImageData;
                 else
-                    device = 1;
+                    device = mod(reduce,numCudaDevices)+1;
                     fprintf('\nReduce x%d...',reduce);
                     imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1],'mean',device);
                     imDataReduced = tmpImageData;
