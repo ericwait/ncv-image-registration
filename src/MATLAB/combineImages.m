@@ -159,7 +159,10 @@ for chan=1:imageData.NumberOfChannels
     end
     
     tmpImageData = imageData;
-    if (size(outImage,1)>size(outImage,2))
+    w = whos('outImage');
+    userview = memory;
+    
+    if (size(outImage,1)>size(outImage,2) && userview.MemAvailableAllArrays>w.bytes)
         outImage = permute(outImage(end:-1:1,:,:),[2,1,3]);
         tmpImageData.XDimension = imageData.YDimension;
         tmpImageData.YDimension = imageData.XDimension;
@@ -180,20 +183,20 @@ for chan=1:imageData.NumberOfChannels
     if (strcmp(reducIms,'Yes'))
         maxReduction = ceil(size(outImage,2)/2048);
         
+        w = whos('outImage');
+        
+        if (userview.MemAvailableAllArrays>w.bytes*max((numCudaDevices-1),1))% -1 because one of the pools will use the current copy
+            numPools = max(numCudaDevices,1);
+        else
+            numPools = 1;
+        end
+        
         poolObj = gcp('nocreate');
         if (isempty(poolObj))
-            if (numCudaDevices<1)
-                poolObj = parpool(1);
-            else
-                poolObj = parpool(numCudaDevices);
-            end
-        elseif (poolObj.NumWorkers>numCudaDevices)
+            poolObj = parpool(numPools);
+        elseif (poolObj.NumWorkers>numPools)
             delete(poolObj);
-            if (numCudaDevices<1)
-                poolObj = parpool(1);
-            else
-                poolObj = parpool(numCudaDevices);
-            end
+            poolObj = parpool(numPools);
         end
 
         if (isempty(poolObj)), error('No pool for Cuda Reduce!'); end
@@ -205,7 +208,8 @@ for chan=1:imageData.NumberOfChannels
                     imR = outImage;
                     imDataReduced = tmpImageData;
                 else
-                    device = mod(reduce,numCudaDevices)+1;
+                    %device = mod(reduce,numCudaDevices)+1;
+                    device = 1;
                     fprintf('\nReduce x%d...',reduce);
                     imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1],'mean',device);
                     imDataReduced = tmpImageData;
