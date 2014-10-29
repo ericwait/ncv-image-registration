@@ -169,7 +169,7 @@ for chan=1:imageData.NumberOfChannels
     end
     
     if (strcmp(visualize,'Visualize Only')==0)
-        imwrite(max(outImage(:,:,:),[],3),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
+        imwrite(max(outImage,[],3),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
         createMetadata(fullfile(pathName, prefix),tmpImageData);
         modZ = ceil(size(outImage,3)/length(imageDatasets));
         for z=1:size(outImage,3)
