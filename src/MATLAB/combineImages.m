@@ -39,6 +39,14 @@ if (~exist(logDir,'dir'))
 end
 
 [deltasPresent,imageDatasets] = readDeltaData(pathName,imageDatasets);
+if (0~=deltasPresent)
+    refine = questdlg('Would you like to use the old registration delta?','Refine Deltas?','Old','Redo','Old');
+    if (refine==0)
+        return
+    elseif (strcmp(refine,'Redo'))
+        deltasPresent = 0;
+    end
+end
 
 if (0==deltasPresent)
     refine = questdlg('Would you like to refine registration or use microscope data?','Refine Deltas?','Refine','Microscope','Refine W/ Visualizer','Microscope');
@@ -60,9 +68,7 @@ end
 
 if (strcmp(refine,'Refine') || strcmp(refine,'Refine W/ Visualizer'))
     prefix = [datasetName '_Montage_wDelta'];
-    answer = inputdlg('Channel to register:','Channel Chooser',1,{'3'});
-    if (isempty(answer)), return, end
-    imageDatasets = createDeltas(imageDatasets,str2double(answer),strcmp(refine,'Refine W/ Visualizer'));
+    imageDatasets = createDeltas(imageDatasets,strcmp(refine,'Refine W/ Visualizer'));
     [~,imageDatasets] = readDeltaData(pathName,imageDatasets);
 elseif (0==deltasPresent)
     prefix = [datasetName '_Montage'];
