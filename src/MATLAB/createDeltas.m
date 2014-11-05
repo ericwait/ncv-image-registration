@@ -1,4 +1,4 @@
-function imageDatasets = createDeltas(imageDatasets,chan,visualize)
+function imageDatasets = createDeltas(imageDatasets,visualize)
 minOverlap = 50;
 maxSearchSize = 100;
 n = length(imageDatasets);
@@ -41,10 +41,10 @@ if (strcmp(reRun,'Rerun'))
     makeGraph = tic;
     for i=1:n
         static = tic;
-        [im1,imageDataset1] = tiffReader([],chan,[],[],imageDatasets(i).imageDir,1);
+        [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir,1);
         
         for j=i+1:n
-            [im2,imageDataset2] = tiffReader([],chan,[],[],imageDatasets(j).imageDir,1);
+            [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir,1);
             
             [~,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
             

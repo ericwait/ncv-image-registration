@@ -37,34 +37,41 @@ end
 maxIterX = maxSearchSize;
 maxIterY = maxSearchSize;
 
-imMax1 = max(im1,[],3);
-imMax2 = max(im2,[],3);
+imMax1 = squeeze(max(im1,[],3));
+imMax2 = squeeze(max(im2,[],3));
+normCovar = zeros(maxIterY*2,maxIterX*2,imageDataset1.NumberOfChannels);
 
 %% run 2-D case
 totalTm = tic;
 
 if (visualize==1)
-    setupVisualizer(imMax1,imMax2,imageROI1,imageROI2,imageDataset1,imageDataset2);
-    normCovar = iterateOverX(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap,visualize);
+    for c=1:imageDataset1.NumberOfChannels
+        setupVisualizer(imMax1(:,:,c),imMax2(:,:,c),imageROI1,imageROI2,imageDataset1,imageDataset2);
+        normCovar(:,:,c) = iterateOverX(maxIterX,maxIterY,imMax1(:,:,c),imMax2(:,:,c),imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap,visualize);
+    end
 else
-    normCovar = iterateOverXpar(maxIterX,maxIterY,imMax1,imMax2,imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap,visualize);
+    for c=1:imageDataset1.NumberOfChannels
+        normCovar(:,:,c) = iterateOverXpar(maxIterX,maxIterY,imMax1(:,:,c),imMax2(:,:,c),imageROI1(1),imageROI2(1),imageROI1(2),imageROI2(2),0,minOverlap,visualize);
+    end
 end
 
 tm = toc(totalTm);
 
+
 %% find the best answer and check results
 [maxNCV,I] = max(normCovar(:));
-[r,c] = ind2sub(size(normCovar),I);
-bestDeltaX = c-maxIterX;
-bestDeltaY = r-maxIterY;
+[y,x,c] = ind2sub(size(normCovar),I);
+bestDeltaX = x-maxIterX;
+bestDeltaY = y-maxIterY;
 
 if (logFile~=1)
     fHand = fopen(logFile,'at');
 else
     fHand = 1;
 end
-fprintf(fHand,'\t%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d)\n',...
-    printTime(tm),tm/(maxIterX*2*maxIterY*2),tm/(maxIterX*2),maxNCV,bestDeltaX,bestDeltaY);
+fprintf(fHand,'\t%s, per step %5.3f, per scan line %5.3f, NVC:%04.3f at (%d,%d) on channel:%d\n',...
+    printTime(tm),tm/(maxIterX*2*maxIterY*2*imageDataset1.NumberOfChannels),tm/(maxIterX*2*imageDataset1.NumberOfChannels),...
+    maxNCV,bestDeltaX,bestDeltaY,c);
 if (fHand~=1)
     fclose(fHand);
 end
@@ -73,20 +80,20 @@ end
 [yStart1,yStart2,yEnd1,yEnd2] = calculateROIs(bestDeltaY,imageROI1(2),imageROI2(2),size(im1,1),size(im2,1));
 
 if (visualize==1)
-    set(Rect1,'Position',[xStart1,yStart1,xEnd1-xStart1,yEnd1-yStart1]);
-    set(Rect2,'Position',[xStart2,yStart2,xEnd2-xStart2,yEnd2-yStart2]);
+    set(Rect1,'Position',[max(xStart1,1),max(yStart1,1),max(xEnd1-xStart1,1),max(yEnd1-yStart1,1)]);
+    set(Rect2,'Position',[max(xStart2,1),max(yStart2,1),max(xEnd2-xStart2,1),max(yEnd2-yStart2,1)]);
 end
 
 curCovar = NormalizedCovariance(...
-    max(im1(yStart1:yEnd1,xStart1:xEnd1,:),[],3),...
-    max(im2(yStart2:yEnd2,xStart2:xEnd2,:),[],3));
+    max(im1(yStart1:yEnd1,xStart1:xEnd1,:,c),[],3),...
+    max(im2(yStart2:yEnd2,xStart2:xEnd2,:,c),[],3));
 
 if (abs(maxNCV-curCovar)>0.00001)
     warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNCV);
 end
 
 if (showDecisionSurf)% || maxNCV~=curCovar)
-    drawDecisionSurf(normCovar,c,r,bestDeltaX,bestDeltaY,0,maxNCV,curCovar,1,imageDataset1,imageDataset2);
+    drawDecisionSurf(normCovar(:,:,c),x,y,c,bestDeltaX,bestDeltaY,0,maxNCV,curCovar,1,imageDataset1,imageDataset2);
 end
 
 %% run 3-D case
@@ -99,11 +106,11 @@ maxIterY = 5;
 totalTm = tic;
 
 if (visualize==1)
-    setupVisualizer(imMax1,imMax2,newROI1,newROI2,imageDataset1,imageDataset2);
-    normCovarZ = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1,im2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),...
+    setupVisualizer(imMax1(:,:,c),imMax2(:,:,c),newROI1,newROI2,imageDataset1,imageDataset2);
+    normCovarZ = iterateOverZ(maxIterZ,maxIterX,maxIterY,im1(:,:,:,c),im2(:,:,:,c),newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),...
     newROI2(3),minOverlap,visualize);
 else
-   normCovarZ = iterateOverZpar(maxIterZ,maxIterX,maxIterY,im1,im2,newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),...
+   normCovarZ = iterateOverZpar(maxIterZ,maxIterX,maxIterY,im1(:,:,:,c),im2(:,:,:,c),newROI1(1),newROI2(1),newROI1(2),newROI2(2),newROI1(3),...
     newROI2(3),minOverlap,visualize); 
 end
 
@@ -111,10 +118,10 @@ tm = toc(totalTm);
 
 %% find the best answer and check
 [maxNcovZ,I] = max(normCovarZ(:));
-[r,c,z] = ind2sub(size(normCovarZ),I);
+[y,x,z] = ind2sub(size(normCovarZ),I);
 
-ultimateDeltaX = bestDeltaX + c-maxIterX;
-ultimateDeltaY = bestDeltaY + r-maxIterY;
+ultimateDeltaX = bestDeltaX + x-maxIterX;
+ultimateDeltaY = bestDeltaY + y-maxIterY;
 ultimateDeltaZ = z - maxIterZ;
 
 if (logFile~=1)
@@ -125,8 +132,8 @@ end
 fprintf(fHand,'\t%s, per step %5.3f, per scan line %5.3f, per scan box %5.3f, NVC:%04.3f at (%d,%d,%d)\n',...
     printTime(tm),tm/(maxIterZ*2*maxIterX*2*maxIterY*2),tm/(maxIterZ*2*maxIterX*2),tm/(maxIterZ*2),maxNcovZ,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ);
 
-if (c-maxIterX~=0 || r-maxIterY~=0)
-    fprintf(fHand,'\tA better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', c-maxIterX,r-maxIterY,ultimateDeltaZ,maxNcovZ,maxNCV);
+if (x-maxIterX~=0 || y-maxIterY~=0)
+    fprintf(fHand,'\tA better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', c-maxIterX,y-maxIterY,ultimateDeltaZ,maxNcovZ,maxNCV);
 end
 if (fHand~=1)
     fclose(fHand);
@@ -137,8 +144,8 @@ end
 [zStart1,zStart2,zEnd1,zEnd2] = calculateROIs(ultimateDeltaZ,1,1,size(im1,3),size(im2,3));
 
 curCovar = NormalizedCovariance(...
-    im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1),...
-    im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2));
+    im1(yStart1:yEnd1,xStart1:xEnd1,zStart1:zEnd1,c),...
+    im2(yStart2:yEnd2,xStart2:xEnd2,zStart2:zEnd2,c));
 
 if (abs(maxNcovZ-curCovar)>0.00001)
     warning('ROI normalized covariance (%f) did not match the max (%f)',curCovar,maxNcovZ);
@@ -146,12 +153,12 @@ if (abs(maxNcovZ-curCovar)>0.00001)
 end
 
 if (showDecisionSurf)% || c-maxIterX~=0 || r-maxIterY~=0 || maxNcovZ~=curCovar)
-    drawDecisionSurf(normCovarZ(:,:,z),c,r,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcovZ,curCovar,2,imageDataset1,imageDataset2);
+    drawDecisionSurf(normCovarZ(:,:,z),x,y,c,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcovZ,curCovar,2,imageDataset1,imageDataset2);
 end
 
 if (visualize==1)
-    set(Rect1,'Position',[xStart1,yStart1,xEnd1-xStart1,yEnd1-yStart1]);
-    set(Rect2,'Position',[xStart2,yStart2,xEnd2-xStart2,yEnd2-yStart2]);
+    set(Rect1,'Position',[max(xStart1,1),max(yStart1,1),max(xEnd1-xStart1,1),max(yEnd1-yStart1,1)]);
+    set(Rect2,'Position',[max(xStart2,1),max(yStart2,1),max(xEnd2-xStart2,1),max(yEnd2-yStart2,1)]);
     clear global normCovar normCovarZ Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
 end
 
@@ -209,8 +216,8 @@ for delta = 1:maxIterX*2
     if (visualize==1)
         pos1 = get(Rect1,'Position');
         pos2 = get(Rect2,'Position');
-        set(Rect1,'Position',[start1,pos1(2),end1-start1,pos1(4)]);
-        set(Rect2,'Position',[start2,pos2(2),end2-start2,pos2(4)]);
+        set(Rect1,'Position',[max(start1,1),max(pos1(2),1),max(end1-start1,1),max(pos1(4),1)]);
+        set(Rect2,'Position',[max(start2,1),max(pos2(2),1),max(end2-start2,1),max(pos2(4),1)]);
     end
     
     imX1 = im1(:,start1:end1,:);
@@ -233,8 +240,8 @@ parfor delta = 1:maxIterX*2
     if (visualize==1)
         pos1 = get(Rect1,'Position');
         pos2 = get(Rect2,'Position');
-        set(Rect1,'Position',[start1,pos1(2),end1-start1,pos1(4)]);
-        set(Rect2,'Position',[start2,pos2(2),end2-start2,pos2(4)]);
+        set(Rect1,'Position',[max(start1,1),max(pos1(2),1),max(end1-start1,1),max(pos1(4),1)]);
+        set(Rect2,'Position',[max(start2,1),max(pos2(2),1),max(end2-start2,1),max(pos2(4),1)]);
     end
     
     imX1 = im1(:,start1:end1,:);
@@ -262,8 +269,8 @@ for delta = 1:maxIterY*2
     if (visualize==1)
         pos1 = get(Rect1,'Position');
         pos2 = get(Rect2,'Position');
-        set(Rect1,'Position',[pos1(1),start1,pos1(3),end1-start1]);
-        set(Rect2,'Position',[pos2(1),start2,pos2(3),end2-start2]);
+        set(Rect1,'Position',[max(pos1(1),1),max(start1,1),max(pos1(3),1),max(end1-start1,1)]);
+        set(Rect2,'Position',[max(pos2(1),1),max(start2,1),max(pos2(3),1),max(end2-start2,1)]);
         updateXYviewer(imY1,imY2,normCoLine(delta),curDeltaX,curDelta,curDeltaZ);
     end
     
@@ -308,8 +315,9 @@ imagesc(im1,'Parent',SubImOrg1);
 colormap(SubImOrg1,'gray');
 axis(SubImOrg1,'image');
 hold(SubImOrg1);
-rectangle('Position',[image1ROI(1),image1ROI(2),image1ROI(4)-image1ROI(1),image1ROI(5)-image1ROI(2)],'EdgeColor','r','Parent',SubImOrg1);
-Rect1 = rectangle('Position',[image1ROI(1),image1ROI(2),image1ROI(4)-image1ROI(1),image1ROI(5)-image1ROI(2)],'EdgeColor','g','Parent',SubImOrg1);
+rectPos = [max(image1ROI(1),1),max(image1ROI(2),1),max(image1ROI(4)-image1ROI(1),1),max(image1ROI(5)-image1ROI(2),1)];
+rectangle('Position',rectPos,'EdgeColor','r','Parent',SubImOrg1);
+Rect1 = rectangle('Position',rectPos,'EdgeColor','g','Parent',SubImOrg1);
 title(SubImOrg1,imageData1.DatasetName,'Interpreter','none');
 
 SubImOrg2 = subplot(2,2,2);
@@ -317,8 +325,9 @@ imagesc(im2,'Parent',SubImOrg2);
 colormap(SubImOrg2,'gray');
 axis(SubImOrg2,'image');
 hold(SubImOrg2);
-rectangle('Position',[image2ROI(1),image2ROI(2),image2ROI(4)-image2ROI(1),image2ROI(5)-image2ROI(2)],'EdgeColor','r','Parent',SubImOrg2);
-Rect2 = rectangle('Position',[image2ROI(1),image2ROI(2),image2ROI(4)-image2ROI(1),image2ROI(5)-image2ROI(2)],'EdgeColor','g','Parent',SubImOrg2);
+rectPos = [max(image2ROI(1),1),max(image2ROI(2),1),max(image2ROI(4)-image2ROI(1),1),max(image2ROI(5)-image2ROI(2),1)];
+rectangle('Position',rectPos,'EdgeColor','r','Parent',SubImOrg2);
+Rect2 = rectangle('Position',rectPos,'EdgeColor','g','Parent',SubImOrg2);
 title(SubImOrg2,imageData2.DatasetName,'Interpreter','none');
 
 SubImBest1 = subplot(2,2,3);
@@ -347,7 +356,7 @@ if (mod(curDeltaY,5)==0)
 end
 end
 
-function drawDecisionSurf(decisionArray,c,r,deltaX,deltaY,deltaZ,covariance1,covariance2,subPlotIdx,imageDataset1,imageDataset2)
+function drawDecisionSurf(decisionArray,x,y,c,deltaX,deltaY,deltaZ,covariance1,covariance2,subPlotIdx,imageDataset1,imageDataset2)
 global DecisionFig DecisionAxes
 if (isempty(DecisionFig))
     DecisionFig = figure;
@@ -360,10 +369,9 @@ end
 
 surf(decisionArray,'EdgeColor','none','Parent',DecisionAxes(subPlotIdx));
 hold(DecisionAxes(subPlotIdx))
-text(c,r,covariance1,sprintf('  \\Delta (%d,%d,%d):%.3f',deltaX,deltaY,deltaZ,covariance2),...
+text(x,y,covariance1,sprintf('  \\Delta (%d,%d,%d,%d):%.3f',deltaX,deltaY,deltaZ,c,covariance2),...
     'Color','r','BackgroundColor','k','VerticalAlignment','bottom','Parent',DecisionAxes(subPlotIdx));
 
-scatter3(c,r,covariance1,'fill','Parent',DecisionAxes(subPlotIdx));
+scatter3(x,y,covariance1,'fill','Parent',DecisionAxes(subPlotIdx));
 drawnow
-hold(DecisionAxes(subPlotIdx),'off');
 end
