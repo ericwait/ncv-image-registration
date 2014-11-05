@@ -214,8 +214,8 @@ for chan=1:imageData.NumberOfChannels
                     imR = outImage;
                     imDataReduced = tmpImageData;
                 else
-                    %device = mod(reduce,numCudaDevices)+1;
-                    device = 1;
+                    device = mod(reduce,numCudaDevices)+1;
+%                     device = 1;
                     fprintf('\nReduce x%d...',reduce);
                     imR = CudaMex('ReduceImage',outImage,[reduce,reduce,1],'mean',device);
                     imDataReduced = tmpImageData;
