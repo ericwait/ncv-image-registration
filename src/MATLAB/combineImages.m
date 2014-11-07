@@ -251,6 +251,8 @@ for chan=1:imageData.NumberOfChannels
     tm = toc(chanStart);
     fprintf('Chan:%d done in %s\n',chan,printTime(tm));
 end
+
+colorMIP(fullfile(pathName, prefix),[tmpImageData.DatasetName '.txt']);
 tm = toc(totalTime);
 poolObj = gcp('nocreate');
 if (~isempty(poolObj))
