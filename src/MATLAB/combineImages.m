@@ -45,6 +45,17 @@ if (0~=deltasPresent)
         return
     elseif (strcmp(refine,'Redo'))
         deltasPresent = 0;
+        
+        for i=1:length(imageDatasets)
+            imageDatasets(i).ParentDelta = 0;
+            imageDatasets(i).Children = [];
+            imageDatasets(i).xMinPos = 0;
+            imageDatasets(i).yMinPos = 0;
+            imageDatasets(i).zMinPos = 0;
+            imageDatasets(i).xMaxPos = 0;
+            imageDatasets(i).yMaxPos = 0;
+            imageDatasets(i).zMaxPos = 0;
+        end
     end
 end
 
