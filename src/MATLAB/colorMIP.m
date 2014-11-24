@@ -1,4 +1,8 @@
-function colorMIP(root,metadataFileName)
+function colorMIP(root,metadataFileName,chanList)
+if (~exist('chanList','var'))
+    chanList = [];
+end
+
 %% setup colors
 defaultColors = struct('str','','color',[]);
 defaultColors(1).str = 'r';
@@ -41,30 +45,34 @@ if (isempty(stainOrder) || length(stainOrder)~=imageData.NumberOfChannels)
     disp([stains(stainOrder).stain]);
 end
 
-[unusedColors, idx] = setdiff([defaultColors.str],[stains(stainOrder).strColor]);
+if (isempty(chanList))
+    chanList = 1:NumberOfChannels;
+end
+
+[unusedColors, idx] = setdiff([defaultColors.str],[stains(stainOrder(chanList)).strColor]);
 if (~isempty(unusedColors) && length(unusedColors)>6-imageData.NumberOfChannels)
     unused = 1;
-    for c=1:imageData.NumberOfChannels-1
-        for i=c+1:imageData.NumberOfChannels
-            if (strcmp(stains(stainOrder(c)).strColor,stains(stainOrder(i)).strColor)~=0)
-                stains(stainOrder(i)).strColor = defaultColors(idx(unused)).str;
-                stains(stainOrder(i)).color = defaultColors(idx(unused)).color;
+    for c=1:length(chanList)-1
+        for i=c+1:length(chanList)
+            if (strcmp(stains(stainOrder(chanList(c))).strColor,stains(stainOrder(chanList(i))).strColor)~=0)
+                stains(stainOrder(chanList(i))).strColor = defaultColors(idx(unused)).str;
+                stains(stainOrder(chanList(i))).color = defaultColors(idx(unused)).color;
                 unused = unused + 1;
             end
         end
     end
 end
 
-colors = zeros(1,1,3,imageData.NumberOfChannels);
-for c=1:imageData.NumberOfChannels
-    colors(1,1,:,c) = stains(stainOrder(c)).color;
+colors = zeros(1,1,3,length(chanList));
+for c=1:length(chanList)
+    colors(1,1,:,c) = stains(stainOrder(chanList(c))).color;
 end
 
 %% make colored image
-imColors = zeros(imageData.YDimension,imageData.XDimension,3,imageData.NumberOfChannels);
-imIntensity = zeros(imageData.YDimension,imageData.XDimension,imageData.NumberOfChannels);
-for c=1:imageData.NumberOfChannels
-    imIntensity(:,:,c) = mat2gray(imread(fullfile(root,sprintf('_%s_c%02d_t0001.tif',imageData.DatasetName,c))));
+imColors = zeros(imageData.YDimension,imageData.XDimension,3,length(chanList));
+imIntensity = zeros(imageData.YDimension,imageData.XDimension,length(chanList));
+for c=1:length(chanList)
+    imIntensity(:,:,c) = mat2gray(imread(fullfile(root,sprintf('_%s_c%02d_t0001.tif',imageData.DatasetName,chanList(c)))));
     color = repmat(colors(1,1,:,c),imageData.YDimension,imageData.XDimension,1);
     imColors(:,:,:,c) = repmat(imIntensity(:,:,c),1,1,3).*color;
 end
@@ -97,6 +105,7 @@ stains = setNextColor(stains, 'Tomato', lclColor, lclStr);
 stains = setNextColor(stains, 'Bcat', lclColor, lclStr);
 stains = setNextColor(stains, 'Mash', lclColor, lclStr);
 stains = setNextColor(stains, 'lectin', lclColor, lclStr);
+stains = setNextColor(stains, 'EdU', lclColor, lclStr);
 
 %% green
 lclColor = [0.00 1.00 0.00];
@@ -117,6 +126,7 @@ stains = setNextColor(stains, 'Itga', lclColor, lclStr);
 lclColor = [1.00 1.00 0.00];
 lclStr = 'y';
 stains = setNextColor(stains, 'Olig2', lclColor, lclStr);
+stains = setNextColor(stains, 'EGFR', lclColor, lclStr);
 % stains = setNextColor(stains, 'AcTub', lclColor, lclStr);
 % stains = setNextColor(stains, 'Bcatenin', lclColor, lclStr);
 
@@ -124,7 +134,6 @@ stains = setNextColor(stains, 'Olig2', lclColor, lclStr);
 lclColor = [1.00 0.00 1.00];
 lclStr = 'm';
 stains = setNextColor(stains, 'AcTub', lclColor, lclStr);
-stains = setNextColor(stains, 'EdU', lclColor, lclStr);
 % stains = setNextColor(stains, 'VCAM', lclColor, lclStr);
 % stains = setNextColor(stains, 'Mash', lclColor, lclStr);
 end
