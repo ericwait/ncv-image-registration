@@ -121,7 +121,7 @@ clear im
 for chan=1:imageData.NumberOfChannels
     chanStart = tic;
     outImage = zeros(imageHeight,imageWidth,imageDepth,w.class);
-    if (strcmp(visualize,'No')~=0)
+    if (strcmp(visualize,'No')==0)
         outImageColor = zeros(imageHeight,imageWidth,imageDepth,w.class);
     end
     fprintf('Chan:%d\n',chan);
@@ -154,7 +154,7 @@ for chan=1:imageData.NumberOfChannels
             
             clear nextIm
             
-            if (strcmp(visualize,'No')~=0)
+            if (strcmp(visualize,'No')==0)
                 outImageColor(startYind:startYind+imageDatasets(datasetIdx).YDimension-1,...
                     startXind:startXind+imageDatasets(datasetIdx).XDimension-1,...
                     startZind:startZind+imageDatasets(datasetIdx).ZDimension-1) = ones(imageDatasets(datasetIdx).YDimension,...
