@@ -23,9 +23,9 @@ end
 
 for i=1:length(dirNames{1})
     if isempty(imageDatasets)
-        [imageDatasets,~] = readMetaData(fullfile(pathName,dirNames{1}{i}));
+        [imageDatasets,~] = readMetaData(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']));
     else
-        [imageDatasets(end+1),~] = readMetaData(fullfile(pathName,dirNames{1}{i}));
+        [imageDatasets(end+1),~] = readMetaData(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']));
     end
 end
 
