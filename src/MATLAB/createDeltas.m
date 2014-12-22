@@ -41,10 +41,10 @@ if (strcmp(reRun,'Rerun'))
     makeGraph = tic;
     for i=1:n
         static = tic;
-        [im1,imageDataset1] = tiffReader([],[],[],[],imageDatasets(i).imageDir,1);
+        [im1,imageDataset1] = tiffReader(fullfile(imageDatasets(i).imageDir,[imageDatasets(i).DatasetName,'.txt']),[],[],[],[],[],true);
         
         for j=i+1:n
-            [im2,imageDataset2] = tiffReader([],[],[],[],imageDatasets(j).imageDir,1);
+            [im2,imageDataset2] = tiffReader(fullfile(imageDatasets(j).imageDir,[imageDatasets(j).DatasetName,'.txt']),[],[],[],[],[],true);
             
             [~,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
             

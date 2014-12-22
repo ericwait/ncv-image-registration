@@ -23,9 +23,9 @@ end
 
 for i=1:length(dirNames{1})
     if isempty(imageDatasets)
-        [imageDatasets,~] = readMetaData(fullfile(pathName,dirNames{1}{i}));
+        [imageDatasets,~] = readMetaData(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']));
     else
-        [imageDatasets(end+1),~] = readMetaData(fullfile(pathName,dirNames{1}{i}));
+        [imageDatasets(end+1),~] = readMetaData(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']));
     end
 end
 
@@ -114,7 +114,7 @@ imageData.XPixelPhysicalSize = minXvoxelSize;
 imageData.YPixelPhysicalSize = minYvoxelSize;
 imageData.ZPixelPhysicalSize = minZvoxelSize;
 
-[im,~] = tiffReader([],[],[],[],fullfile(pathName,dirNames{1}{i}));
+[im,~] = tiffReader(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i} '.txt']));
 w = whos('im');
 clear im
 
@@ -131,7 +131,7 @@ for chan=1:imageData.NumberOfChannels
             startYind = round((imageDatasets(datasetIdx).yMinPos-minYPos) / minYvoxelSize +1);
             startZind = round((imageDatasets(datasetIdx).zMinPos-minZPos) / minZvoxelSize +1);
             
-            [nextIm,~] = tiffReader([],chan,[],[],fullfile(pathName,dirNames{1}{datasetIdx}),1);
+            [nextIm,~] = tiffReader(fullfile(pathName,dirNames{1}{datasetIdx},[dirNames{1}{datasetIdx} '.txt']),[],chan,[],[],[],true);
             fprintf('.');
             
             roi = [startXind,startYind,startZind,...
