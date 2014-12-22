@@ -46,7 +46,7 @@ if (isempty(stainOrder) || length(stainOrder)~=imageData.NumberOfChannels)
 end
 
 if (isempty(chanList))
-    chanList = 1:NumberOfChannels;
+    chanList = 1:imageData.NumberOfChannels;
 end
 
 [unusedColors, idx] = setdiff([defaultColors.str],[stains(stainOrder(chanList)).strColor]);
@@ -106,6 +106,7 @@ stains = setNextColor(stains, 'Bcat', lclColor, lclStr);
 stains = setNextColor(stains, 'Mash', lclColor, lclStr);
 stains = setNextColor(stains, 'lectin', lclColor, lclStr);
 stains = setNextColor(stains, 'EdU', lclColor, lclStr);
+stains = setNextColor(stains, 'EDU', lclColor, lclStr);
 
 %% green
 lclColor = [0.00 1.00 0.00];
