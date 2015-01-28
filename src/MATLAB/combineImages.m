@@ -114,6 +114,8 @@ imageData.XPixelPhysicalSize = minXvoxelSize;
 imageData.YPixelPhysicalSize = minYvoxelSize;
 imageData.ZPixelPhysicalSize = minZvoxelSize;
 
+tmpImageData = imageData;
+
 [im,~] = tiffReader(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i} '.txt']));
 w = whos('im');
 clear im
@@ -175,7 +177,6 @@ for chan=1:imageData.NumberOfChannels
         close(fig);
     end
     
-    tmpImageData = imageData;
     w = whos('outImage');
     userview = memory;
     
@@ -263,7 +264,14 @@ for chan=1:imageData.NumberOfChannels
     fprintf('Chan:%d done in %s\n',chan,printTime(tm));
 end
 
-colorMIP(fullfile(pathName, prefix),[tmpImageData.DatasetName '.txt']);
+colorMip = colorMIP(fullfile(pathName, prefix,[tmpImageData.DatasetName '.txt']));
+f = figure;
+imagesc(colorMip);%,'Parent',ax);
+ax = get(f,'CurrentAxes');
+drawBoxesLines(f,ax,imageDatasets,0,tmpImageData);
+frm = getframe(ax);
+imwrite(frm.cdata,fullfile(pathName,prefix,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
+close(f);
 tm = toc(totalTime);
 poolObj = gcp('nocreate');
 if (~isempty(poolObj))

@@ -1,4 +1,4 @@
-function colorMIP(root,metadataFileName,chanList)
+function imFinal = colorMIP(metadataFilePath,chanList)
 if (~exist('chanList','var'))
     chanList = [];
 end
@@ -21,11 +21,12 @@ defaultColors(6).color = [1.00 1.00 0.00];
 stains = setColors();
 
 %% get image data
-if (~exist('metadataFileName','var') || isempty(metadataFileName))
+if (~exist('metadataFilePath','var') || isempty(metadataFilePath))
     [metadataFileName,root,~] = uigetfile('.txt');
+    metadataFilePath = fullfile(root,metadataFileName);
 end
 
-imageData = readMetaData(fullfile(root,metadataFileName));
+imageData = readMetaData(metadataFilePath);
 
 if ~isfield(imageData,'DatasetName'), return, end
 
@@ -72,7 +73,7 @@ end
 imColors = zeros(imageData.YDimension,imageData.XDimension,3,length(chanList));
 imIntensity = zeros(imageData.YDimension,imageData.XDimension,length(chanList));
 for c=1:length(chanList)
-    imIntensity(:,:,c) = mat2gray(imread(fullfile(root,sprintf('_%s_c%02d_t0001.tif',imageData.DatasetName,chanList(c)))));
+    imIntensity(:,:,c) = mat2gray(max(tiffReader(metadataFilePath,[],chanList(c),[],[],[],1),[],3));
     color = repmat(colors(1,1,:,c),imageData.YDimension,imageData.XDimension,1);
     imColors(:,:,:,c) = repmat(imIntensity(:,:,c),1,1,3).*color;
 end
@@ -82,6 +83,7 @@ imIntSum = sum(imIntensity,3);
 imIntSum(imIntSum==0) = 1;
 imColrSum = sum(imColors,4);
 imFinal = imColrSum.*repmat(imMax./imIntSum,1,1,3);
+[root,~,~] = fileparts(metadataFilePath);
 metadataFileName = fullfile(root,sprintf('_%s.tif',imageData.DatasetName));
 imwrite(imFinal,metadataFileName,'tif','Compression','lzw');
 fprintf('%s\nColors:%s\n',metadataFileName,[stains(stainOrder).strColor]);
