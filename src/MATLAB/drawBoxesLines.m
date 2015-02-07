@@ -33,7 +33,7 @@ for i=1:length(imageDatasets)
     centerParent = [(imageDatasets(imageDatasets(i).ParentDelta).xMinPos-minXPos)/imageDatasets(imageDatasets(i).ParentDelta).XPixelPhysicalSize + imageDatasets(imageDatasets(i).ParentDelta).XDimension/2,...
         (imageDatasets(imageDatasets(i).ParentDelta).yMinPos-minYPos)/imageDatasets(imageDatasets(i).ParentDelta).YPixelPhysicalSize + imageDatasets(imageDatasets(i).ParentDelta).YDimension/2];
     
-    posNum = regexp(imageDatasets(i).DatasetName,[regexptranslate('escape',curDataset.DatasetName) '(.*)'],'tokens','once');
+    posNum = regexp(imageDatasets(i).DatasetName,[regexptranslate('escape',curDataset) '(.*)'],'tokens','once');
     if (isempty(posNum))
         posNum = num2str(i);
     end

@@ -1,4 +1,4 @@
-function [fig,ax] = testingDeltas(outImage, outImageColor,imageDatasets,chan)
+function [fig,ax] = testingDeltas(outImage, outImageColor,imageDatasets,chan,curDataset)
 [img, colorIdx] = max(outImage,[],3);
 
 fig = figure;
@@ -6,7 +6,7 @@ imagesc(img);
 ax = gca;
 colormap(ax,'gray');
 
-drawBoxesLines(fig,ax,imageDatasets,chan);
+drawBoxesLines(fig,ax,imageDatasets,chan,curDataset);
 
 if (~isempty(outImageColor))
     %% setup colormap for the colored image
@@ -21,7 +21,7 @@ if (~isempty(outImageColor))
     fig = figure;
     image(imgC);
     ax = gca;
-    drawBoxesLines(fig,ax,imageDatasets,chan);
+    drawBoxesLines(fig,ax,imageDatasets,chan,curDataset);
 end
 
 drawnow

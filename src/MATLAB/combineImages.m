@@ -176,7 +176,7 @@ for chan=1:imageData.NumberOfChannels
         title(sprintf('Cannel:%d',chan),'Interpreter','none','Color','w');
         testingDeltas(outImage, outImageColor,imageDatasets,chan);
     else
-        [fig,ax] = testingDeltas(outImage,[],imageDatasets,chan);
+        [fig,ax] = testingDeltas(outImage,[],imageDatasets,chan,prefix);
         set(fig,'Units','normalized','Position',[0 0 1 1]);
         frm = getframe(ax);
         imwrite(frm.cdata,fullfile(logDir,sprintf('%s_c%02d_minSpanTree.tif',datasetName,chan)),'tif','Compression','lzw');
@@ -274,7 +274,7 @@ colorMip = colorMIP(fullfile(pathName, prefix,[tmpImageData.DatasetName '.txt'])
 f = figure;
 imagesc(colorMip);%,'Parent',ax);
 ax = get(f,'CurrentAxes');
-drawBoxesLines(f,ax,imageDatasets,0,tmpImageData);
+drawBoxesLines(f,ax,imageDatasets,0,tmpImageData.DatasetName);
 frm = getframe(ax);
 imwrite(frm.cdata,fullfile(pathName,prefix,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
 close(f);
