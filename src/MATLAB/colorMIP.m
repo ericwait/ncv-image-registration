@@ -42,7 +42,7 @@ end
 [b, idx] = sort(starts);
 stainOrder = idx(b>0);
 if (isempty(stainOrder) || length(stainOrder)~=imageData.NumberOfChannels)
-    dbstop in colorMIP at 41
+    dbstop in colorMIP at 46
     disp([stains(stainOrder).stain]);
 end
 
