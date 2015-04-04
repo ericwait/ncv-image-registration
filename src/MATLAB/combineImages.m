@@ -178,6 +178,9 @@ for chan=1:imageData.NumberOfChannels
     else
         [fig,ax] = testingDeltas(outImage,[],imageDatasets,chan,prefix);
         set(fig,'Units','normalized','Position',[0 0 1 1]);
+        if (imageHeight>imageWidth)
+            camroll(ax,-90);
+        end
         frm = getframe(ax);
         imwrite(frm.cdata,fullfile(logDir,sprintf('%s_c%02d_minSpanTree.tif',datasetName,chan)),'tif','Compression','lzw');
         close(fig);
@@ -271,10 +274,16 @@ for chan=1:imageData.NumberOfChannels
 end
 
 colorMip = colorMIP(fullfile(pathName, prefix,[tmpImageData.DatasetName '.txt']));
+if (imageHeight>imageWidth)
+    colorMip = permute(colorMip(:,end:-1:1,:),[2,1,3]);
+end
 f = figure;
 imagesc(colorMip);%,'Parent',ax);
 ax = get(f,'CurrentAxes');
 drawBoxesLines(f,ax,imageDatasets,0,tmpImageData.DatasetName);
+if (imageHeight>imageWidth)
+    camroll(ax,-90);
+end
 frm = getframe(ax);
 imwrite(frm.cdata,fullfile(pathName,prefix,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
 close(f);
@@ -286,3 +295,4 @@ end
 fprintf('Completed in %s\n',printTime(tm));
 
 clear mex
+end
