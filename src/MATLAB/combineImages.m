@@ -22,10 +22,16 @@ for i=length(str1):-1:1
 end
 
 for i=1:length(dirNames{1})
-    if isempty(imageDatasets)
-        [imageDatasets,~] = readMetaData(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']));
+    [~,~,ext] = fileparts(dirNames{1}{i});
+    if (strcmp(ext,'.txt'))
+        metaFilePath = fullfile(pathName,dirNames{1}{i});
     else
-        [imageDatasets(end+1),~] = readMetaData(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']));
+        metaFilePath = fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']);
+    end
+    if isempty(imageDatasets)
+        [imageDatasets,~] = readMetaData(metaFilePath);
+    else
+        [imageDatasets(end+1),~] = readMetaData(metaFilePath);
     end
 end
 
