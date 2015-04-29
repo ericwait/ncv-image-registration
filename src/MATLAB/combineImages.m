@@ -122,7 +122,13 @@ imageData.ZPixelPhysicalSize = minZvoxelSize;
 
 tmpImageData = imageData;
 
-[im,~] = tiffReader(fullfile(pathName,dirNames{1}{i},[dirNames{1}{i} '.txt']));
+[~,~,ext] = fileparts(dirNames{1}{1});
+if (strcmp(ext,'.txt'))
+    metaFilePath = fullfile(pathName,dirNames{1}{1});
+else
+    metaFilePath = fullfile(pathName,dirNames{1}{1},[dirNames{1}{1},'.txt']);
+end
+[im,~] = tiffReader(metaFilePath);
 w = whos('im');
 clear im
 
@@ -139,7 +145,13 @@ for chan=1:imageData.NumberOfChannels
             startYind = round((imageDatasets(datasetIdx).yMinPos-minYPos) / minYvoxelSize +1);
             startZind = round((imageDatasets(datasetIdx).zMinPos-minZPos) / minZvoxelSize +1);
             
-            [nextIm,~] = tiffReader(fullfile(pathName,dirNames{1}{datasetIdx},[dirNames{1}{datasetIdx} '.txt']),[],chan,[],[],[],true);
+            [~,~,ext] = fileparts(dirNames{1}{datasetIdx});
+            if (strcmp(ext,'.txt'))
+                metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx});
+            else
+                metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx},[dirNames{1}{datasetIdx},'.txt']);
+            end
+            [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],[],true);
             fprintf('.');
             
             roi = [startXind,startYind,startZind,...
@@ -174,7 +186,7 @@ for chan=1:imageData.NumberOfChannels
     if (strcmp(visualize,'Yes') || strcmp(visualize,'Visualize Only'))
         figure,imagesc(max(outImage,[],3)),colormap gray, axis image
         title(sprintf('Cannel:%d',chan),'Interpreter','none','Color','w');
-        testingDeltas(outImage, outImageColor,imageDatasets,chan);
+        testingDeltas(outImage, outImageColor,imageDatasets,chan,prefix);
     else
         [fig,ax] = testingDeltas(outImage,[],imageDatasets,chan,prefix);
         set(fig,'Units','normalized','Position',[0 0 1 1]);
