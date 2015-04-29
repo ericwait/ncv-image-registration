@@ -1,5 +1,5 @@
 function imageDatasets = createDeltas(imageDatasets,visualize)
-minOverlap = 50;
+minOverlap = 25;
 maxSearchSize = 100;
 n = length(imageDatasets);
 
@@ -57,6 +57,10 @@ if (strcmp(reRun,'Rerun'))
                 idx = sub2ind(size(edges),i,j);
                 edges(idx) = ed;
             else
+                t = datetime('now');
+                fprintf(1,'\t%s-->%s @ %02d:%02d:%02d.%0.0f\n',...
+                    imageDataset1.DatasetName,imageDataset2.DatasetName,t.Hour,t.Minute,floor(t.Second),(t.Second-floor(t.Second))*100);
+                
                 [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,...
                     minOverlap,maxSearchSize,logFile,visualize,visualize);
                 
@@ -68,7 +72,6 @@ if (strcmp(reRun,'Rerun'))
                 idx = sub2ind(size(edges),i,j);
                 edges(idx) = ed;
                 e = e+1;
-                fprintf(1,'.');
             end
         end
         clear('im1');
@@ -76,7 +79,7 @@ if (strcmp(reRun,'Rerun'))
         tm = toc(static);
         fHand = fopen(logFile,'at');
         fprintf(fHand,'%s took %s\n',imageDatasets(i).DatasetName,printTime(tm));
-        fprintf(1,'\n%s took %s\n',imageDatasets(i).DatasetName,printTime(tm));
+        fprintf(1,'%s took %s\n\n',imageDatasets(i).DatasetName,printTime(tm));
         fclose(fHand);
     end
     
