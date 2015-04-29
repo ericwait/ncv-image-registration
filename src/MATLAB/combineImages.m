@@ -154,12 +154,12 @@ for chan=1:imageData.NumberOfChannels
             [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],[],true);
             fprintf('.');
             
-            roi = [startXind,startYind,startZind,...
-                startXind+min(imageDatasets(datasetIdx).XDimension,size(nextIm,1))-1,...
-                startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,2))-1,...
+            roi = [startYind,startXind,startZind,...
+                startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,1))-1,...
+                startXind+min(imageDatasets(datasetIdx).XDimension,size(nextIm,2))-1,...
                 startZind+min(imageDatasets(datasetIdx).ZDimension,size(nextIm,3))-1];
             
-            outRoi = outImage(roi(2):roi(5),roi(1):roi(4),roi(3):roi(6));
+            outRoi = outImage(roi(1):roi(4),roi(2):roi(5),roi(3):roi(6));
             difInd = outRoi>0;
             nextSum = sum(sum(sum(nextIm(difInd))));
             outSum = sum(sum(sum(outRoi(difInd))));
@@ -170,7 +170,7 @@ for chan=1:imageData.NumberOfChannels
             
             clear outRoi
             
-            outImage(roi(2):roi(5),roi(1):roi(4),roi(3):roi(6)) = nextIm;
+            outImage(roi(1):roi(4),roi(2):roi(5),roi(3):roi(6)) = nextIm;
             
             clear nextIm
             
