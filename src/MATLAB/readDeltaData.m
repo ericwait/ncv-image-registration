@@ -51,6 +51,15 @@ if (deltasPresent==1)
     if (length(root)~=1), error('There are too many roots to min span tree!'); end
     
     imageDatasets = applyParentsDelta(root,0,0,0,imageDatasets);
+else
+    for i=1:length(imageDatasets)
+        imageDatasets(i).xMinPos = imageDatasets(i).YPosition*1e6;
+        imageDatasets(i).xMaxPos = imageDatasets(i).xMinPos + imageDatasets(i).XDimension * imageDatasets(i).XPixelPhysicalSize;
+        imageDatasets(i).yMinPos = imageDatasets(i).XPosition*1e6;
+        imageDatasets(i).yMaxPos = imageDatasets(i).yMinPos + imageDatasets(i).YDimension * imageDatasets(i).YPixelPhysicalSize;
+        imageDatasets(i).zMinPos = 0;
+        imageDatasets(i).zMaxPos = imageDatasets(i).ZDimension * imageDatasets(i).ZPixelPhysicalSize;
+    end
 end
 end
 
