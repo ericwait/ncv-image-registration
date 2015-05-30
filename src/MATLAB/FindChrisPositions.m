@@ -1,20 +1,42 @@
-root = 'C:\Images\Temple\SVZ\Montage\2mo1 Surface DAPI Msh1-647 VCAM-488 Olg2-514 Bcat-Cy3 GFAP-594';
+function FindChrisPositions(root,mipName)
+if (~exist('root','var') || isempty(root))
+    root = uigetdir();
+end
+
+if (~exist('mipName','var') || isempty(mipName))
+    mipName = uigetfile(fullfile(root,'.tif'));
+end
+
+if (isempty(root) || isempty(mipName) || any(mipName==0))
+    warning('No files found, exiting');
+    return;
+end
+
+imMont = imread(fullfile(root,mipName));
 overlap = 0.05;
 
-imMont = imread(fullfile(root,'2mo1 wmSVZ 25x01.tif'));
+[listFile,err] = fopen(fullfile(root,'_unmixed','list.txt'),'r');
+
+if (~isempty(err))
+    warning(err);
+    return;
+end
+
+names = textscan(listFile,'%s','delimiter','\n');
+fclose(listFile);
+
+txtNames = names{1,1};
+numImages = length(txtNames);
 
 mask = ~(imMont(:,:,1)==69 & imMont(:,:,2)==77 & imMont(:,:,3)==98);
 cc = bwconncomp(mask);
 
-numImages = 118;
 edgeSize = ceil(sqrt(size(cc.PixelIdxList{1},1)/numImages));
 
-figure, imagesc(imMont), axis image
+figure
+imagesc(imMont)
+axis image
 hold on
-
-imagesc(imMont), axis image
-
-plot(crn(:,1),crn(:,2),'*g')
 
 for i=edgeSize:edgeSize:size(imMont,2)
     line([i,i],[0,size(imMont,1)],'color','w');
@@ -67,15 +89,12 @@ for r=1:2:ceil(size(imMont,1)/edgeSize)
         end
     end
 end
+hold off
 
-listFile = fopen(fullfile(root,'_unmixed','list.txt'),'r');
-names = textscan(listFile,'%s','delimiter','\n');
-fclose(listFile);
-
-txtNames = names{1,1};
 for i=1:length(txtNames)
     d = readMetadata(fullfile(root,'_unmixed',txtNames{i}));
     d.XPosition = (pos(i,1)-1)*(d.XDimension-d.XDimension*overlap)*d.XPixelPhysicalSize * 1e-6;
     d.YPosition = (pos(i,2)-1)*(d.YDimension-d.YDimension*overlap)*d.YPixelPhysicalSize * 1e-6;
     createMetadata(fullfile(root,'_unmixed'),d,true);
+end
 end
