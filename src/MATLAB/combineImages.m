@@ -29,9 +29,9 @@ for i=1:length(dirNames{1})
         metaFilePath = fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']);
     end
     if isempty(imageDatasets)
-        [imageDatasets,~] = readMetaData(metaFilePath);
+        [imageDatasets,~] = readMetadata(metaFilePath);
     else
-        [imageDatasets(end+1),~] = readMetaData(metaFilePath);
+        [imageDatasets(end+1),~] = readMetadata(metaFilePath);
     end
 end
 
