@@ -18,6 +18,8 @@ else
 end
 
 edgeEmpty = struct(...
+    'i',0,...
+    'j',0,...
     'normCovar',-inf,...
     'deltaX',0,...
     'deltaY',0,...
@@ -45,63 +47,24 @@ if (strcmp(reRun,'Rerun'))
     dirs = cellstr({imageDatasets(:).imageDir});
     names = cellstr({imageDatasets(:).DatasetName});
     
-    gcp('nocreate');
-    
-    spmd
-        for i=labindex:numlabs:n
-            static = tic;
-            [im1,imageDataset1] = tiffReader(fullfile(dirs{i},[names{i},'.txt']),[],[],[],[],[],true);
-            
-            for j=i+1:n
-                [im2,imageDataset2] = tiffReader(fullfile(dirs{j},[names{j},'.txt']),[],[],[],[],[],true);
-                
-                [~,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
-                
-                ed = edgeEmpty;
-                if (minXdist>maxSearchSize-minOverlap || minYdist>maxSearchSize-minOverlap)
-                    ed.normCovar = -inf;
-                    ed.deltaX = 0;
-                    ed.deltaY = 0;
-                    ed.deltaZ = 0;
-                    ed.overlapSize = 0;
-                    edges(i,j) = ed;
-                    %idx = sub2ind(size(edges),i,j);
-                    %edges(idx) = ed;
-                else
-                    t = datetime('now');
-                    fprintf(1,'\t%s-->%s @ %02d:%02d:%02d.%0.0f\n',...
-                        imageDataset1.DatasetName,imageDataset2.DatasetName,t.Hour,t.Minute,floor(t.Second),(t.Second-floor(t.Second))*100);
-                    
-                    [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,...
-                        minOverlap,maxSearchSize,logFile,visualize,visualize);
-                    
-                    ed.normCovar = normCovar;
-                    ed.deltaX = deltaX;
-                    ed.deltaY = deltaY;
-                    ed.deltaZ = deltaZ;
-                    ed.overlapSize = overlapSize;
-                    edges(i,j) = ed;
-                    %                 idx = sub2ind(size(edges),i,j);
-                    %                 edges(idx) = ed;
-                    %                 e = e+1;
-                end
-            end
-            
-            tm = toc(static);
-            fHand = fopen(logFile,'at');
-            fprintf(fHand,'%s took %s\n',names{i},printTime(tm));
-            fprintf(1,'%s took %s\n\n',names{i},printTime(tm));
-            fclose(fHand);
-        end
+    spmd        
+        createEdgeData(dirs,names, logFile,minOverlap,maxSearchSize,visualize);
     end
+    
+    delete(poolobj);
+    
+    dirList = dir(fullfile(dirs(1),'*.mat'));
+    for k=1:length(dirList)
+        ed = load(fullfile(dirs(1),dirList(k).name));
+        edges(ed.i,ed.j) = ed;
+        e = e+1;
+    end
+    
     tm = toc(makeGraph);
     
-    e = sum(edges(:).normCovar>-1);
-
     fHand = fopen(logFile,'at');
     fprintf(fHand,'Graph creation took: %s, per edge %06.3f sec, per worker %f sec\n',printTime(tm),tm/e,poolobj.NumWorkers);
     fclose(fHand);
-    delete(poolobj);
     
     save(fullfile(logDir,'graphEdges.mat'),'edges');
 else
