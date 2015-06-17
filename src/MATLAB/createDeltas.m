@@ -51,8 +51,6 @@ if (strcmp(reRun,'Rerun'))
         createEdgeData(dirs,names, logFile,minOverlap,maxSearchSize,visualize);
     end
     
-    delete(poolobj);
-    
     dirList = dir(fullfile(dirs{1},'*.mat'));
     for k=1:length(dirList)
         load(fullfile(dirs{1},dirList(k).name));
@@ -120,7 +118,7 @@ for i=1:n
         parent = imageDatasets(parentNode).DatasetName;
     end
     
-    f = fopen(fullfile(imageDatasets(i).imageDir,'..',[imageDatasets(i).DatasetName,'_corrResults.txt']),'w');
+    f = fopen(fullfile(imageDatasets(i).imageDir,[imageDatasets(i).DatasetName,'_corrResults.txt']),'w');
     fprintf(f,'deltaX:%d\n',deltaX);
     fprintf(f,'deltaY:%d\n',deltaY);
     fprintf(f,'deltaZ:%d\n',deltaZ);
