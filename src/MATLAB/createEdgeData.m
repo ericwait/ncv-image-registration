@@ -15,13 +15,18 @@ ed = struct(...
             
 for i=labindex:numlabs:length(names)
     static = tic;
-    [im1,imageDataset1] = tiffReader(fullfile(dirs{i},[names{i},'.txt']),[],[],[],[],[],true);
+    im1 = [];
+    imageDataset1 = [];
     
     for j=i+1:length(names)
         checkPointPath = fullfile(fullfile(dirs{i},sprintf('%d_%d.mat',i,j)));
         [bExists,~] = Threading.claimDataFile(fileMap, checkPointPath);
         
         if (~bExists)
+            if (isempty(im1))
+                [im1,imageDataset1] = tiffReader(fullfile(dirs{i},[names{i},'.txt']),[],[],[],[],[],true);
+            end
+            
             imageDataset2 = readMetadata(fullfile(dirs{j},[names{j},'.txt']));
             [~,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
             
@@ -50,9 +55,9 @@ for i=labindex:numlabs:length(names)
                 ed.deltaZ = deltaZ;
                 ed.overlapSize = overlapSize;
             end
+            
+            Threading.finalizeDataFile(fileMap, checkPointPath, ed);
         end
-        
-        Threading.finalizeDataFile(fileMap, checkPointPath, ed);
         
         tm = toc(static);
         fHand = fopen(logFile,'at');
@@ -61,5 +66,4 @@ for i=labindex:numlabs:length(names)
         fclose(fHand);
     end
 end
-
 
