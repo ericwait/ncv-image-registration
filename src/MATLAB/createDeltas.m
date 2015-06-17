@@ -53,11 +53,13 @@ if (strcmp(reRun,'Rerun'))
     
     delete(poolobj);
     
-    dirList = dir(fullfile(dirs(1),'*.mat'));
+    dirList = dir(fullfile(dirs{1},'*.mat'));
     for k=1:length(dirList)
-        ed = load(fullfile(dirs(1),dirList(k).name));
-        edges(ed.i,ed.j) = ed;
-        e = e+1;
+        load(fullfile(dirs{1},dirList(k).name));
+        if (ed.i>0 && ed.j>0)
+            edges(ed.i,ed.j) = ed;
+            e = e+1;
+        end
     end
     
     tm = toc(makeGraph);
