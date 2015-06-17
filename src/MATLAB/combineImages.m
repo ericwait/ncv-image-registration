@@ -132,13 +132,14 @@ end
 w = whos('im');
 clear im
 
+backspaces = '';
 for chan=1:imageData.NumberOfChannels
     chanStart = tic;
     outImage = zeros(imageHeight,imageWidth,imageDepth,w.class);
     if (strcmp(visualize,'No')==0)
         outImageColor = zeros(imageHeight,imageWidth,imageDepth,w.class);
     end
-    fprintf('Chan:%d\n',chan);
+    fprintf('Chan:%d\t',chan);
     for datasetIdx=1:length(imageDatasets)
         if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
             startXind = round((imageDatasets(datasetIdx).xMinPos-minXPos) / minXvoxelSize +1);
@@ -152,7 +153,10 @@ for chan=1:imageData.NumberOfChannels
                 metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx},[dirNames{1}{datasetIdx},'.txt']);
             end
             [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],[],true);
-            fprintf('.');
+            prcntDone = 100 * datasetIdx / length(imageDatasets);
+            doneStr = sprintf('%3.1f',prcntDone);
+            fprintf([backspaces,doneStr]);
+            backspaces = repmat(sprintf('\b'),1,length(doneStr));
             
             roi = [startYind,startXind,startZind,...
                 startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,1))-1,...
