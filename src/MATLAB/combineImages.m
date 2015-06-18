@@ -276,7 +276,7 @@ for chan=1:imageData.NumberOfChannels
     fprintf('Chan:%d done in %s\n',chan,printTime(tm));
 end
 
-colorMip = colorMIP(fullfile(pathName, prefix,[tmpImageData.DatasetName '.txt']));
+colorMip = colorMIP(fullfile(pathName, prefix,[tmpImageData.DatasetName '.json']));
 if (imageHeight>imageWidth)
     colorMip = permute(colorMip(:,end:-1:1,:),[2,1,3]);
 end
