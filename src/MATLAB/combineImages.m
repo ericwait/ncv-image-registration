@@ -128,7 +128,7 @@ if (strcmp(ext,'.txt'))
 else
     metaFilePath = fullfile(pathName,dirNames{1}{1},[dirNames{1}{1},'.txt']);
 end
-[im,~] = tiffReader(metaFilePath);
+[im,~] = tiffReader(metaFilePath,1,1,1,[],[],true);
 w = whos('im');
 clear im
 
