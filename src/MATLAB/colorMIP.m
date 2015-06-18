@@ -83,6 +83,7 @@ imIntSum = sum(imIntensity,3);
 imIntSum(imIntSum==0) = 1;
 imColrSum = sum(imColors,4);
 imFinal = imColrSum.*repmat(imMax./imIntSum,1,1,3);
+imFinal = im2uint8(imFinal);
 [root,~,~] = fileparts(metadataFilePath);
 metadataFileName = fullfile(root,sprintf('_%s.tif',imageData.DatasetName));
 imwrite(imFinal,metadataFileName,'tif','Compression','lzw');
