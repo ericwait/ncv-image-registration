@@ -213,14 +213,7 @@ for chan=1:imageData.NumberOfChannels
     
     if (strcmp(visualize,'Visualize Only')==0)
         imwrite(max(outImage,[],3),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
-        createMetadata(fullfile(pathName, prefix),tmpImageData);
-        modZ = ceil(size(outImage,3)/length(imageDatasets));
-        for z=1:size(outImage,3)
-            imwrite(outImage(:,:,z),fullfile(pathName, prefix, [datasetName sprintf('_c%02d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
-            if (mod(z,modZ)==0)
-                fprintf('.');
-            end
-        end
+        tiffWriter(outImage,fullfile(pathName, [prefix, '\']),tmpImageData,[],chan);
     end
     
     if (strcmp(reducIms,'Yes'))
@@ -268,14 +261,8 @@ for chan=1:imageData.NumberOfChannels
                     mkdir(fullfile(pathName,prefix),['x' num2str(reduce)]);
                 end
                 
-                createMetadata(fullfile(pathName, prefix, ['x' num2str(reduce)]),imDataReduced);
-                for z=1:size(outImage,3)
-                    imwrite(imR(:,:,z),fullfile(pathName, prefix, ['x' num2str(reduce)], [datasetName sprintf('_c%02d_t%04d_z%04d.tif',chan,1,z)]),'tif','Compression','lzw');
-                    if (mod(z,modZ)==0)
-                        fprintf('.');
-                    end
-                end
-                
+                tiffWriter(imR,fullfile(pathName, prefix, ['x' num2str(reduce), '\']),imDataReduced,[],chan);
+                 
                 fprintf(' done.\n');
             end
         end
