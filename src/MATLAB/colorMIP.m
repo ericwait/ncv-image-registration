@@ -26,14 +26,14 @@ if (~exist('metadataFilePath','var') || isempty(metadataFilePath))
     metadataFilePath = fullfile(root,metadataFileName);
 end
 
-imageData = readMetaData(metadataFilePath);
+imageData = readMetadata(metadataFilePath);
 
 if ~isfield(imageData,'DatasetName'), return, end
 
 %% set stain colors
 starts = zeros(1,length(stains));
 for i=1:length(stains)
-    idx = strfind(imageData.DatasetName,stains(i).stain);
+    idx = strfind(imageData.imageDir,stains(i).stain);
     if (~isempty(idx))
         starts(i) = idx;
     end
