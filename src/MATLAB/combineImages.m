@@ -132,7 +132,6 @@ end
 w = whos('im');
 clear im
 
-backspaces = '';
 for chan=1:imageData.NumberOfChannels
     chanStart = tic;
     outImage = zeros(imageHeight,imageWidth,imageDepth,w.class);
@@ -140,6 +139,7 @@ for chan=1:imageData.NumberOfChannels
         outImageColor = zeros(imageHeight,imageWidth,imageDepth,w.class);
     end
     fprintf('Chan:%d\t',chan);
+    PrintProgress(length(imageDatasets),true);
     for datasetIdx=1:length(imageDatasets)
         if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
             startXind = round((imageDatasets(datasetIdx).xMinPos-minXPos) / minXvoxelSize +1);
@@ -153,10 +153,7 @@ for chan=1:imageData.NumberOfChannels
                 metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx},[dirNames{1}{datasetIdx},'.txt']);
             end
             [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],[],true);
-            prcntDone = 100 * datasetIdx / length(imageDatasets);
-            doneStr = sprintf('%3.1f',prcntDone);
-            fprintf([backspaces,doneStr]);
-            backspaces = repmat(sprintf('\b'),1,length(doneStr));
+            PrintProgress(datasetIdx);
             
             roi = [startYind,startXind,startZind,...
                 startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,1))-1,...
@@ -186,6 +183,9 @@ for chan=1:imageData.NumberOfChannels
             end
         end
     end
+    
+    PrintProgress([],false);
+    fprintf('\n');
     
     if (strcmp(visualize,'Yes') || strcmp(visualize,'Visualize Only'))
         figure,imagesc(max(outImage,[],3)),colormap gray, axis image
