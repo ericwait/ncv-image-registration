@@ -46,8 +46,8 @@ for i=labindex:numlabs:length(names)
                 
                 [im2,~] = tiffReader(fullfile(dirs{j},[names{j},'.txt']),[],[],[],[],[],true);
                 
-                [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImages(im1,imageDataset1,im2,imageDataset2,...
-                    minOverlap,maxSearchSize,logFile,visualize,visualize);
+                [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImagesFTT(im1,imageDataset1,im2,imageDataset2,...
+                    minOverlap,maxSearchSize,logFile);
                 
                 ed.normCovar = normCovar;
                 ed.deltaX = deltaX;
@@ -58,12 +58,12 @@ for i=labindex:numlabs:length(names)
             
             Threading.finalizeDataFile(fileMap, checkPointPath, ed);
         end
-        
-        tm = toc(static);
-        fHand = fopen(logFile,'at');
-        fprintf(fHand,'%s took %s\n',names{i},printTime(tm));
-        fprintf(1,'%s took %s\n\n',names{i},printTime(tm));
-        fclose(fHand);
     end
+    
+    tm = toc(static);
+    fHand = fopen(logFile,'at');
+    fprintf(fHand,'%s took %s\n',names{i},printTime(tm));
+    fprintf(1,'%s took %s\n\n',names{i},printTime(tm));
+    fclose(fHand);
 end
 
