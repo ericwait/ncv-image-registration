@@ -128,7 +128,7 @@ if (strcmp(ext,'.txt'))
 else
     metaFilePath = fullfile(pathName,dirNames{1}{1},[dirNames{1}{1},'.txt']);
 end
-[im,~] = tiffReader(metaFilePath,1,1,1,[],[],true);
+[im,~] = tiffReader(metaFilePath,1,1,1,[],false,true);
 w = whos('im');
 clear im
 
@@ -152,7 +152,7 @@ for chan=1:imageData.NumberOfChannels
             else
                 metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx},[dirNames{1}{datasetIdx},'.txt']);
             end
-            [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],[],true);
+            [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],false,true);
             PrintProgress(datasetIdx);
             
             roi = [startYind,startXind,startZind,...

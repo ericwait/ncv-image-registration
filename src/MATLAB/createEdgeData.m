@@ -24,7 +24,7 @@ for i=labindex:numlabs:length(names)
         
         if (~bExists)
             if (isempty(im1))
-                [im1,imageDataset1] = tiffReader(fullfile(dirs{i},[names{i},'.txt']),[],[],[],[],[],true);
+                [im1,imageDataset1] = tiffReader(fullfile(dirs{i},[names{i},'.txt']),[],[],[],[],false,true);
             end
             
             imageDataset2 = readMetadata(fullfile(dirs{j},[names{j},'.txt']));
@@ -44,7 +44,7 @@ for i=labindex:numlabs:length(names)
                 fprintf(1,'\t%s-->%s @ %02d:%02d:%02d.%0.0f\n',...
                     imageDataset1.DatasetName,imageDataset2.DatasetName,t.Hour,t.Minute,floor(t.Second),(t.Second-floor(t.Second))*100);
                 
-                [im2,~] = tiffReader(fullfile(dirs{j},[names{j},'.txt']),[],[],[],[],[],true);
+                [im2,~] = tiffReader(fullfile(dirs{j},[names{j},'.txt']),[],[],[],[],false,true);
                 
                 [deltaX,deltaY,deltaZ,normCovar,overlapSize] = registerTwoImagesFTT(im1,imageDataset1,im2,imageDataset2,...
                     minOverlap,maxSearchSize,logFile);

@@ -73,7 +73,7 @@ end
 imColors = zeros(imageData.YDimension,imageData.XDimension,3,length(chanList));
 imIntensity = zeros(imageData.YDimension,imageData.XDimension,length(chanList));
 for c=1:length(chanList)
-    imIntensity(:,:,c) = mat2gray(max(tiffReader(metadataFilePath,[],chanList(c),[],[],[],1),[],3));
+    imIntensity(:,:,c) = mat2gray(max(tiffReader(metadataFilePath,[],chanList(c),[],[],false,1),[],3));
     color = repmat(colors(1,1,:,c),imageData.YDimension,imageData.XDimension,1);
     imColors(:,:,:,c) = repmat(imIntensity(:,:,c),1,1,3).*color;
 end

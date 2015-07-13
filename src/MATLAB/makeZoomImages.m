@@ -10,7 +10,7 @@ outImSize = [576 1024]-2;
 reduc = 1;
 imagesPath = fullfile(rootDir,['x' num2str(reduc)]);
 
-[im, imageData] = tiffReader('uint8',[],[],[],imagesPath);
+[im, imageData] = tiffReader('uint8',[],[],[],imagesPath,false);
 curCenter = round(center/reduc);
 rowMin = max(1,curCenter(2)-outImSize(1)/2);
 rowMax = min(size(im,1),curCenter(2)+outImSize(1)/2);
@@ -39,7 +39,7 @@ outImSize = [1152 2048]-2; %[row col]
 for reduc=1:maxReduction
     imagesPath = fullfile(rootDir,['x' num2str(reduc)]);
     
-    [im, imageData] = tiffReader('uint8',[],[],[],imagesPath);
+    [im, imageData] = tiffReader('uint8',[],[],[],imagesPath,false);
     curCenter = round(center/reduc);
     rowMin = max(1,curCenter(2)-outImSize(1)/2);
     rowMax = min(size(im,1),curCenter(2)+outImSize(1)/2);
