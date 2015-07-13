@@ -1,9 +1,13 @@
 %CALCULATEOVERLAP returns ROIs in the form
 %[columnStart,rowStart, zStart, columnEnd,rowEnd, zEnd]
-function [image1ROI,image2ROI, minXdist, minYdist,currentPadding] = calculateOverlap(imageData1,imageData2,padding)
+function [image1ROI,image2ROI, minXdist, minYdist,currentPadding] = calculateOverlap(imageData1,imageData2,padding,unitFactor)
 
 if (~exist('padding','var') || isempty(padding))
     padding = [0,0];
+end
+
+if (~exist('unitFactor','var') || isempty(unitFactor))
+    unitFactor = 1e6;
 end
 
 currentPadding = padding;
@@ -11,17 +15,18 @@ currentPadding = padding;
 image1ROI = [1, 1, 1, imageData1.XDimension, imageData1.YDimension, imageData1.ZDimension];
 image2ROI = [1, 1, 1, imageData2.XDimension, imageData2.YDimension, imageData2.ZDimension];
 
-image1Space = [ -imageData1.YPosition*1e6,...
-                -imageData1.XPosition*1e6,...
-                -imageData1.YPosition*1e6+imageData1.XPixelPhysicalSize*imageData1.XDimension,...
-                -imageData1.XPosition*1e6+imageData1.YPixelPhysicalSize*imageData1.YDimension];
+image1Space = [ -imageData1.YPosition*unitFactor,...
+                -imageData1.XPosition*unitFactor,...
+                -imageData1.YPosition*unitFactor+imageData1.XPixelPhysicalSize*imageData1.XDimension,...
+                -imageData1.XPosition*unitFactor+imageData1.YPixelPhysicalSize*imageData1.YDimension];
 
-image2Space = [ -imageData2.YPosition*1e6,...
-                -imageData2.XPosition*1e6,...
-                -imageData2.YPosition*1e6+imageData2.XPixelPhysicalSize*imageData2.XDimension,...
-                -imageData2.XPosition*1e6+imageData2.YPixelPhysicalSize*imageData2.YDimension];
+image2Space = [ -imageData2.YPosition*unitFactor,...
+                -imageData2.XPosition*unitFactor,...
+                -imageData2.YPosition*unitFactor+imageData2.XPixelPhysicalSize*imageData2.XDimension,...
+                -imageData2.XPosition*unitFactor+imageData2.YPixelPhysicalSize*imageData2.YDimension];
 
 if (image1Space(1)<image2Space(1))
+    % image1 is left of image2
     image2ROI(1) = round((image2Space(1)-image1Space(1))/imageData2.XPixelPhysicalSize) +1;
     if (image2ROI(1)-padding(1)<1)
         currentPadding(1) = image2ROI(1) -1;
