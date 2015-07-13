@@ -19,7 +19,7 @@ for i=labindex:numlabs:length(names)
     imageDataset1 = [];
     
     for j=i+1:length(names)
-        checkPointPath = fullfile(fullfile(dirs{i},sprintf('%d_%d.mat',i,j)));
+        checkPointPath = fullfile(dirs{i},sprintf('%d_%d.mat',i,j));
         [bExists,~] = Threading.claimDataFile(fileMap, checkPointPath);
         
         if (~bExists)

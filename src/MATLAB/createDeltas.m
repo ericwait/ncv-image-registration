@@ -51,6 +51,13 @@ if (strcmp(reRun,'Rerun'))
         createEdgeData(dirs,names, logFile,minOverlap,maxSearchSize,visualize);
     end
     
+    for i=1:length(dirs)
+        dList = dir(fullfile(dirs{i},'*.mat'));
+        for j=1:length(dList)
+            delete(fullfile(dirs{i},dList(j).name));
+        end
+    end
+    
     dirList = dir(fullfile(dirs{1},'*.mat'));
     for k=1:length(dirList)
         load(fullfile(dirs{1},dirList(k).name));
