@@ -33,6 +33,7 @@ im1ROI = im1(imageROI1(2):imageROI1(5),imageROI1(1):imageROI1(4),imageROI1(3):im
 im2ROI = im2(imageROI2(2):imageROI2(5),imageROI2(1):imageROI2(4),imageROI2(3):imageROI2(6),:,:);
 
 %% run 2-D case
+newOrgin = Helper.flipFirstTwoDims(padding);
 totalTm = tic;
 
 im1MaxROI = squeeze(max(im1ROI,[],3));
@@ -42,7 +43,7 @@ for c=1:imageDataset1.NumberOfChannels
     if (curNCV>maxNCV)
         bestChan = c;
         maxNCV = curNCV;
-        bestDeltas = [Helper.flipFirstTwoDims(deltas),0] - padding;
+        bestDeltas = [Helper.flipFirstTwoDims(deltas),0];
     end
 end
 
@@ -66,7 +67,7 @@ if (size(im1,3)>1)
     totalTm = tic;
     
     [deltasZ,maxNcovZ] = Helper.getMaxNCVdeltas(im1ROI(:,:,:,bestChan),im2ROI(:,:,:,bestChan),minOverlap^3,maxSearchSize);
-    deltasZ = Helper.flipFirstTwoDims(deltasZ) - padding;
+    deltasZ = Helper.flipFirstTwoDims(deltasZ);
     
     tm = toc(totalTm);
     
@@ -93,8 +94,8 @@ if (abs(maxNcovZ-maxNCV)>0.00001)
     maxNcovZ = max(maxNcovZ,maxNCV);
 end
 
-[xStart1,xStart2,xEnd1,xEnd2] = calculateROIs(deltasZ(1)-padding(1),imageROI1(1),imageROI2(1),size(im1,2),size(im2,2));
-[yStart1,yStart2,yEnd1,yEnd2] = calculateROIs(deltasZ(2)-padding(2),imageROI1(2),imageROI2(2),size(im1,1),size(im2,1));
+[xStart1,xStart2,xEnd1,xEnd2] = calculateROIs(deltasZ(1)+padding(1),imageROI1(1),imageROI2(1),size(im1,2),size(im2,2));
+[yStart1,yStart2,yEnd1,yEnd2] = calculateROIs(deltasZ(2)+padding(2),imageROI1(2),imageROI2(2),size(im1,1),size(im2,1));
 [zStart1,zStart2,zEnd1,zEnd2] = calculateROIs(deltasZ(3),1,1,size(im1,3),size(im2,3));
 
 overlapSize = (xEnd1-xStart1) * (yEnd1-yStart1) * (zEnd1-zStart1);
