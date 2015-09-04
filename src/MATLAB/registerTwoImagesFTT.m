@@ -89,7 +89,7 @@ if (size(im1,3)>1)
 end
 %% fixup results
 
-if (abs(maxNcovZ-maxNCV)>0.00001)
+if (maxNcovZ-maxNCV < -0.0001 || maxNcovZ-maxNCV > -0.0001)
     warning('ROI normalized covariance (%f) did not match the max (%f)',maxNCV,maxNcovZ);
     maxNcovZ = max(maxNcovZ,maxNCV);
 end
