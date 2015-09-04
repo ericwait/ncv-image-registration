@@ -169,7 +169,7 @@ if (abs(maxNcovZ-curCovar)>0.00001)
 end
 
 if (showDecisionSurf && size(im1,3)>1)% || c-maxIterX~=0 || r-maxIterY~=0 || maxNcovZ~=curCovar)
-    drawDecisionSurf(normCovarZ(:,:,z),x,y,c,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcovZ,curCovar,2,imageDataset1,imageDataset2);
+    drawDecisionSurf(normCovarZ(:,:,z),x,y,c,ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNcovZ,curCovar,2,imageDataset1,imageDataset2,maxIterX,maxIterY);
 end
 
 if (visualize==1)

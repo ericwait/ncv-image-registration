@@ -9,6 +9,14 @@ if (isempty(DecisionFig))
     DecisionAxes = [subplot1, subplot2];
 end
 
+if (~exist('maxIterX','var') || isempty(maxIterX))
+    maxIterX = 0;
+end
+
+if (~exist('maxIterY','var') || isempty(maxIterY))
+    maxIterY = 0;
+end
+
 [X,Y] = meshgrid(1:size(decisionArray,2),1:size(decisionArray,1));
 X = X - maxIterX;
 Y = Y - maxIterY;
