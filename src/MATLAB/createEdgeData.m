@@ -33,7 +33,7 @@ for i=labindex:numlabs:length(names)
             ed.i = i;
             ed.j = j;
                 
-            if (minXdist>maxSearchSize-minOverlap || minYdist>maxSearchSize-minOverlap)
+            if (minXdist<maxSearchSize-minOverlap || minYdist<maxSearchSize-minOverlap || minXdist*minYdist<maxSearchSize^2)
                 ed.normCovar = -inf;
                 ed.deltaX = 0;
                 ed.deltaY = 0;
