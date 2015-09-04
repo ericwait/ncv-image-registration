@@ -39,7 +39,7 @@ totalTm = tic;
 im1MaxROI = squeeze(max(im1ROI,[],3));
 im2MaxROI = squeeze(max(im2ROI,[],3));
 for c=1:imageDataset1.NumberOfChannels
-    [deltas,curNCV] = Helper.getMaxNCVdeltas(im1MaxROI(:,:,c),im2MaxROI(:,:,c),minOverlap^2,maxSearchSize);
+    [deltas,curNCV] = Helper.getMaxNCVdeltas(im1MaxROI(:,:,c),im2MaxROI(:,:,c),minOverlap^2,maxSearchSize,newOrgin([1,2]));
     if (curNCV>maxNCV)
         bestChan = c;
         maxNCV = curNCV;
@@ -66,7 +66,7 @@ end
 if (size(im1,3)>1)
     totalTm = tic;
     
-    [deltasZ,maxNcovZ] = Helper.getMaxNCVdeltas(im1ROI(:,:,:,bestChan),im2ROI(:,:,:,bestChan),minOverlap^3,maxSearchSize);
+    [deltasZ,maxNcovZ] = Helper.getMaxNCVdeltas(im1ROI(:,:,:,bestChan),im2ROI(:,:,:,bestChan),minOverlap^3,maxSearchSize,newOrgin);
     deltasZ = Helper.flipFirstTwoDims(deltasZ);
     
     tm = toc(totalTm);
