@@ -53,17 +53,13 @@ if (strcmp(reRun,'Rerun'))
     
     for i=1:length(dirs)
         dList = dir(fullfile(dirs{i},'*.mat'));
-        for j=1:length(dList)
-            delete(fullfile(dirs{i},dList(j).name));
-        end
-    end
-    
-    dirList = dir(fullfile(dirs{1},'*.mat'));
-    for k=1:length(dirList)
-        load(fullfile(dirs{1},dirList(k).name));
+        for k=1:length(dList)
+            load(fullfile(dirs{i},dList(k).name));
         if (ed.i>0 && ed.j>0)
             edges(ed.i,ed.j) = ed;
             e = e+1;
+        end
+            %delete(fullfile(dirs{i},dList(k).name));
         end
     end
     
