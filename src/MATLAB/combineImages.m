@@ -23,10 +23,10 @@ end
 
 for i=1:length(dirNames{1})
     [~,~,ext] = fileparts(dirNames{1}{i});
-    if (strcmp(ext,'.txt'))
+    if (~isempty(ext))
         metaFilePath = fullfile(pathName,dirNames{1}{i});
     else
-        metaFilePath = fullfile(pathName,dirNames{1}{i},[dirNames{1}{i},'.txt']);
+        metaFilePath = fullfile(pathName,dirNames{1}{i},dirNames{1}{i});
     end
     if isempty(imageDatasets)
         [imageDatasets,~] = readMetadata(metaFilePath);
@@ -36,7 +36,7 @@ for i=1:length(dirNames{1})
 end
 
 if (isempty(imageDatasets))
-    error('No images for dataset %s\n',datasetName);
+    error(sprintf('No images for dataset %s\n',datasetName));
 end
 
 logDir = fullfile(imageDatasets(1).imageDir,'..','_GraphLog');
@@ -126,7 +126,7 @@ tmpImageData = imageData;
 if (strcmp(ext,'.txt'))
     metaFilePath = fullfile(pathName,dirNames{1}{1});
 else
-    metaFilePath = fullfile(pathName,dirNames{1}{1},[dirNames{1}{1},'.txt']);
+    metaFilePath = fullfile(pathName,dirNames{1}{1},dirNames{1}{1});
 end
 [im,~] = tiffReader(metaFilePath,1,1,1,[],false,true);
 w = whos('im');
@@ -150,7 +150,7 @@ for chan=1:imageData.NumberOfChannels
             if (strcmp(ext,'.txt'))
                 metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx});
             else
-                metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx},[dirNames{1}{datasetIdx},'.txt']);
+                metaFilePath = fullfile(pathName,dirNames{1}{datasetIdx},dirNames{1}{datasetIdx});
             end
             [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],false,true);
             PrintProgress(datasetIdx);
