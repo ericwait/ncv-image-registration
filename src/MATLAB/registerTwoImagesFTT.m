@@ -25,6 +25,8 @@ if (fHand~=1)
 end
 
 [imageROI1,imageROI2,~,~,padding] = calculateOverlap(imageDataset1,imageDataset2,[maxSearchSize,maxSearchSize,0]);
+[imageROI1,imageROI2,~,~] = calculateOverlap(imageDataset1,imageDataset2);
+[imageROI1,imageROI2,padding] = addPadding2Overlap(imageDataset1,imageROI1,imageDataset2,imageROI2,maxSearchSize);
 
 maxNCV = -inf;
 bestChan = 0;

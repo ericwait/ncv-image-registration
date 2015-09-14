@@ -106,9 +106,9 @@ maxZPos = max([imageDatasets(:).zMaxPos]);
 minXvoxelSize = min([imageDatasets([imageDatasets.ZPixelPhysicalSize]>0).XPixelPhysicalSize]);
 minYvoxelSize = min([imageDatasets([imageDatasets.ZPixelPhysicalSize]>0).YPixelPhysicalSize]);
 minZvoxelSize = min([imageDatasets([imageDatasets.ZPixelPhysicalSize]>0).ZPixelPhysicalSize]);
-imageWidth = round((maxXPos-minXPos)/minXvoxelSize +1);
-imageHeight = round((maxYPos-minYPos)/minYvoxelSize +1);
-imageDepth = round((maxZPos-minZPos)/minZvoxelSize +1);
+imageWidth = length(minXPos:maxXPos);
+imageHeight = length(minYPos:maxYPos);
+imageDepth = length(minZPos:maxZPos);
 
 imageData.DatasetName = datasetName;
 imageData.NumberOfChannels = max([imageDatasets(:).NumberOfChannels]);
@@ -142,9 +142,9 @@ for chan=1:imageData.NumberOfChannels
     PrintProgress(length(imageDatasets),true);
     for datasetIdx=1:length(imageDatasets)
         if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
-            startXind = round((imageDatasets(datasetIdx).xMinPos-minXPos) / minXvoxelSize +1);
-            startYind = round((imageDatasets(datasetIdx).yMinPos-minYPos) / minYvoxelSize +1);
-            startZind = round((imageDatasets(datasetIdx).zMinPos-minZPos) / minZvoxelSize +1);
+            startXind = imageDatasets(datasetIdx).xMinPos-minXPos+1;
+            startYind = imageDatasets(datasetIdx).yMinPos-minYPos+1;
+            startZind = imageDatasets(datasetIdx).zMinPos-minZPos+1;
             
             [~,~,ext] = fileparts(dirNames{1}{datasetIdx});
             if (strcmp(ext,'.txt'))
@@ -155,10 +155,10 @@ for chan=1:imageData.NumberOfChannels
             [nextIm,~] = tiffReader(metaFilePath,[],chan,[],[],false,true);
             PrintProgress(datasetIdx);
             
-            roi = [startYind,startXind,startZind,...
+            roi = floor([startYind,startXind,startZind,...
                 startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,1))-1,...
                 startXind+min(imageDatasets(datasetIdx).XDimension,size(nextIm,2))-1,...
-                startZind+min(imageDatasets(datasetIdx).ZDimension,size(nextIm,3))-1];
+                startZind+min(imageDatasets(datasetIdx).ZDimension,size(nextIm,3))-1]);
             
             outRoi = outImage(roi(1):roi(4),roi(2):roi(5),roi(3):roi(6));
             difInd = outRoi>0;

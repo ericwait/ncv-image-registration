@@ -28,12 +28,14 @@ for i=labindex:numlabs:length(names)
             end
             
             imageDataset2 = readMetadata(fullfile(dirs{j},[names{j},'.txt']));
-            [~,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
+            imageDataset2 = readMetadata(fullfile(dirs{j},names{j}));
+            [roi1,~,minXdist,minYdist] = calculateOverlap(imageDataset1,imageDataset2);
             
             ed.i = i;
             ed.j = j;
+            roiVol = max(roi1(4)-roi1(1),1) * max(roi1(5)-roi1(2),1) * max(roi1(6)-roi1(3),1);
                 
-            if (minXdist<maxSearchSize-minOverlap || minYdist<maxSearchSize-minOverlap || minXdist*minYdist<maxSearchSize^2)
+            if (minXdist>maxSearchSize-minOverlap || minYdist>maxSearchSize-minOverlap || roiVol<maxSearchSize^2)
                 ed.normCovar = -inf;
                 ed.deltaX = 0;
                 ed.deltaY = 0;
