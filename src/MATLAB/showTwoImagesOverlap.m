@@ -73,12 +73,12 @@ combinedWidth = abs(im1ROI(1)-im2ROI(1)) + max(size(im1,2),size(im2,2));
 combinedHeight = abs(im1ROI(2)-im2ROI(2)) + max(size(im1,1),size(im2,1));
 combinedDepth = abs(im1ROI(3)-im2ROI(3)) + max(size(im1,3),size(im2,3));
 
-im = zeros(combinedHeight,combinedWidth,3,combinedDepth,'like',im1);
+im = zeros(combinedHeight,combinedWidth,3,combinedDepth,'uint8');
 
-im(im1Starts(2):im1Ends(2),im1Starts(1):im1Ends(1),1,im1Starts(3):im1Ends(3)) = im1;
-im(im2Starts(2):im2Ends(2),im2Starts(1):im2Ends(1),3,im2Starts(3):im2Ends(3)) = im2;
+im(im1Starts(2):im1Ends(2),im1Starts(1):im1Ends(1),1,im1Starts(3):im1Ends(3)) = im2uint8(mat2gray(im1));
+im(im2Starts(2):im2Ends(2),im2Starts(1):im2Ends(1),3,im2Starts(3):im2Ends(3)) = im2uint8(mat2gray(im2));
 
 figure
-image(max(im,[],4));
+imagesc(max(im,[],4));
 axis image
 end
