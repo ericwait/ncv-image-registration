@@ -24,7 +24,6 @@ if (fHand~=1)
     fclose(fHand);
 end
 
-[imageROI1,imageROI2,~,~,padding] = calculateOverlap(imageDataset1,imageDataset2,[maxSearchSize,maxSearchSize,0]);
 [imageROI1,imageROI2,~,~] = calculateOverlap(imageDataset1,imageDataset2);
 [imageROI1,imageROI2,padding] = addPadding2Overlap(imageDataset1,imageROI1,imageDataset2,imageROI2,maxSearchSize);
 
@@ -64,6 +63,9 @@ if (fHand~=1)
     fclose(fHand);
 end
 
+deltasZ = [bestDeltas,0];
+maxNcovZ = maxNCV;
+
 %% run 3-D case
 if (size(im1,3)>1)
     totalTm = tic;
@@ -91,7 +93,7 @@ if (size(im1,3)>1)
 end
 %% fixup results
 
-if (maxNcovZ-maxNCV < -0.0001 || maxNcovZ-maxNCV > -0.0001)
+if (maxNcovZ-maxNCV < -0.0001 || maxNcovZ-maxNCV > 0.0001)
     warning('ROI normalized covariance (%f) did not match the max (%f)',maxNCV,maxNcovZ);
     maxNcovZ = max(maxNcovZ,maxNCV);
 end
@@ -100,16 +102,16 @@ end
 [yStart1,yStart2,yEnd1,yEnd2] = calculateROIs(deltasZ(2)+padding(2),imageROI1(2),imageROI2(2),size(im1,1),size(im2,1));
 [zStart1,zStart2,zEnd1,zEnd2] = calculateROIs(deltasZ(3),1,1,size(im1,3),size(im2,3));
 
-overlapSize = (xEnd1-xStart1) * (yEnd1-yStart1) * (zEnd1-zStart1);
+overlapSize = max(xEnd1-xStart1,1) * max(yEnd1-yStart1,1) * max(zEnd1-zStart1,1);
 ultimateDeltaX = deltasZ(1);
 ultimateDeltaY = deltasZ(2);
 ultimateDeltaZ = deltasZ(3);
 
 maxNCV = maxNcovZ;
 
-if (overlapSize < minOverlap^3)
-    maxNCV = -inf;
-end
+% if (overlapSize < minOverlap^3)
+%     maxNCV = -inf;
+% end
 
 clear imROI1 imROI2
 end
