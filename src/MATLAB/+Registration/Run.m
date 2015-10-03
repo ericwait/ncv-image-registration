@@ -1,4 +1,4 @@
-function combineImages()
+function Run()
 totalTime = tic;
 imageDatasets = [];
 deltasPresent = 0;
