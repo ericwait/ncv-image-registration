@@ -35,3 +35,4 @@ src/MATLAB/movieFiles
 *.avi
 *.mpeg
 *.mp4
+*.orig
