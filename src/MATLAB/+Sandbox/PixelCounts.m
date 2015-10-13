@@ -1,7 +1,7 @@
 function PixelCounts(path,chans)
 tic
 [im,imData] = tiffReader(path,[],chans);
-fprintf('Read images in: %s\n',printTime(toc));
+fprintf('Read images in: %s\n',Utils.PrintTime(toc));
 
 if (isempty(im))
     return

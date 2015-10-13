@@ -1,4 +1,4 @@
-function [image1ROI,image2ROI, minXdist, minYdist] = calculateOverlap(imageData1,imageData2,unitFactor)
+function [image1ROI,image2ROI, minXdist, minYdist] = CalculateOverlapXY(imageData1,imageData2,unitFactor)
 %CALCULATEOVERLAP returns ROIs in the form
 %  [columnStart, rowStart, zStart, columnEnd, rowEnd, zEnd]
 %  The UNIT_FACTOR changes the stage position into the same scale as the

@@ -7,8 +7,10 @@ datasetName = '';
 
 if (~exist('listPath','var') || isempty(listPath))
     [fileName,pathName,~] = uigetfile('.txt');
-    warning('No data read');
-    if fileName==0, return, end
+    if fileName==0
+            warning('No data read');
+            return
+    end
 else
     [pathName,fileName,ext] = fileparts(listPath);
     fileName = [fileName ext];
@@ -46,9 +48,9 @@ for i=1:length(dirNames{1})
     
     if (~isempty(metaFilePath))
         if isempty(imageDatasets)
-            [imageDatasets,~] = readMetadata(metaFilePath);
+            [imageDatasets,~] = MicroscopeData.ReadMetadata(metaFilePath);
         else
-            [imageDatasets(end+1),~] = readMetadata(metaFilePath);
+            [imageDatasets(end+1),~] = MicroscopeData.ReadMetadata(metaFilePath);
         end
     end
 end

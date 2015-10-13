@@ -1,5 +1,10 @@
-function updateXYviewer(im1,im2,normCovar,curDeltaX,curDeltaY,curDeltaZ)
-global MaxCovar SubImBest1 SubImBest2
+function UpdateXYviewer(im1,im2,normCovar,curDeltaX,curDeltaY,curDeltaZ)
+global Fig MaxCovar SubImBest1 SubImBest2
+persistent frame
+
+if (isempty(frame))
+    frame = 1;
+end
 
 if (MaxCovar<normCovar)
     MaxCovar = normCovar;
@@ -14,7 +19,16 @@ if (MaxCovar<normCovar)
     title(SubImBest2,titleText);
 end
 
-if (mod(curDeltaY,5)==0)
-    drawnow
+if (~exist('movie','dir'))
+    mkdir('movie');
 end
+
+%if (mod(curDeltaY,5)==0)
+    drawnow
+%end
+
+fileName = fullfile('movie',sprintf('ncvIter_%d.tif',frame));
+saveas(Fig,fileName);
+
+frame = frame +1;
 end

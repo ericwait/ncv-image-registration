@@ -1,4 +1,4 @@
-function [deltasPresent,imageDatasets] = readDeltaData(root,imageDatasets,unitFactor)
+function [deltasPresent,imageDatasets] = ReadDeltaData(root,imageDatasets,unitFactor)
 if (~exist('unitFactor','var') || isempty(unitFactor))
     unitFactor = 1e6;
 end
@@ -9,14 +9,14 @@ if ~exist('root','var')
 else
     rootDir = root;
 end
-deltasPresent = 0;
+deltasPresent = false;
 names = {imageDatasets(:).DatasetName};
 names = cellfun(@(x)([x '.']),names,'uniformOutput',0);
 for i=1:length(imageDatasets)
     filename = fullfile(root,imageDatasets(i).DatasetName,[imageDatasets(i).DatasetName '_corrResults.txt']);
    
     if exist(filename,'file') 
-        deltasPresent = 1;
+        deltasPresent = true;
         fid = fopen(filename,'rt');
         data = fscanf(fid,'deltaX:%d\ndeltaY:%d\ndeltaZ:%d\nNCV:%f\n');
         deltaParent = [strtrim(fscanf(fid,'Parent:%255c\n')) '.'];
@@ -40,7 +40,7 @@ for i=1:length(imageDatasets)
     end
 end
 
-if (deltasPresent==1)
+if (deltasPresent==true)
     imageDatasets(1).Children = [];
     root = [];
     for i=1:length(imageDatasets)
@@ -61,10 +61,10 @@ else
         imageDatasets(i).yMinPos = round(imageDatasets(i).YPosition * unitFactor * imageDatasets(i).YPixelPhysicalSize);
         imageDatasets(i).yMaxPos = imageDatasets(i).yMinPos + imageDatasets(i).YDimension -1;
         
-        if (isfield(imageDatasets,'ZPosition'))
+        if (isfield(imageDatasets,'ZPosition') && ~isempty(imageDatasets(i).ZPosition))
             imageDatasets(i).zMinPos = round(imageDatasets(i).ZPosition * unitFactor * imageDatasets(i).ZPixelPhysicalSize);
         else
-            imageDatasets(i).zMinPos = 1;
+            imageDatasets(i).zMinPos = 0;
         end
         imageDatasets(i).zMaxPos = imageDatasets(i).zMinPos + imageDatasets(i).ZDimension -1;
     end

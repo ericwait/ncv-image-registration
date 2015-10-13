@@ -1,4 +1,4 @@
-function drawBoxesLines(figHandle,axisHandle,imageDatasets,chan,curDataset)
+function DrawBoxesLines(figHandle,axisHandle,imageDatasets,chan,curDataset)
 hold(axisHandle,'on');
 
 minXPos = min([imageDatasets(:).xMinPos]);
@@ -39,10 +39,10 @@ for i=1:length(imageDatasets)
     if (isempty(posNum))
         posNum = num2str(i);
     end
-    text(centerCur(1)+20,centerCur(2)-20,posNum,'color','r','FontSize',14,'BackgroundColor',gry,'Parent',axisHandle);
+    text(centerCur(1)+20,centerCur(2)-20,posNum,'color','r','FontSize',14,'BackgroundColor',gry,'Parent',axisHandle,'Interpreter','none');
     text((centerParent(1)+centerCur(1))/2,(centerParent(2)+centerCur(2))/2,...
         sprintf('(%d,%d,%d):%04.2f',imageDatasets(i).xDelta,imageDatasets(i).yDelta,imageDatasets(i).zDelta,imageDatasets(i).NCV),...
-        'color',[0.749,0.749,0],'FontSize',10,'BackgroundColor',gry,'Parent',axisHandle);
+        'color',[0.749,0.749,0],'FontSize',10,'BackgroundColor',gry,'Parent',axisHandle,'Interpreter','none');
 end
 
 title(axisHandle,sprintf('Cannel:%d',chan),'Interpreter','none','Color','w');

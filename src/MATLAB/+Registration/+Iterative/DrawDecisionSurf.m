@@ -1,4 +1,4 @@
-function drawDecisionSurf(decisionArray,x,y,c,deltaX,deltaY,deltaZ,covariance1,covariance2,subPlotIdx,imageDataset1,imageDataset2,maxIterX,maxIterY)
+function DrawDecisionSurf(decisionArray,x,y,c,deltaX,deltaY,deltaZ,covariance1,covariance2,subPlotIdx,imageDataset1,imageDataset2,maxIterX,maxIterY)
 global DecisionFig DecisionAxes
 if (isempty(DecisionFig))
     DecisionFig = figure;

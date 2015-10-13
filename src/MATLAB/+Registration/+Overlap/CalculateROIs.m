@@ -1,4 +1,4 @@
-function [start1,start2,end1,end2] = calculateROIs(delta,oldStart1,oldStart2,size1,size2)
+function [start1,start2,end1,end2] = CalculateROIs(delta,oldStart1,oldStart2,size1,size2)
 if (oldStart1==1 && oldStart2~=1)
     start1 = 1;
 else
