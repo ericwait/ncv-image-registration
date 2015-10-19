@@ -62,7 +62,7 @@ if (showDecisionSurf)
         surf(X,Y,ncvMatrix,'LineStyle','none');
         nvcZ = 0;
     else
-        surf(X,Y,ncvMatrix(:,:,ncvCoords_RC(3)+1),'LineStyle','none');
+        surf(X,Y,ncvMatrix(:,:,ncvCoords_RC(3)),'LineStyle','none');
         nvcZ = ncvCoords_RC(3) - (size(im2,3) + orginCoords_RC(3));
     end
     hold on
@@ -82,7 +82,7 @@ if (showDecisionSurf)
         surf(X,Y,ncvMatrixROI,'LineStyle','none');
         deltas_RC = [deltas_RC,0];
     else
-        surf(X,Y,ncvMatrixROI(:,:,ncvCoords_RC(3)+1),'LineStyle','none');
+        surf(X,Y,ncvMatrixROI(:,:,ncvCoords_RC(3)),'LineStyle','none');
     end
     hold on
     text(deltas_RC(2),deltas_RC(1),maxNCV,...

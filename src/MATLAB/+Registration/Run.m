@@ -202,6 +202,7 @@ if (strcmp(visualize,'Visualize Only')==0)
     % Save a colored maximum intensity version
     imageData.imageDir = fullfile(pathName, [prefix, '\']);
     colorMip = ImUtils.ThreeD.ColorMIP(MicroscopeData.Reader(tmpImageData),MicroscopeData.GetChannelColors(imageData));
+    imwrite(colorMip,fullfile(pathName,prefix,sprintf('_%s_RGB.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
     f = figure;
     imagesc(colorMip);%,'Parent',ax);
     ax = get(f,'CurrentAxes');

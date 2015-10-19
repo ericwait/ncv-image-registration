@@ -6,7 +6,7 @@ if (~exist('deltas','var') || isempty(deltas))
     deltas = [0,0,0];
 end
 
-[im1ROI,im2ROI,~,~] = calculateOverlap(im1Data,im2Data);
+[im1ROI,im2ROI,~,~] = Registration.Overlap.CalculateOverlapXY(im1Data,im2Data);
 
 im1Starts = [1,1,1];
 im1Ends = [size(im1,2),size(im1,1),size(im1,3)];
