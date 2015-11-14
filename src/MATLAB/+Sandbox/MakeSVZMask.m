@@ -14,7 +14,7 @@ while (processing)
     [~,name,~] = fileparts(fileName);
     
     specChan = false;
-    if (strcmpi(name(end-1:end),'c4'))
+    if (strcmpi(name(end-2:end),'_3c'))
         specChan = true;
         name = name(1:end-3);
     end
@@ -22,7 +22,7 @@ while (processing)
     im = imread(fullfile(dirName,fileName));  
     
     rspnce = 'yes';
-    if (exist(fullfile(dirName,[name,'_mask.tif']),'file'))
+    if (exist(fullfile(dirName,[name,'_RGB_mask.tif']),'file'))
         rspnce = questdlg('Would you like to redraw?','Redo ROI','Yes','No','No');
         if (strcmpi('yes',rspnce))
             bw = roipoly(im);
@@ -30,7 +30,7 @@ while (processing)
                 continue
             end
         else
-            bw = imread(fullfile(dirName,[name,'_mask.tif']));
+            bw = imread(fullfile(dirName,[name,'_RGB_mask.tif']));
         end
     else
         bw = roipoly(im);
@@ -52,7 +52,7 @@ while (processing)
     
     suffix = [];
     if (specChan)
-        suffix = 'c4';
+        suffix = '_3c';
     end
     
     if (strcmpi('yes',rspnce))
