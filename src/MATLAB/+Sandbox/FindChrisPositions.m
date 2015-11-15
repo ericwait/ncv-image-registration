@@ -40,8 +40,8 @@ numImages = length(imageDatasets);
 subImageLength = ceil(sqrt(size(cc.PixelIdxList{1},1)/numImages));
 
 %% Show the original image
-figure
-imagesc(imMont)
+f = figure;
+ax = imagesc(imMont);
 axis image
 hold on
 
@@ -120,6 +120,13 @@ for r=1:2:ceil(size(imMont,1)/subImageLength)
     end
 end
 hold off
+set(f,'units','normalized','Position',[0,0,1,1]);
+set(gca,'units','normalized','Position',[0,0,1,1]);
+
+frm = getframe(gca);
+imwrite(frm.cdata,fullfile(imageDatasets(1).imageDir,'..',sprintf('_%s_pos.tif',imageDatasets(1).DatasetName)),'tif','Compression','lzw');
+
+close(f);
 
 %% Write the positions back to the metadata
 for i=1:length(imageDatasets)
