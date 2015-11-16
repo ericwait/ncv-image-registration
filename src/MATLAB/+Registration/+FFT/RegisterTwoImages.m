@@ -87,7 +87,7 @@ fprintf(fHand,'\t%s, NVC:%04.3f at (%d,%d) on channel:%d\n',...
 if (fHand~=1)
     fclose(fHand);
 end
-
+bestDeltas_XY = [bestDeltas_XY([1,2]),0];
 deltasZ_XY = bestDeltas_XY;
 maxNcovZ = maxNCV;
 

@@ -63,7 +63,7 @@ if (fHand~=1)
     fclose(fHand);
 end
 
-deltasZ = [bestDeltas,0];
+deltasZ = bestDeltas;
 maxNcovZ = maxNCV;
 
 %% run 3-D case
