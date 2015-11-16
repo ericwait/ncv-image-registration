@@ -15,12 +15,12 @@ if (isempty(bestY))
 end
 
 if (MaxCovar<normCovar)
-    g = colormap('gray');
+    g = colormap(SubImBest1,'gray');
     gB = brighten(g,0.3);
     MaxCovar = normCovar;
     imagesc(max(im1,[],3),'Parent',SubImBest1)
     colormap(SubImBest1,gB)
-    brighten(.2);
+    gB = brighten(g,0.2);
     axis(SubImBest1,'image')
     imagesc(max(im2,[],3),'Parent',SubImBest2)
     colormap(SubImBest2,gB);
