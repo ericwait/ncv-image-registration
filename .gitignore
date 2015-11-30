@@ -37,3 +37,4 @@ src/MATLAB/movieFiles
 *.mp4
 *.orig
 *.tif
+*.mat
