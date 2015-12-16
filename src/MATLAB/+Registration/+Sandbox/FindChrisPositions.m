@@ -138,9 +138,11 @@ for i=1:length(imageDatasets)
     % Make the positions start at 0
     curPos_RC = pos_RC(n,:)-1;
     
-    d.XPosition = curPos_RC(2) * (d.XDimension-d.XDimension*overlap) / d.XPixelPhysicalSize * 1e-6;
-    d.YPosition = curPos_RC(1) * (d.YDimension-d.YDimension*overlap) / d.YPixelPhysicalSize * 1e-6;
-    d.ZPosition = 0;
+    XPosition = curPos_RC(2) * (d.Dimensions(1)-d.Dimensions(1)*overlap) / d.PixelPhysicalSize(1) * 1e-6;
+    YPosition = curPos_RC(1) * (d.Dimensions(2)-d.Dimensions(2)*overlap) / d.PixelPhysicalSize(2) * 1e-6;
+    ZPosition = 0;
+    
+    d.Position = [XPosition,YPosition,ZPosition];
     
     % Write data back
     MicroscopeData.CreateMetadata(d.imageDir,d,true);
