@@ -185,6 +185,9 @@ end
 
 tmpImageData.imageDir = fullfile(pathName, [prefix, '\']);
 
+clear outImageColor
+clear difInd
+
 %% Save out overview results
 if (strcmp(visualize,'Visualize Only')==0)
     % Save a colored maximum intensity version
@@ -204,6 +207,7 @@ if (strcmp(visualize,'Visualize Only')==0)
     frm = getframe(ax);
     imwrite(frm.cdata,fullfile(pathName,prefix,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
     close(f);
+    clear colorMip
 end
 
 %% Done!
