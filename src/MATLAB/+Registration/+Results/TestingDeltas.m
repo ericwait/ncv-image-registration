@@ -1,10 +1,9 @@
 function [fig,ax] = TestingDeltas(outImage, outImageColor,imageDatasets,chan,curDataset)
 [img, colorIdx] = max(outImage,[],3);
 
-fig = figure;
-imagesc(img);
-ax = gca;
-colormap(ax,'gray');
+imageHandle = ImUtils.ThreeD.ShowMaxImage(img,true,[],[],true);
+ax = get(imageHandle,'Parent');
+fig = get(ax,'Parent');
 
 Registration.Results.DrawBoxesLines(fig,ax,imageDatasets,chan,curDataset);
 
