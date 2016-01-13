@@ -180,6 +180,11 @@ if (strcmp(combineHere,'Yes'))
             MicroscopeData.Writer(outImage,fullfile(pathName, [prefix, '\']),tmpImageData,[],chan);
         end
         
+    % Save a smoothed version
+    imD = MicroscopeData.ReadMetadata(montages(i).filePath);
+    outImage = Cuda.Mex('ContrastEnhancement',outImage,[75,75,75],[3,3,3],labindex);
+    MicroscopeData.Writer(outImage,fullfile(pathName, prefix,'Smoothed\'),tmpImageData,[],chan);
+    
         % Clean up this channel
         clear outImage;
         if (strcmp(visualize,'No')~=0)
@@ -190,6 +195,7 @@ if (strcmp(combineHere,'Yes'))
     end
     
     tmpImageData.imageDir = fullfile(pathName, [prefix, '\']);
+    MicroscopeData.CreateMetadata(tempImageData.imageDir,tmpImageData,false);
     
     clear outImageColor
     clear difInd
