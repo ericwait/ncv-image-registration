@@ -88,6 +88,7 @@ if (strcmp(combineHere,'Yes'))
     imClass = MicroscopeData.GetImageClass(imageDatasets(1));
     
     %% Combine each channel and write it out due to memory constraints
+    imMIP = zeros(maxPos_XY(2),maxPos_XY(1),1,imageData.NumberOfChannels,imClass);
     for chan=1:imageData.NumberOfChannels
         chanStart = tic;
         
@@ -140,6 +141,8 @@ if (strcmp(combineHere,'Yes'))
             cp.PrintProgress(datasetIdx);
         end
         
+        imMIP(:,:,1,chan) = max(outImage,[],3);
+        
         % Cleanup the progress indicator
         cp.ClearProgress();
         
@@ -173,7 +176,7 @@ if (strcmp(combineHere,'Yes'))
         
         % Save out the result
         if (strcmp(visualize,'Visualize Only')==0)
-            imwrite(max(outImage,[],3),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
+            imwrite(squeeze(imMIP(:,:,1,chan)),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
             MicroscopeData.Writer(outImage,fullfile(pathName, [prefix, '\']),tmpImageData,[],chan);
         end
         
@@ -195,7 +198,7 @@ if (strcmp(combineHere,'Yes'))
     if (strcmp(visualize,'Visualize Only')==0)
         % Save a colored maximum intensity version
         imageData.imageDir = fullfile(pathName, [prefix, '\']);
-        colorMip = ImUtils.ThreeD.ColorMIP(MicroscopeData.ReaderParZ(tmpImageData,[],[],[],[],[],true),MicroscopeData.Colors.GetChannelColors(imageData));
+        colorMip = ImUtils.ThreeD.ColorMIP(imMIP,MicroscopeData.Colors.GetChannelColors(imageData));
         imwrite(colorMip,fullfile(pathName,prefix,sprintf('_%s_RGB.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
         f = figure;
         imagesc(colorMip);%,'Parent',ax);
