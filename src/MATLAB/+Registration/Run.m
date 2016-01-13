@@ -50,13 +50,17 @@ else
     refine = '';
 end
 
+visualizor = strcmp(refine,'Refine W/ Visualizer');
+
 visualize = questdlg('Would you like to see the results?','Results Visualizer','Yes','No','Visualize Only','No');
 if (isempty(visualize)), return, end
+
+visualizor = visualizor || strcmp(visualize,'Yes') || strcmp(visualize,'Visualize Only');
 
 %% Calculate the overlaps if they don't exist of the user wants them recalculated
 if (strcmp(refine,'Refine') || strcmp(refine,'Refine W/ Visualizer'))
     prefix = [datasetName '_Montage_wDelta'];
-    imageDatasets = Registration.CreateDeltas(imageDatasets,minOverlap,maxSearchSize,strcmp(refine,'Refine W/ Visualizer'));
+    imageDatasets = Registration.CreateDeltas(imageDatasets,minOverlap,maxSearchSize, visualizor);
     [~,imageDatasets] = Registration.Results.ReadDeltaData(pathName,imageDatasets);
 elseif (0==deltasPresent)
     prefix = [datasetName '_Montage'];
