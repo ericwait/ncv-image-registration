@@ -136,7 +136,11 @@ for i=1:numNodes
         deltaY = 0;
         deltaZ = 0;
         ncv = 0.0;
-        parent = imageDatasets(i).DatasetName;
+        if (i~=1)
+            parent = imageDatasets(i-1).DatasetName;
+        else
+            parent = imageDatasets(i).DatasetName;
+        end
     else
         if (parentNode<i)
             edgeIdx = sub2ind(size(edges),parentNode,i);
