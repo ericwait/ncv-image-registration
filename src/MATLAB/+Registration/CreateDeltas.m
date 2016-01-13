@@ -44,13 +44,6 @@ edges(numNodes,numNodes).normCovar = -inf;
 
 %% Create the edge graph
 if (strcmp(reRun,'Rerun'))  
-    poolobj = gcp();
-    if (visualize)
-        numWorkers = 1;
-    else
-        numWorkers = poolobj.NumWorkers;
-    end
-    
     % create a log file for this computer to be tracked on the network
     [~, sysName] = system('hostname');
     logFile = fullfile(logDir,sprintf('graphBuild_%s.txt',sysName(1:end-1)));
@@ -58,7 +51,7 @@ if (strcmp(reRun,'Rerun'))
     % Print out the start time of this job
     c = clock;
     fHand = fopen(logFile,'wt');
-    fprintf(fHand,'\n%d-%02d-%02d %02d:%02d Workers:%d\n',c(1),c(2),c(3),c(4),c(5),numWorkers);
+    fprintf(fHand,'\n%d-%02d-%02d %02d:%02d \n',c(1),c(2),c(3),c(4),c(5));
     fclose(fHand);
 
     % Create structres for the parallel processes
@@ -67,13 +60,7 @@ if (strcmp(reRun,'Rerun'))
     
     % Start creating the edge weights in parallel
     makeGraphStartTime = tic;
-    if (visualize)
-        Registration.CreateEdgeData(dirs,names, logFile,minOverlap,maxSearchSize,visualize);
-    else        
-        spmd
-            Registration.CreateEdgeData(dirs,names, logFile,minOverlap,maxSearchSize,visualize);
-        end
-    end
+    Registration.CreateEdgeData(dirs,names,logFile,minOverlap,maxSearchSize,visualize);
     
     % Collate the results
     e = 0;
