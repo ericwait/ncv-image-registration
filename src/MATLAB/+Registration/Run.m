@@ -104,7 +104,7 @@ for chan=1:imageData.NumberOfChannels
         % Ensure that this subimage has the current channel
         if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
             % Get the image data
-            [nextIm,~] = MicroscopeData.Reader(imageDatasets(datasetIdx),[],chan,[],[],false,true);
+            [nextIm,~] = MicroscopeData.ReaderParZ(imageDatasets(datasetIdx),[],chan,[],[],false,true);
             
             % Calculate where this sub image starts in the full image
             startPos_xy = imageDatasets(datasetIdx).MinPos-minPos_XY+1;
@@ -189,7 +189,7 @@ tmpImageData.imageDir = fullfile(pathName, [prefix, '\']);
 if (strcmp(visualize,'Visualize Only')==0)
     % Save a colored maximum intensity version
     imageData.imageDir = fullfile(pathName, [prefix, '\']);
-    colorMip = ImUtils.ThreeD.ColorMIP(MicroscopeData.Reader(tmpImageData),MicroscopeData.GetChannelColors(imageData));
+    colorMip = ImUtils.ThreeD.ColorMIP(MicroscopeData.ReaderParZ(tmpImageData,[],[],[],[],[],true),MicroscopeData.Colors.GetChannelColors(imageData));
     imwrite(colorMip,fullfile(pathName,prefix,sprintf('_%s_RGB.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
     f = figure;
     imagesc(colorMip);%,'Parent',ax);
