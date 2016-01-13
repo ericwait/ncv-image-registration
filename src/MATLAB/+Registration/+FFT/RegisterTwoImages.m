@@ -29,14 +29,31 @@ if (fHand~=1)
     fclose(fHand);
 end
 
+%% check to see if the image has data and is big enough
 [imageROI1Org_XY,imageROI2Org_XY,~,~] = Registration.Overlap.CalculateOverlapXY(imageDataset1,imageDataset2);
 [imageROI1_XY,imageROI2_XY,padding_XY] = Registration.Overlap.AddPaddingToOverlapXY(imageDataset1,imageROI1Org_XY,imageDataset2,imageROI2Org_XY,maxSearchSize);
 
 maxNCV = -inf;
 bestChan = 0;
+ultimateDeltaX = 0;
+ultimateDeltaY = 0;
+ultimateDeltaZ = 0;
+
+overlapSize = max(min(imageROI1Org_XY(4)-imageROI1Org_XY(1),imageROI2Org_XY(4)-imageROI2Org_XY(1)),1) *...
+    max(min(imageROI1Org_XY(5)-imageROI1Org_XY(2),imageROI2Org_XY(5)-imageROI2Org_XY(2)),1);
 
 im1ROI = im1(imageROI1_XY(2):imageROI1_XY(5),imageROI1_XY(1):imageROI1_XY(4),imageROI1_XY(3):imageROI1_XY(6),:,:);
 im2ROI = im2(imageROI2_XY(2):imageROI2_XY(5),imageROI2_XY(1):imageROI2_XY(4),imageROI2_XY(3):imageROI2_XY(6),:,:);
+
+[~,~,maxVal] = Utils.GetClassBits(im1ROI);
+if (max(im1ROI(:))<=0.28*maxVal || max(im2ROI(:))<=0.28*maxVal)
+    % no real info in the image
+    return
+end
+if (overlapSize <= 0.01* min(prod(imageDataset1.Dimensions(1:2)),prod(imageDataset2.Dimensions(1:2))))
+    % does not have enough overall overlap
+    return
+end
 
 %% run 2-D case
 newOrgin_RC = Utils.SwapXY_RC(padding_XY);
@@ -143,15 +160,19 @@ end
 [zStart1,zStart2,zEnd1,zEnd2] = Registration.Overlap.CalculateROIs(deltasZ_XY(3),1,1,size(im1,3),size(im2,3));
 
 overlapSize = max(xEnd1-xStart1,1) * max(yEnd1-yStart1,1) * max(zEnd1-zStart1,1);
-ultimateDeltaX = deltasZ_XY(1);
-ultimateDeltaY = deltasZ_XY(2);
-ultimateDeltaZ = deltasZ_XY(3);
 
-maxNCV = maxNcovZ;
-
-% if (overlapSize < minOverlap^3)
-%     maxNCV = -inf;
-% end
+if (maxNcovZ>0.7 && overlapSize >= minOverlap^3)
+    ultimateDeltaX = deltasZ_XY(1);
+    ultimateDeltaY = deltasZ_XY(2);
+    ultimateDeltaZ = deltasZ_XY(3);
+    
+    maxNCV = maxNcovZ;
+else
+    maxNCV = -inf;
+    ultimateDeltaX = 0;
+    ultimateDeltaY = 0;
+    ultimateDeltaZ = 0;
+end
 
 clear imROI1 imROI2
 end
