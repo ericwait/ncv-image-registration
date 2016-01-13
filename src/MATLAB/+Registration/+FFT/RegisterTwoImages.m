@@ -13,9 +13,6 @@ end
 if (~exist('logFile','var') || isempty(logFile))
     logFile = 1;
 end
-if (~exist('showDecisionSurf','var') || isempty(showDecisionSurf))
-    showDecisionSurf = 0;
-end
 if (~exist('visualize','var') || isempty(visualize))
     visualize = 0;
 end
