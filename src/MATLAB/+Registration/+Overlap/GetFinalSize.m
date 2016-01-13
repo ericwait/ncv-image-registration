@@ -1,4 +1,4 @@
-function [ imageData, varargout ] = GetFinalSize( imageDatasets, datasetName )
+function [ imageData, minPos, imageSize ] = GetFinalSize( imageDatasets, datasetName )
 %GETFINALSIZE Takes all of the sub-image datasets and returns what the
 %final dataset should look like.
 %   imageData is the metadata that should be used to create the montage
@@ -7,34 +7,22 @@ function [ imageData, varargout ] = GetFinalSize( imageDatasets, datasetName )
 %   [ imageData, minPos, maxPos ] = GetFinalSize( imageDatasets )
 %   min and max are [X,Y]
 
-minXPos = min([imageDatasets(:).xMinPos]);
-minYPos = min([imageDatasets(:).yMinPos]);
-minZPos = min([imageDatasets(:).zMinPos]);
-maxXPos = max([imageDatasets(:).xMaxPos]);
-maxYPos = max([imageDatasets(:).yMaxPos]);
-maxZPos = max([imageDatasets(:).zMaxPos]);
-minXvoxelSize = min([imageDatasets([imageDatasets.ZPixelPhysicalSize]>0).XPixelPhysicalSize]);
-minYvoxelSize = min([imageDatasets([imageDatasets.ZPixelPhysicalSize]>0).YPixelPhysicalSize]);
-minZvoxelSize = min([imageDatasets([imageDatasets.ZPixelPhysicalSize]>0).ZPixelPhysicalSize]);
-imageWidth = length(minXPos:maxXPos);
-imageHeight = length(minYPos:maxYPos);
-imageDepth = length(minZPos:maxZPos);
+imageData = imageDatasets(1);
+
+minPos = min(vertcat(imageDatasets(:).MinPos));
+maxPos = max(vertcat(imageDatasets(:).MaxPos));
+minVoxelSize = min(vertcat(imageDatasets(:).PixelPhysicalSize));
+
+imageWidth = length(minPos(1):maxPos(1));
+imageHeight = length(minPos(2):maxPos(2));
+imageDepth = length(minPos(3):maxPos(3));
 
 imageData.DatasetName = datasetName;
 imageData.NumberOfChannels = max([imageDatasets(:).NumberOfChannels]);
 imageData.NumberOfFrames = max([imageDatasets(:).NumberOfFrames]);
-imageData.XDimension = imageWidth;
-imageData.YDimension = imageHeight;
-imageData.ZDimension = imageDepth;
-imageData.XPixelPhysicalSize = minXvoxelSize;
-imageData.YPixelPhysicalSize = minYvoxelSize;
-imageData.ZPixelPhysicalSize = minZvoxelSize;
+imageData.Dimensions = [imageWidth,imageHeight,imageDepth];
+imageData.PixelPhysicalSize = minVoxelSize;
 
-if (nargout>1)
-    varargout{1} = [minXPos,minYPos,minZPos];
-end
-if (nargout>2)
-    varargout{2} = [imageWidth,imageHeight,imageDepth];
-end
+imageSize = [imageWidth,imageHeight,imageDepth];
 end
 

@@ -34,12 +34,8 @@ if (deltasPresent==true)
         for i=1:length(imageDatasets)
             imageDatasets(i).ParentDelta = 0;
             imageDatasets(i).Children = [];
-            imageDatasets(i).xMinPos = 0;
-            imageDatasets(i).yMinPos = 0;
-            imageDatasets(i).zMinPos = 0;
-            imageDatasets(i).xMaxPos = 0;
-            imageDatasets(i).yMaxPos = 0;
-            imageDatasets(i).zMaxPos = 0;
+            imageDatasets(i).MinPos = [0,0,0];
+            imageDatasets(i).MaxPos = [0,0,0];
         end
     end
 end
@@ -103,23 +99,14 @@ for chan=1:imageData.NumberOfChannels
         
         % Ensure that this subimage has the current channel
         if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
-            
-            % Calculate where this sub image starts in the full image
-            startXind = imageDatasets(datasetIdx).xMinPos-minPos_XY(1)+1;
-            startYind = imageDatasets(datasetIdx).yMinPos-minPos_XY(2)+1;
-            startZind = imageDatasets(datasetIdx).zMinPos-minPos_XY(3)+1;
-            
             % Get the image data
             [nextIm,~] = MicroscopeData.Reader(imageDatasets(datasetIdx),[],chan,[],[],false,true);
             
-            % Get the range of indices that this sub image exist in the
-            % large image
-            roi_RC = floor([startYind,startXind,startZind,...
-                startYind+min(imageDatasets(datasetIdx).YDimension,size(nextIm,1))-1,...
-                startXind+min(imageDatasets(datasetIdx).XDimension,size(nextIm,2))-1,...
-                startZind+min(imageDatasets(datasetIdx).ZDimension,size(nextIm,3))-1]);
+            % Calculate where this sub image starts in the full image
+            startPos_xy = imageDatasets(datasetIdx).MinPos-minPos_XY+1;
+            endPos_xy = startPos_xy + min(imageDatasets(datasetIdx).Dimensions,size(nextIm))-1;
             
-            outRoi = outImage(roi_RC(1):roi_RC(4),roi_RC(2):roi_RC(5),roi_RC(3):roi_RC(6));
+            outRoi = outImage(startPos_xy(2):endPos_xy(2),startPos_xy(1):endPos_xy(1),startPos_xy(3):endPos_xy(3));
             
             % Find out which image should exist in the overlap
             % TODO this could be blended better
@@ -132,15 +119,13 @@ for chan=1:imageData.NumberOfChannels
             clear outRoi
             
             % Set the output image with the sub image
-            outImage(roi_RC(1):roi_RC(4),roi_RC(2):roi_RC(5),roi_RC(3):roi_RC(6)) = nextIm;
+            outImage(startPos_xy(2):endPos_xy(2),startPos_xy(1):endPos_xy(1),startPos_xy(3):endPos_xy(3)) = nextIm;
             clear nextIm
             
             % Create the colored output image if requested by the user
             if (strcmp(visualize,'No')==0)
-                outImageColor(startYind:startYind+imageDatasets(datasetIdx).YDimension-1,...
-                    startXind:startXind+imageDatasets(datasetIdx).XDimension-1,...
-                    startZind:startZind+imageDatasets(datasetIdx).ZDimension-1) = ones(imageDatasets(datasetIdx).YDimension,...
-                    imageDatasets(datasetIdx).XDimension,imageDatasets(datasetIdx).ZDimension)*datasetIdx;
+                outImageColor(startPos_xy(2):endPos_xy(2),startPos_xy(1):endPos_xy(1),startPos_xy(3):endPos_xy(3)) =...
+                    ones(imageDatasets(datasetIdx).Dimensions(2),imageDatasets(datasetIdx).Dimensions(1),imageDatasets(datasetIdx).Dimensions(3))*datasetIdx;
             end
         end
         
@@ -176,8 +161,7 @@ for chan=1:imageData.NumberOfChannels
     userview = memory;
     if (size(outImage,1)>size(outImage,2) && userview.MemAvailableAllArrays>w.bytes)
         outImage = permute(outImage(end:-1:1,:,:),[2,1,3]);
-        tmpImageData.XDimension = imageData.YDimension;
-        tmpImageData.YDimension = imageData.XDimension;
+        tmpImageData.Dimensions = Utils.SwapXY_RC(imageData.Dimensions);
     end
     
     % Save out the result

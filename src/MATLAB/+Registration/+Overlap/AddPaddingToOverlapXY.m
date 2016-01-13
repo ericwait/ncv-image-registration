@@ -10,8 +10,8 @@ elseif (length(padding)==2)
 end
 
 %% Create arrays that allow for 'for' loops
-im1Dim_XY = [imageData1.XDimension,imageData1.YDimension,imageData1.ZDimension];
-im2Dim = [imageData2.XDimension,imageData2.YDimension,imageData2.ZDimension];
+im1Dim_XY = imageData1.Dimensions;
+im2Dim = imageData2.Dimensions;
 
 paddingUsed_XY = zeros(1,3);
 image1ROIout_XY = image1ROI_XY;

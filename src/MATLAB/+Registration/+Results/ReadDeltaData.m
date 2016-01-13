@@ -22,15 +22,15 @@ for i=1:length(imageDatasets)
         deltaParent = [strtrim(fscanf(fid,'Parent:%255c\n')) '.'];
         fclose(fid);
         
-        imageDatasets(i).xDelta = data(1);
-        imageDatasets(i).yDelta = data(2);
-        imageDatasets(i).zDelta = data(3);
+        imageDatasets(i).Delta(1) = data(1);
+        imageDatasets(i).Delta(2) = data(2);
+        imageDatasets(i).Delta(3) = data(3);
         imageDatasets(i).NCV = data(4);
     else
         deltaParent = '';
-        imageDatasets(i).xDelta = 0;
-        imageDatasets(i).yDelta = 0;
-        imageDatasets(i).zDelta = 0;
+        imageDatasets(i).Delta(1) = 0;
+        imageDatasets(i).Delta(2) = 0;
+        imageDatasets(i).Delta(3) = 0;
         imageDatasets(i).NCV = 0;
     end
     
@@ -53,46 +53,24 @@ if (deltasPresent==true)
     
     if (length(root)~=1), error('There are too many roots to min span tree!'); end
     
-    imageDatasets = applyParentsDelta(root,0,0,0,imageDatasets,unitFactor);
+    imageDatasets = applyParentsDelta(root,[0,0,0],imageDatasets,unitFactor);
 else
     for i=1:length(imageDatasets)
-        imageDatasets(i).xMinPos = round(imageDatasets(i).XPosition*unitFactor * imageDatasets(i).XPixelPhysicalSize);
-        imageDatasets(i).xMaxPos = imageDatasets(i).xMinPos + imageDatasets(i).XDimension -1;
-        imageDatasets(i).yMinPos = round(imageDatasets(i).YPosition * unitFactor * imageDatasets(i).YPixelPhysicalSize);
-        imageDatasets(i).yMaxPos = imageDatasets(i).yMinPos + imageDatasets(i).YDimension -1;
-        
-        if (isfield(imageDatasets,'ZPosition') && ~isempty(imageDatasets(i).ZPosition))
-            imageDatasets(i).zMinPos = round(imageDatasets(i).ZPosition * unitFactor * imageDatasets(i).ZPixelPhysicalSize);
-        else
-            imageDatasets(i).zMinPos = 0;
-        end
-        imageDatasets(i).zMaxPos = imageDatasets(i).zMinPos + imageDatasets(i).ZDimension -1;
+        imageDatasets(i).MinPos = round(imageDatasets(i).Position*unitFactor .* imageDatasets(i).PixelPhysicalSize);
+        imageDatasets(i).MaxPos = imageDatasets(i).MinPos + imageDatasets(i).Dimensions -1;
     end
 end
 end
 
-function imageDatasets = applyParentsDelta(root,deltaX,deltaY,deltaZ,imageDatasets,unitFactor)
-imageDatasets(root).xDelta = imageDatasets(root).xDelta + deltaX;
-imageDatasets(root).yDelta = imageDatasets(root).yDelta + deltaY;
-imageDatasets(root).zDelta = imageDatasets(root).zDelta + deltaZ;
+function imageDatasets = applyParentsDelta(root,delta,imageDatasets,unitFactor)
+imageDatasets(root).Delta = imageDatasets(root).Delta + delta;
 
-deltaX = imageDatasets(root).xDelta;
-deltaY = imageDatasets(root).yDelta;
-deltaZ = imageDatasets(root).zDelta;
+delta = imageDatasets(root).Delta;
 
-imageDatasets(root).xMinPos = round(imageDatasets(root).XPosition*unitFactor * imageDatasets(root).XPixelPhysicalSize) + deltaX;
-imageDatasets(root).xMaxPos = imageDatasets(root).xMinPos + imageDatasets(root).XDimension -1;
-imageDatasets(root).yMinPos = round(imageDatasets(root).YPosition * unitFactor * imageDatasets(root).YPixelPhysicalSize) + deltaY;
-imageDatasets(root).yMaxPos = imageDatasets(root).yMinPos + imageDatasets(root).YDimension -1;
-
-if (isfield(imageDatasets,'ZPosition'))
-    imageDatasets(root).zMinPos = round(imageDatasets(root).ZPosition * unitFactor * imageDatasets(root).ZPixelPhysicalSize) + deltaZ;
-else
-    imageDatasets(root).zMinPos = 1 + deltaZ;
-end
-imageDatasets(root).zMaxPos = imageDatasets(root).zMinPos + imageDatasets(root).ZDimension -1;
+imageDatasets(root).MinPos = round(imageDatasets(root).Position*unitFactor .* imageDatasets(root).PixelPhysicalSize) + delta;
+imageDatasets(root).MaxPos = imageDatasets(root).MinPos + imageDatasets(root).Dimensions -1;
 
 for i=1:length(imageDatasets(root).Children)
-    imageDatasets = applyParentsDelta(imageDatasets(root).Children(i),deltaX,deltaY,deltaZ,imageDatasets,unitFactor);
+    imageDatasets = applyParentsDelta(imageDatasets(root).Children(i),delta,imageDatasets,unitFactor);
 end
 end
