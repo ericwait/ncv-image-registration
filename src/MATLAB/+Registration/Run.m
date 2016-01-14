@@ -68,6 +68,14 @@ elseif (0==deltasPresent)
     prefix = [datasetName '_Montage'];
 end
 
+outPath = MicroscopeData.Helper.CreateUniqueWordedPath(fullfile(pathName,prefix,datasetName));
+lastSlash = find(outPath=='\',1,'last');
+if (lastSlash==length(outPath))
+    lastSlash = find(outPath=='\',2,'last');
+    lastSlash = lastSlash(2);
+end
+outPath = outPath(1:lastSlash);
+
 if (strcmp(combineHere,'Yes'))
     %% Start a log dirctory
     logDir = fullfile(imageDatasets(1).imageDir,'..','_GraphLog');
@@ -76,8 +84,8 @@ if (strcmp(combineHere,'Yes'))
     end
     
     %% create a dirctory for the new images
-    if ~isdir(fullfile(pathName,prefix))
-        mkdir(pathName,prefix);
+    if ~isdir(outPath)
+        mkdir(outPath);
     end
     
     %% Get the final dimensions
@@ -177,14 +185,14 @@ if (strcmp(combineHere,'Yes'))
         % Save out the result
         if (strcmp(visualize,'Visualize Only')==0)
             imwrite(squeeze(imMIP(:,:,1,chan)),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
-            MicroscopeData.Writer(outImage,fullfile(pathName, [prefix, '\']),tmpImageData,[],chan);
+            MicroscopeData.Writer(outImage,outPath,tmpImageData,[],chan);
         end
         
     % Save a smoothed version
     imD = MicroscopeData.ReadMetadata(montages(i).filePath);
     outImage = Cuda.Mex('ContrastEnhancement',outImage,[75,75,75],[3,3,3],labindex);
-    MicroscopeData.Writer(outImage,fullfile(pathName, prefix,'Smoothed\'),tmpImageData,[],chan);
     
+        MicroscopeData.Writer(outImage,fullfile(outPath,'Smoothed\'),tmpImageData,[],chan);
         % Clean up this channel
         clear outImage;
         if (strcmp(visualize,'No')~=0)
@@ -194,7 +202,7 @@ if (strcmp(combineHere,'Yes'))
         fprintf('done in %s\n',Utils.PrintTime(tm))
     end
     
-    tmpImageData.imageDir = fullfile(pathName, [prefix, '\']);
+    tmpImageData.imageDir = outPath;
     MicroscopeData.CreateMetadata(tempImageData.imageDir,tmpImageData,false);
     
     clear outImageColor
@@ -205,7 +213,7 @@ if (strcmp(combineHere,'Yes'))
         % Save a colored maximum intensity version
         imageData.imageDir = fullfile(pathName, [prefix, '\']);
         colorMip = ImUtils.ThreeD.ColorMIP(imMIP,MicroscopeData.Colors.GetChannelColors(imageData));
-        imwrite(colorMip,fullfile(pathName,prefix,sprintf('_%s_RGB.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
+        imwrite(colorMip,fullfile(outPath,sprintf('_%s_RGB.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
         f = figure;
         imagesc(colorMip);%,'Parent',ax);
         ax = get(f,'CurrentAxes');
@@ -217,7 +225,7 @@ if (strcmp(combineHere,'Yes'))
         %         camroll(ax,-90);
         %     end
         frm = getframe(ax);
-        imwrite(frm.cdata,fullfile(pathName,prefix,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
+        imwrite(frm.cdata,fullfile(outPath,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
         close(f);
         clear colorMip
     end
