@@ -184,7 +184,7 @@ if (strcmp(combineHere,'Yes'))
         
         % Save out the result
         if (strcmp(visualize,'Visualize Only')==0)
-            imwrite(squeeze(imMIP(:,:,1,chan)),fullfile(pathName, prefix, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
+            imwrite(imMIP(:,:,1,chan),fullfile(outPath, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
             MicroscopeData.Writer(outImage,outPath,tmpImageData,[],chan);
         end
         
