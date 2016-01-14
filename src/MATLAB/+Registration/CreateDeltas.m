@@ -80,7 +80,7 @@ if (strcmp(reRun,'Rerun'))
     
     % Print out the time it took 
     fHand = fopen(logFile,'at');
-    fprintf(fHand,'Graph creation took: %s, per edge %06.3f sec, per worker %f sec\n',Utils.PrintTime(tm),tm/e,poolobj.NumWorkers);
+    fprintf(fHand,'Graph creation took: %s, per edge %06.3f sec\n',Utils.PrintTime(tm),tm/e);
     fclose(fHand);
     
     % Save the results
