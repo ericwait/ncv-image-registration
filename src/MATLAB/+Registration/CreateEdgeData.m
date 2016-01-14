@@ -3,7 +3,7 @@ function CreateEdgeData( dirs, names, logFile, minOverlap,maxSearchSize,visualiz
 %   Detailed explanation goes here
 
 %% Create mutexes and local data
-[cleanupObj,fileMap] = Threading.initCleanupData();
+[cleanupObj,fileMap] = Threading.InitCleanupData();
 
 ed = struct(...
     'i',0,...
