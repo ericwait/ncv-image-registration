@@ -1,4 +1,4 @@
-function CreateEdgeData( dirs, names, logFile, minOverlap,maxSearchSize,visualize)
+function CreateEdgeData( dirs, names, logFile, minOverlap,maxSearchSize,unitFactor,visualize)
 %CREATEEDGEDATA Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -34,7 +34,7 @@ for i=labindex:numlabs:length(names)
             
             % Check if the next image overlaps or not
             imageDataset2 = MicroscopeData.ReadMetadata(fullfile(dirs{j},names{j}));
-            [roi1,~,minXdist,minYdist] = Registration.Overlap.CalculateOverlapXY(imageDataset1,imageDataset2);
+            [roi1,~,minXdist,minYdist] = Registration.Overlap.CalculateOverlapXY(imageDataset1,imageDataset2,unitFactor);
             
             ed.i = i;
             ed.j = j;
@@ -59,10 +59,10 @@ for i=labindex:numlabs:length(names)
                 
                 % Run the registration
                 if (visualize)
-                    [deltaX,deltaY,deltaZ,normCovar,overlapSize] = Registration.Iterative.RegisterTwoImages(im1,imageDataset1,im2,imageDataset2,...
+                    [deltaX,deltaY,deltaZ,normCovar,overlapSize] = Registration.Iterative.RegisterTwoImages(im1,imageDataset1,im2,imageDataset2,unitFactor,...
                         minOverlap,maxSearchSize,logFile,visualize,visualize);
                 else
-                    [deltaX,deltaY,deltaZ,normCovar,overlapSize] = Registration.FFT.RegisterTwoImages(im1,imageDataset1,im2,imageDataset2,...
+                    [deltaX,deltaY,deltaZ,normCovar,overlapSize] = Registration.FFT.RegisterTwoImages(im1,imageDataset1,im2,imageDataset2,unitFactor,...
                         minOverlap,maxSearchSize,logFile,visualize,visualize);
                 end
                 

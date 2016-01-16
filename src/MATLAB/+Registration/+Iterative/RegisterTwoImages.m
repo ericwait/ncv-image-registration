@@ -1,5 +1,5 @@
 function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = RegisterTwoImages(im1,imageDataset1,im2,...
-    imageDataset2,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize)
+    imageDataset2,unitFactor,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize)
 clear global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
 global Rect1 Rect2
 
@@ -32,7 +32,7 @@ if (fHand~=1)
     fclose(fHand);
 end
 
-[imageROI1_XY,imageROI2_XY,~,~] = Registration.Overlap.CalculateOverlapXY(imageDataset1,imageDataset2);
+[imageROI1_XY,imageROI2_XY,~,~] = Registration.Overlap.CalculateOverlapXY(imageDataset1,imageDataset2,unitFactor);
 
 maxIterX = maxSearchSize;
 maxIterY = maxSearchSize;

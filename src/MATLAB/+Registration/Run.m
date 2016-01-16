@@ -1,4 +1,4 @@
-function Run(listPath,minOverlap,maxSearchSize)
+function Run(listPath,minOverlap,maxSearchSize,unitFactor)
 %% Check inputs
 if (~exist('listPath','var'))
     listPath = [];
@@ -10,6 +10,9 @@ end
 
 if (~exist('maxSearchSize','var') || isempty(maxSearchSize))
     maxSearchSize = 100;
+end
+if (~exist('unitFactor','var'))
+    unitFactor = [];
 end
 
 totalTime = tic;
@@ -62,7 +65,7 @@ combineHere = questdlg('Would you like to make the final montage on this compute
 %% Calculate the overlaps if they don't exist of the user wants them recalculated
 if (strcmp(refine,'Refine') || strcmp(refine,'Refine W/ Visualizer'))
     prefix = [datasetName '_Montage_wDelta'];
-    imageDatasets = Registration.CreateDeltas(imageDatasets,minOverlap,maxSearchSize, visualizor);
+    imageDatasets = Registration.CreateDeltas(imageDatasets,minOverlap,maxSearchSize, unitFactor, visualizor);
     [~,imageDatasets] = Registration.Results.ReadDeltaData(pathName,imageDatasets);
 elseif (0==deltasPresent)
     prefix = [datasetName '_Montage'];

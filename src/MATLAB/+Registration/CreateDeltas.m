@@ -1,4 +1,4 @@
-function imageDatasets = CreateDeltas(imageDatasets,minOverlap,maxSearchSize,visualize)
+function imageDatasets = CreateDeltas(imageDatasets,minOverlap,maxSearchSize,unitFactor,visualize)
 %% Check inputs
 if (~exist('minOverlap','var') || isempty(minOverlap))
     minOverlap = 25;
@@ -60,7 +60,7 @@ if (strcmp(reRun,'Rerun'))
     
     % Start creating the edge weights in parallel
     makeGraphStartTime = tic;
-    Registration.CreateEdgeData(dirs,names,logFile,minOverlap,maxSearchSize,visualize);
+    Registration.CreateEdgeData(dirs,names,logFile,minOverlap,maxSearchSize,unitFactor,visualize);
     
     % Collate the results
     e = 0;
