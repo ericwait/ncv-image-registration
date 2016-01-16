@@ -143,6 +143,9 @@ for i=1:length(imageDatasets)
     ZPosition = 0;
     
     d.Position = [XPosition,YPosition,ZPosition];
+    [ colors, stainNames ] = MicroscopeData.Colors.GetChannelColors( d, true );
+    d.ChannelNames = stainNames;
+    d.ChannelColors = colors;
     
     % Write data back
     MicroscopeData.CreateMetadata(d.imageDir,d,true);
