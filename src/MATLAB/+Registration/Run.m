@@ -91,6 +91,8 @@ if (strcmp(combineHere,'Yes'))
     %% Get the final dimensions
     [ imageData, minPos_XY, maxPos_XY ] = Registration.Overlap.GetFinalSize(imageDatasets,datasetName);
     tmpImageData = imageData;
+    tmpImageData.DatasetName = strtrim(MicroscopeData.Helper.SanitizeString(tmpImageData.DatasetName));
+    datasetName = tmpImageData.DatasetName;
     
     %% Get the image class to make memory for the new image
     imClass = MicroscopeData.GetImageClass(imageDatasets(1));
