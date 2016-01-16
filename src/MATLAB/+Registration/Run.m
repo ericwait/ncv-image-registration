@@ -202,7 +202,7 @@ if (strcmp(combineHere,'Yes'))
     end
     
     tmpImageData.imageDir = outPath;
-    MicroscopeData.CreateMetadata(tempImageData.imageDir,tmpImageData,false);
+    MicroscopeData.CreateMetadata(tmpImageData.imageDir,tmpImageData,false);
     
     clear outImageColor
     clear difInd
