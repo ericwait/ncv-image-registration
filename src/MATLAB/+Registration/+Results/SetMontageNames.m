@@ -13,28 +13,28 @@ rootDir = 'P:\Images\Temple\3d\SVZ\Montage\PumpData\';
     subDir = 'Contralateral Sides 7-2-15';
 
         curDir = fullfile('22mSVZ w2mChP-CM',...
-            '22mSVZ w2mChP-CM #_Montage_wDelta\');
+            '_Montage_wDelta\');
             montages(end).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor2mo;
             montages(end).marker = marker2mo;
             
-        curDir = fullfile('22mSVZ w22mChP-CM',...
-            '22mSVZ w22mChP-CM #_Montage_wDelta\');
+        curDir = fullfile('22mSVZ_w22mChP-CM',...
+            '_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor22mo;
             montages(end).marker = marker22mo;
        
-        curDir = fullfile('22mSVZ wControlPump1 10x1',...
-            '22mSVZ wControlPump1 10x1 #_Montage_wDelta\');
+        curDir = fullfile('22mSVZ_wControlPump1_10x1',...
+            '_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColorCtrl;
             montages(end).marker = markerCtrl;
             
-        curDir = fullfile('22mSVZ wControlPump1 10x2',...
-            '22mSVZ wControlPump1 10x2 #_Montage_wDelta\');
+        curDir = fullfile('22mSVZ_wControlPump1_10x2',...
+            '_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColorCtrl;
@@ -43,29 +43,29 @@ rootDir = 'P:\Images\Temple\3d\SVZ\Montage\PumpData\';
             
     subDir = 'Contralateral Sides 9-18-15';
     
-        curDir = fullfile('22mSVZ StabSham1 10x1_4x01',...
-            '22mSVZ StabSham 10x1_4x01 #_Montage_wDelta\');
+        curDir = fullfile('22mSVZ_StabSham1_10x1_4x01',...
+            '_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColorCtrl;
             montages(end).marker = markerCtrl;
             
-        curDir = fullfile('22mSVZ w2mChP-CM 2 10x1_4x01',...
-            '22mSVZ w2mChP-CM 2 10x1_4x01 #_Montage_wDelta\');
+        curDir = fullfile('22mSVZ w22mChP-CM 2 10x1_4x01',...
+            '_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor2mo;
             montages(end).marker = marker2mo;
             
-        curDir = fullfile('22mSVZ w22mChP-CM 1 10x1_4x01',...
-            '22mSVZ w22mChP-CM 1 10x1_4x01 #_Montage_wDelta\');
+        curDir = fullfile('22mSVZ_w22mChP-CM_1_10x1_4x01',...
+            '_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor22mo;
             montages(end).marker = marker22mo;
             
         curDir = fullfile('22mSVZ w22mChP-CM 2 10x1_4x01',...
-            '22mSVZ w22mChP-CM 2 10x1_4x01 #_Montage_wDelta\');
+            '_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor22mo;
@@ -75,7 +75,7 @@ rootDir = 'P:\Images\Temple\3d\SVZ\Montage\PumpData\';
     subDir = 'Contralateral wmSVZs 11-4-15';
     
         curDir = fullfile('22mSVZ 22mChP-CM1 10x1_4x01',...
-            '22mSVZ 22mChP-CM1 10x1_4x01 #_Montage_wDelta\');
+            '\22mSVZ 22mChP-CM1 10x1_4x01 #_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor22mo;
@@ -88,7 +88,7 @@ rootDir = 'P:\Images\Temple\3d\SVZ\Montage\PumpData\';
             montages(end).faceColor = faceColor22mo;
             montages(end).marker = marker22mo;
             
-        curDir = fullfile('22mSVZ StabSham1 10x1_4x01',...
+        curDir = fullfile('\22mSVZ StabSham1 10x1_4x01',...
             '22mSVZ StabSham1 10x1_4x01 #_Montage_wDelta\');
             montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
@@ -113,14 +113,14 @@ rootDir = 'P:\Images\Temple\3d\SVZ\Montage\PumpData\';
             
         curDir = fullfile('22mSVZ w2mChP-CM Y1 Contra 12-24-15 OptSettings',...
             '22mSVZ w2mChP-CM Y1 Contra 12-24-15 OptSettings #_Montage_wDelta\');
-            montages(end).filePath = fullfile(rootDir,subDir,curDir);
+            montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor2mo;
             montages(end).marker = marker2mo;
             
         curDir = fullfile('22mSVZ w2mChP-CM Y3 Contra 12-22-15 OptSettings',...
             '22mSVZ w2mChP-CM Y3 Contra 12-22-15 OptSettings #_Montage_wDelta\');
-            montages(end).filePath = fullfile(rootDir,subDir,curDir);
+            montages(end+1).filePath = fullfile(rootDir,subDir,curDir);
             montages(end).chanList = [1,2,4];
             montages(end).faceColor = faceColor2mo;
             montages(end).marker = marker2mo;
