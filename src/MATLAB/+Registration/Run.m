@@ -207,6 +207,12 @@ if (strcmp(combineHere,'Yes'))
     end
     
     tmpImageData.imageDir = outPath;
+    if (~isfield(tmpImageData,'ChannelNames')  || isempty(tmpImageData.ChannelNames) ||...
+            ~isfield(tmpImageData,'ChannelColors') || isempty(tmpImageData.ChannelColors))
+       [ colors, stainNames ] = MicroscopeData.Colors.GetChannelColors(tmpImageData);
+       tmpImageData.ChannelNames = stainNames;
+       tmpImageData.ChannelColors = colors;
+    end
     MicroscopeData.CreateMetadata(tmpImageData.imageDir,tmpImageData,false);
     
     clear outImageColor
@@ -232,7 +238,7 @@ if (strcmp(combineHere,'Yes'))
         imwrite(frm.cdata,fullfile(outPath,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
         close(f);
         clear colorMip
-    end
+    end    
     
 end
 
