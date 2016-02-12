@@ -139,8 +139,8 @@ for i=1:length(imageDatasets)
     % Make the positions start at 0
     curPos_RC = pos_RC(n,:)-1;
     
-    XPosition = curPos_RC(2) * (d.Dimensions(1)-d.Dimensions(1)*overlap) / d.PixelPhysicalSize(1) * 1e-6;
-    YPosition = curPos_RC(1) * (d.Dimensions(2)-d.Dimensions(2)*overlap) / d.PixelPhysicalSize(2) * 1e-6;
+    XPosition = curPos_RC(2) * (d.Dimensions(1)-d.Dimensions(1)*overlap) * d.PixelPhysicalSize(1) * 1e-6;
+    YPosition = curPos_RC(1) * (d.Dimensions(2)-d.Dimensions(2)*overlap) * d.PixelPhysicalSize(2) * 1e-6;
     ZPosition = 0;
     
     d.Position = [XPosition,YPosition,ZPosition];
