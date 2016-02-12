@@ -32,6 +32,7 @@ for curDim=1:3
         % Find the max padding possible
         paddingUsed_XY(curDim) = min(padding(curDim),image1ROI_XY(curDim));
         paddingUsed_XY(curDim) = min(paddingUsed_XY(curDim),im2Dim(curDim)-image2ROI_XY(curDim+3)+1);
+        paddingUsed_XY(curDim) = paddingUsed_XY(curDim) -1;
         
         % Apply the padding
         image1ROIout_XY(curDim) = image1ROIout_XY(curDim) - paddingUsed_XY(curDim);
@@ -45,6 +46,7 @@ for curDim=1:3
         % Find the max padding possible
         paddingUsed_XY(curDim) = min(padding(curDim),im1Dim_XY(curDim)-image1ROI_XY(curDim+3)+1);
         paddingUsed_XY(curDim) = min(paddingUsed_XY(curDim),im2Dim(curDim)-image2ROI_XY(curDim+3)+1);
+        paddingUsed_XY(curDim) = paddingUsed_XY(curDim) -1;
         
         % Apply the padding
         image1ROIout_XY(curDim+3) = image1ROIout_XY(curDim+3) + paddingUsed_XY(curDim);
@@ -56,6 +58,7 @@ for curDim=1:3
         % Find the max padding possible
         paddingUsed_XY(curDim) = min(padding(curDim),image2ROI_XY(curDim));
         paddingUsed_XY(curDim) = min(paddingUsed_XY(curDim),im1Dim_XY(curDim)-image1ROI_XY(curDim+3)+1);
+        paddingUsed_XY(curDim) = paddingUsed_XY(curDim) -1;
         
         % Apply the padding
         image2ROIout_XY(curDim) = image2ROIout_XY(curDim) - paddingUsed_XY(curDim);
