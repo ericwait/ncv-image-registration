@@ -125,7 +125,12 @@ if (strcmp(combineHere,'Yes'))
                 
                 % Calculate where this sub image starts in the full image
                 startPos_xy = imageDatasets(datasetIdx).MinPos-minPos_XY+1;
-                endPos_xy = startPos_xy + min(imageDatasets(datasetIdx).Dimensions,size(nextIm))-1;
+                if (ndims(nextIm)==2)
+                    imSize_xy = [Utils.SwapXY_RC(size(nextIm)),1];
+                else
+                    imSize_xy = Utils.SwapXY_RC(size(nextIm));
+                end
+                endPos_xy = startPos_xy + min(imageDatasets(datasetIdx).Dimensions,imSize_xy)-1;
                 
                 outRoi = outImage(startPos_xy(2):endPos_xy(2),startPos_xy(1):endPos_xy(1),startPos_xy(3):endPos_xy(3));
                 
