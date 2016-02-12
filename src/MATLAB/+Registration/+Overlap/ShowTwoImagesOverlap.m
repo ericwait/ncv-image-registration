@@ -1,9 +1,11 @@
-function showTwoImagesOverlap(im1,im1Data,im2,im2Data,deltas)
-%SHOWTWOIMAGESOVERLAP Summary of this function goes here
-%   Detailed explanation goes here
+function ShowTwoImagesOverlap(im1,im1Data,im2,im2Data,deltas,unitFactor)
+%showTwoImagesOverlap(im1,im1Data,im2,im2Data,deltas)
 
 if (~exist('deltas','var') || isempty(deltas))
     deltas = [0,0,0];
+end
+if (~exist('unitFactor','var'))
+    unitFactor = [];
 end
 
 [im1ROI,im2ROI,~,~] = Registration.Overlap.CalculateOverlapXY(im1Data,im2Data,unitFactor);
