@@ -38,6 +38,7 @@ cc = bwconncomp(mask);
 %% Calculate the average side length in the square images
 numImages = length(imageDatasets);
 subImageLength = ceil(sqrt(size(cc.PixelIdxList{1},1)/numImages));
+subImageLength_rc = [subImageLength,subImageLength];
 
 %% Show the original image
 f = figure;
@@ -46,11 +47,11 @@ axis image
 hold on
 
 %% Draw the partition lines
-for i=subImageLength:subImageLength:size(imMont,2)
+for i=subImageLength_rc(2):subImageLength_rc(2):size(imMont,2)
     line([i,i],[0,size(imMont,1)],'color','w');
 end
 
-for i=subImageLength:subImageLength:size(imMont,1)
+for i=subImageLength_rc(1):subImageLength_rc(1):size(imMont,1)
     line([0,size(imMont,2)],[i,i],'color','w');
 end
 
@@ -68,25 +69,25 @@ pos_RC = zeros(numImages,2);
 imNum = 1;
 
 % Search each row to the right then to the left, thus stride by 2
-for r=1:2:ceil(size(imMont,1)/subImageLength)
+for r=1:2:ceil(size(imMont,1)/subImageLength_rc(1))
     % Find the center of the current row
-    rowCenter = r*subImageLength-floor(subImageLength/2);
+    rowCenter = r*subImageLength_rc(1)-floor(subImageLength_rc(1)/2);
     
     if (size(imMont,1)<rowCenter)
         % Too far
         continue;
     end
     
-    for c=1:ceil(size(imMont,2)/subImageLength)
+    for c=1:ceil(size(imMont,2)/subImageLength_rc(2))
         % Find the center of the current column starting on the left
-        colCenter = c*subImageLength-floor(subImageLength/2);
+        colCenter = c*subImageLength_rc(2)-floor(subImageLength_rc(2)/2);
         
         if (size(imMont,2)<colCenter)
             % Too far
             continue;
         end
         
-        if (mask(rowCenter,colCenter))
+        if (mask(round(rowCenter),round(colCenter)))
             % This center is in the montage
             pos_RC(imNum,:) = [r,c];
             text(colCenter,rowCenter,num2str(imNum),'color','w');
@@ -95,23 +96,23 @@ for r=1:2:ceil(size(imMont,1)/subImageLength)
     end
     
     % Go to the next row
-    rowCenter = (r+1)*subImageLength-floor(subImageLength/2);
+    rowCenter = (r+1)*subImageLength_rc(1)-floor(subImageLength_rc(1)/2);
     
     if (size(imMont,1)<rowCenter)
         % Too Far
         continue;
     end
     
-    for c=ceil(size(imMont,2)/subImageLength):-1:1
+    for c=ceil(size(imMont,2)/subImageLength_rc(2)):-1:1
         % Find the center of the current column starting on the right
-        colCenter = c*subImageLength-floor(subImageLength/2);
+        colCenter = c*subImageLength_rc(2)-floor(subImageLength_rc(2)/2);
         
         if (size(imMont,2)<colCenter)
             % Too Far
             continue;
         end
         
-        if (mask(rowCenter,colCenter))
+        if (mask(round(rowCenter),round(colCenter)))
             % This center is in the montage
             pos_RC(imNum,:) = [r+1,c];
             text(colCenter,rowCenter,num2str(imNum),'color','w');
@@ -132,8 +133,8 @@ close(f);
 for i=1:length(imageDatasets)
     d = imageDatasets(i);
     
-    numIdx = regexp(imageDatasets(i).DatasetName,'#\d') +1;
-    numStr = imageDatasets(i).DatasetName(numIdx:end);
+    numIdx = regexp(imageDatasets(i).DatasetName,'_pos\d') +1;
+    numStr = imageDatasets(i).DatasetName(numIdx+3:end);
     n = str2double(numStr);
     % Make the positions start at 0
     curPos_RC = pos_RC(n,:)-1;
@@ -143,7 +144,7 @@ for i=1:length(imageDatasets)
     ZPosition = 0;
     
     d.Position = [XPosition,YPosition,ZPosition];
-    [ colors, stainNames ] = MicroscopeData.Colors.GetChannelColors( d, true );
+    [ colors, stainNames ] = MicroscopeData.Colors.GetChannelColors( d, false );
     d.ChannelNames = stainNames;
     d.ChannelColors = colors;
     
