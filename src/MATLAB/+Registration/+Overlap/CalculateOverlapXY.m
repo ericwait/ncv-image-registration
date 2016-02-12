@@ -42,7 +42,7 @@ im2Pos = imageData2.Position * unitFactor;
 phyVoxSize = imageData1.PixelPhysicalSize;
             
 %% Find the overlapping regions
-posDif = (im1Pos - im2Pos) .* phyVoxSize;
+posDif = (im1Pos - im2Pos) ./ phyVoxSize;
 posDif = round(posDif); %because this needs to be in voxels
 
 minDis = ones(1,3) * inf;
