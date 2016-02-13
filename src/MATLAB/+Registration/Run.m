@@ -173,7 +173,7 @@ if (strcmp(combineHere,'Yes'))
         
         % Write out the resuts to a file
         if (~strcmp(visualize,'Visualize Only'))
-            [fig,ax] = Registration.Results.TestingDeltas(outImage,[],imageDatasets,chan,prefix);
+            [fig,ax] = Registration.Results.TestingDeltas(outImage,[],imageDatasets,minPos_XY,chan,prefix);
             set(fig,'Units','normalized','Position',[0 0 1 1]);
             if (size(outImage,1)>size(outImage,2))
                 camroll(ax,-90);
@@ -235,7 +235,7 @@ if (strcmp(combineHere,'Yes'))
         %     if (tmpImageData.XDimension~=imageData.XDimension)
         %         camroll(ax,90);
         %     end
-        Registration.Results.DrawBoxesLines(f,ax,imageDatasets,0,tmpImageData.DatasetName);
+        Registration.Results.DrawBoxesLines(f,ax,imageDatasets,minPos_XY,0,tmpImageData.DatasetName);
         %     if (size(colorMip,1)>size(colorMip,2))
         %         camroll(ax,-90);
         %     end

@@ -1,15 +1,13 @@
-function DrawBoxesLines(figHandle,axisHandle,imageDatasets,chan,curDataset)
+function DrawBoxesLines(figHandle,axisHandle,imageDatasets,minPos_XY,chan,curDataset)
 hold(axisHandle,'on');
-
-minPos = min([imageDatasets(:).MinPos]);
 
 lw = 2;
 grn = [0 0.4 0];
 gry = [0 0 0];
 
 for i=1:length(imageDatasets)
-    newStarts = imageDatasets(i).MinPos-minPos-imageDatasets(i).Delta;
-    oldStarts = imageDatasets(i).MinPos-minPos;
+    newStarts = imageDatasets(i).MinPos-minPos_XY-imageDatasets(i).Delta;
+    oldStarts = imageDatasets(i).MinPos-minPos_XY;
     rectangle('Position',...
         [newStarts(1), newStarts(2), imageDatasets(i).Dimensions(1), imageDatasets(i).Dimensions(2)],...
          'EdgeColor',grn,'LineStyle','-.','LineWidth',lw,'Parent',axisHandle);
@@ -17,15 +15,15 @@ for i=1:length(imageDatasets)
         [oldStarts(1), oldStarts(2), imageDatasets(i).Dimensions(1), imageDatasets(i).Dimensions(2)],...
          'EdgeColor','r','LineStyle',':','LineWidth',lw,'Parent',axisHandle);
     
-    centerCur = imageDatasets(i).MinPos-minPos + imageDatasets(i).Dimensions/2;
-    centerParent = imageDatasets(imageDatasets(i).ParentDelta).MinPos-minPos+imageDatasets(imageDatasets(i).ParentDelta).Dimensions/2;
+    centerCur = imageDatasets(i).MinPos-minPos_XY + imageDatasets(i).Dimensions/2;
+    centerParent = imageDatasets(imageDatasets(i).ParentDelta).MinPos-minPos_XY+imageDatasets(imageDatasets(i).ParentDelta).Dimensions/2;
     
     plot([centerParent(1) centerCur(1)],[centerParent(2) centerCur(2)],'b','LineWidth',lw,'Parent',axisHandle);
 end
 
 for i=1:length(imageDatasets)
-    centerCur = imageDatasets(i).MinPos-minPos + imageDatasets(i).Dimensions/2;
-    centerParent = imageDatasets(imageDatasets(i).ParentDelta).MinPos-minPos+imageDatasets(imageDatasets(i).ParentDelta).Dimensions/2;
+    centerCur = imageDatasets(i).MinPos-minPos_XY + imageDatasets(i).Dimensions/2;
+    centerParent = imageDatasets(imageDatasets(i).ParentDelta).MinPos-minPos_XY+imageDatasets(imageDatasets(i).ParentDelta).Dimensions/2;
     
     posNum = regexp(imageDatasets(i).DatasetName,[regexptranslate('escape',curDataset) '(.*)'],'tokens','once');
     if (isempty(posNum))
