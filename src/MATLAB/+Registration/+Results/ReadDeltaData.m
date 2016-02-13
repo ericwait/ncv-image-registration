@@ -56,7 +56,7 @@ if (deltasPresent==true)
     imageDatasets = applyParentsDelta(root,[0,0,0],imageDatasets,unitFactor);
 else
     for i=1:length(imageDatasets)
-        imageDatasets(i).MinPos = round(imageDatasets(i).Position*unitFactor .* imageDatasets(i).PixelPhysicalSize);
+        imageDatasets(i).MinPos = round(imageDatasets(i).Position*unitFactor ./ imageDatasets(i).PixelPhysicalSize);
         imageDatasets(i).MaxPos = imageDatasets(i).MinPos + imageDatasets(i).Dimensions -1;
     end
 end
@@ -67,7 +67,7 @@ imageDatasets(root).Delta = imageDatasets(root).Delta + delta;
 
 delta = imageDatasets(root).Delta;
 
-imageDatasets(root).MinPos = round(imageDatasets(root).Position*unitFactor .* imageDatasets(root).PixelPhysicalSize) + delta;
+imageDatasets(root).MinPos = round(imageDatasets(root).Position*unitFactor ./ imageDatasets(root).PixelPhysicalSize) + delta;
 imageDatasets(root).MaxPos = imageDatasets(root).MinPos + imageDatasets(root).Dimensions -1;
 
 for i=1:length(imageDatasets(root).Children)
