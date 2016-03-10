@@ -133,8 +133,8 @@ close(f);
 for i=1:length(imageDatasets)
     d = imageDatasets(i);
     
-    numIdx = regexp(imageDatasets(i).DatasetName,'_pos\d') +1;
-    numStr = imageDatasets(i).DatasetName(numIdx+3:end);
+    numIdx = regexp(imageDatasets(i).DatasetName,'#\d') +1;
+    numStr = imageDatasets(i).DatasetName(numIdx:end);
     n = str2double(numStr);
     % Make the positions start at 0
     curPos_RC = pos_RC(n,:)-1;
