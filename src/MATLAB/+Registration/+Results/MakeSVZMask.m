@@ -1,5 +1,7 @@
 function MakeSVZMask()
 imD = MicroscopeData.ReadMetadata();
+disp(imD.DatasetName)
+
 %% get the iamge data
 mipfilePath = fullfile(imD.imageDir,[imD.DatasetName,'_MIP.tif']);
 if (~exist(mipfilePath,'file'))
