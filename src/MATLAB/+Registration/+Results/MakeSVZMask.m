@@ -7,11 +7,13 @@ mipfilePath = fullfile(imD.imageDir,[imD.DatasetName,'_MIP.tif']);
 if (~exist(mipfilePath,'file'))
     mipfilePath = fullfile(imD.imageDir,['_',imD.DatasetName,'_MIP.tif']);
     if (~exist(mipfilePath,'file'))
-        error('Cannot find file %s',mipfilePath);
+        im = MicroscopeData.ReaderParZ(imD);
+        colorMip = ImUtils.ThreeD.ColorMIP(im);
+    else
+        colorMip = imread(mipfilePath);
     end
 end
-    
-colorMip = imread(mipfilePath);
+
 colors = MicroscopeData.Colors.GetChannelColors(imD);
     
 bw = roipoly(colorMip);
