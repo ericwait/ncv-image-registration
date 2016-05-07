@@ -3,7 +3,13 @@ imD = MicroscopeData.ReadMetadata();
 disp(imD.DatasetName)
 
 %% get the iamge data
-mipfilePath = fullfile(imD.imageDir,[imD.DatasetName,'_MIP.tif']);
+suffix = '_chan';
+for c=2:imD.NumberOfChannels
+    suffix = [suffix,num2str(c)];
+end
+suffix = [suffix,'.tif'];
+
+mipfilePath = fullfile(imD.imageDir,['_',imD.DatasetName,suffix]);
 if (~exist(mipfilePath,'file'))
     mipfilePath = fullfile(imD.imageDir,['_',imD.DatasetName,'_MIP.tif']);
     if (~exist(mipfilePath,'file'))
