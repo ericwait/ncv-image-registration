@@ -18,6 +18,8 @@ if (~exist(mipfilePath,'file'))
     else
         colorMip = imread(mipfilePath);
     end
+else
+    colorMip = imread(mipfilePath);
 end
 
 colors = MicroscopeData.Colors.GetChannelColors(imD);
