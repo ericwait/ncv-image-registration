@@ -29,7 +29,7 @@ for i=labindex:numlabs:length(names)
         if (~bExists)
             % Read in the first image only once
             if (isempty(im1))
-                [im1,imageDataset1] = MicroscopeData.ReaderParZ(fullfile(dirs{i},names{i}),[],[],[],[],false);
+                [im1,imageDataset1] = MicroscopeData.ReaderH5(fullfile(dirs{i},names{i}));
             end
             
             % Check if the next image overlaps or not
@@ -55,7 +55,7 @@ for i=labindex:numlabs:length(names)
                     imageDataset1.DatasetName,imageDataset2.DatasetName,t.Hour,t.Minute,floor(t.Second),(t.Second-floor(t.Second))*100);
                 
                 % Read in the second image
-                [im2,~] = MicroscopeData.ReaderParZ(fullfile(dirs{j},names{j}),[],[],[],[],false);
+                [im2,~] = MicroscopeData.ReaderH5(fullfile(dirs{j},names{j}));
                 
                 % Run the registration
                 if (visualize)
