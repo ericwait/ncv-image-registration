@@ -121,7 +121,7 @@ if (strcmp(combineHere,'Yes'))
             % Ensure that this subimage has the current channel
             if (imageDatasets(datasetIdx).NumberOfChannels>=chan)
                 % Get the image data
-                [nextIm,~] = MicroscopeData.ReaderParZ(imageDatasets(datasetIdx),[],chan,[],[],false,true);
+                [nextIm,~] = MicroscopeData.ReaderH5('imageData',imageDatasets(datasetIdx),'chanList',chan,'verbose',false);
                 
                 % Calculate where this sub image starts in the full image
                 startPos_xy = imageDatasets(datasetIdx).MinPos-minPos_XY+1;
@@ -195,12 +195,13 @@ if (strcmp(combineHere,'Yes'))
         % Save out the result
         if (strcmp(visualize,'Visualize Only')==0)
             imwrite(imMIP(:,:,1,chan),fullfile(outPath, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
-            MicroscopeData.Writer(outImage,outPath,tmpImageData,[],chan);
+            MicroscopeData.WriterH5(outImage,fullfile(outPath,'Original'),'imageData',tmpImageData,'chanList',chan);
         end
         
         % Save a smoothed version
-        outImage = Cuda.Mex('ContrastEnhancement',outImage,[75,75,75],[3,3,3]);
-        MicroscopeData.Writer(outImage,fullfile(outPath,'Smoothed\'),tmpImageData,[],chan);
+        outImage = Cuda.ContrastEnhancement(outImage,[75,75,75],[3,3,3],1);
+        outImage = ImUtils.ConvertType(outImage,class(outImage),true);
+        MicroscopeData.WriterH5(outImage,outPath,'imageData',tmpImageData,'chanList',chan);
         
         % Clean up this channel
         clear outImage;
@@ -225,11 +226,14 @@ if (strcmp(combineHere,'Yes'))
     
     %% Save out overview results
     if (strcmp(visualize,'Visualize Only')==0)
+        % save all MIP combos
+        imFull = MicroscopeData.ReaderH5(tmpImageData.imageDir);
+        MicroscopeData.Colors.WriteMIPcombs(imFull,tmpImageData,tmpImageData.imageDir);
         % Save a colored maximum intensity version
-        imageData.imageDir = fullfile(pathName, [prefix, '\']);
-        colorMip = ImUtils.ThreeD.ColorMIP(imMIP,MicroscopeData.Colors.GetChannelColors(imageData));
-        imwrite(colorMip,fullfile(outPath,sprintf('_%s_RGB.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
+        colors = MicroscopeData.Colors.GetChannelColors(imageData);
+        colorMip = MicroscopeData.Colors.MIP(imFull, tmpImageData, [], colors);
         f = figure;
+        set(f,'units','normalized','Position',[0,0,1,1]);
         imagesc(colorMip);%,'Parent',ax);
         ax = get(f,'CurrentAxes');
         %     if (tmpImageData.XDimension~=imageData.XDimension)
@@ -243,6 +247,7 @@ if (strcmp(combineHere,'Yes'))
         imwrite(frm.cdata,fullfile(outPath,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
         close(f);
         clear colorMip
+        clear imFull
     end    
     
 end
