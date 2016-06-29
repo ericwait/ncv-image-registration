@@ -1,32 +1,40 @@
-function MakeSVZMask()
-imD = MicroscopeData.ReadMetadata();
+function MakeSVZMask(im,imD)
+if (~exist('imD','var') || isempty(imD))
+    imD = MicroscopeData.ReadMetadata();
+end
+
 disp(imD.DatasetName)
+if (~exist('im','var') || isempty(im))
+    im = MicroscopeData.ReaderH5('imageData',imD);
+end
+colors = MicroscopeData.Colors.GetChannelColors(imD);
 
 %% get the iamge data
-suffix = '_chan';
-for c=2:imD.NumberOfChannels
-    suffix = [suffix,num2str(c)];
-end
-suffix = [suffix,'.tif'];
-
-mipfilePath = fullfile(imD.imageDir,['_',imD.DatasetName,suffix]);
-if (~exist(mipfilePath,'file'))
-    mipfilePath = fullfile(imD.imageDir,['_',imD.DatasetName,'_MIP.tif']);
+maskPath = fullfile(imD.imageDir,['_',imD.DatasetName,'_Mask.tif']);
+if (~exist(maskPath,'file'))
+    suffix = '_chan';
+    for c=2:imD.NumberOfChannels
+        suffix = [suffix,num2str(c)];
+    end
+    suffix = [suffix,'.tif'];
+    
+    mipfilePath = fullfile(imD.imageDir,['_',imD.DatasetName,suffix]);
     if (~exist(mipfilePath,'file'))
-        im = MicroscopeData.ReaderParZ(imD);
-        colorMip = ImUtils.ThreeD.ColorMIP(im);
+        mipfilePath = fullfile(imD.imageDir,['_',imD.DatasetName,'_MIP.tif']);
+        if (~exist(mipfilePath,'file'))
+            colorMip = ImUtils.ThreeD.ColorMIP(im,colors);
+        else
+            colorMip = imread(mipfilePath);
+        end
     else
         colorMip = imread(mipfilePath);
     end
-else
-    colorMip = imread(mipfilePath);
-end
-
-colors = MicroscopeData.Colors.GetChannelColors(imD);
     
-bw = roipoly(colorMip);
-
-imwrite(im2uint8(bw),fullfile(imD.imageDir,['_',imD.DatasetName,'_Mask.tif']),'compression','lzw');
+    bw = roipoly(colorMip);
+    imwrite(im2uint8(bw),maskPath,'compression','lzw');
+else
+    bw = imread(maskPath);
+end
     
 %% get the boundry pixels dialated a bit
 bound = bwperim(bw);
@@ -52,8 +60,8 @@ for j=1:size(masks,1)
     imageName = sprintf('_%s_chan%s.tif',imD.DatasetName,num2str(curChans,'%d'));
     imagePath = fullfile(imD.imageDir,imageName);
     
-    im = MicroscopeData.ReaderParZ(imD,[],curChans);
-    colorMip = ImUtils.ThreeD.ColorMIP(im,colors(curChans,:));
+    curIm = im(:,:,:,curChans);
+    colorMip = ImUtils.ThreeD.ColorMIP(curIm,colors(curChans,:));
     imwrite(colorMip,imagePath,'tif','Compression','lzw');
     
     colorMip = ImUtils.ROI.GetMaskedIm(colorMip,bw,boundInd);
