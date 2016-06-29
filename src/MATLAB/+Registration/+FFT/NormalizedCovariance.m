@@ -1,4 +1,4 @@
-function [ NCshiftMatrix ] = NormalizedCovariance( im1,im2, minOverlap )
+function [ NCshiftMatrix ] = NormalizedCovariance( im1,im2, minOverlap, im1Mask, im2Mask )
 %NORMALIZEDCOVARIANCE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -16,6 +16,17 @@ dimIm2 = ndims( im2 );
 
 if dimIm1 ~= dimIm2
     throw(notSameDimensionsException);
+end
+
+if (~exist('im1Mask','var') || isempty(im1Mask))
+    im1Mask = ones(sizeIm1);
+else
+    im1Mask = im2double(im1Mask);
+end
+if (~exist('im2Mask','var') || isempty(im2Mask))
+    im2Mask = ones(sizeIm2);
+else
+    im2Mask = im2double(im2Mask);
 end
 
 %% Set up Fourier Transform.
@@ -37,12 +48,11 @@ for d = 1:dimIm1
     subsCell1{d} = 1:sizeIm1(d);
     subsCell2{d} = 1:sizeIm2(d);
 end
-refStruct1 = struct('type','()','subs',{subsCell1});
-refStruct2 = struct('type','()','subs',{subsCell2});
-imEmb1 = subsasgn( imEmb1, refStruct1, im1 );
-imEmb2 = subsasgn( imEmb2, refStruct2, im2flip );
-imEmb1ones = subsasgn( imEmb1ones, refStruct1, ones(sizeIm1) );
-imEmb2ones = subsasgn( imEmb2ones, refStruct2, ones(sizeIm2) );
+
+imEmb1(subsCell1{:}) = im1;
+imEmb2(subsCell2{:}) = im2flip;
+imEmb1ones(subsCell1{:}) = im1Mask;
+imEmb2ones(subsCell2{:}) = im2Mask;
 
 %% Compute the Fourier transforms
 % Transform images.
