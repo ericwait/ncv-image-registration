@@ -25,6 +25,8 @@ if (isempty(imageDatasets))
     return
 end
 
+disp(datasetName);
+
 pathName = fullfile(imageDatasets(1).imageDir,'..');
 [deltasPresent,imageDatasets] = Registration.Results.ReadDeltaData(pathName,imageDatasets);
 if (deltasPresent==true)
@@ -113,7 +115,7 @@ if (strcmp(combineHere,'Yes'))
         
         % Give the user an indication of were the process is
         fprintf('Chan:%d...',chan);
-        cp = Utils.CmdlnProgress(length(imageDatasets),true);
+        cp = Utils.CmdlnProgress(length(imageDatasets),true,'Placing');
         
         % Place each subimage into the final channel image
         for datasetIdx=1:length(imageDatasets)
@@ -162,7 +164,7 @@ if (strcmp(combineHere,'Yes'))
         imMIP(:,:,1,chan) = max(outImage,[],3);
         
         % Cleanup the progress indicator
-        cp.ClearProgress();
+        cp.ClearProgress(true);
         
         % Show the user the output if requested
         if (strcmp(visualize,'Yes') || strcmp(visualize,'Visualize Only'))
@@ -195,13 +197,13 @@ if (strcmp(combineHere,'Yes'))
         % Save out the result
         if (strcmp(visualize,'Visualize Only')==0)
             imwrite(imMIP(:,:,1,chan),fullfile(outPath, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
-            MicroscopeData.WriterH5(outImage,fullfile(outPath,'Original'),'imageData',tmpImageData,'chanList',chan);
+            MicroscopeData.WriterH5(outImage,fullfile(outPath,'Original'),'imageData',tmpImageData,'chanList',chan,'verbose',true);
         end
         
         % Save a smoothed version
         outImage = Cuda.ContrastEnhancement(outImage,[75,75,75],[3,3,3],1);
         outImage = ImUtils.ConvertType(outImage,class(outImage),true);
-        MicroscopeData.WriterH5(outImage,outPath,'imageData',tmpImageData,'chanList',chan);
+        MicroscopeData.WriterH5(outImage,outPath,'imageData',tmpImageData,'chanList',chan,'verbose',true);
         
         % Clean up this channel
         clear outImage;
@@ -227,11 +229,24 @@ if (strcmp(combineHere,'Yes'))
     %% Save out overview results
     if (strcmp(visualize,'Visualize Only')==0)
         % save all MIP combos
-        imFull = MicroscopeData.ReaderH5(tmpImageData.imageDir);
-        MicroscopeData.Colors.WriteMIPcombs(imFull,tmpImageData,tmpImageData.imageDir);
+        [imFull,imFullD] = MicroscopeData.ReaderH5(tmpImageData.imageDir,'verbose',true);
+        root = fileparts(imageData.imageDir);
+        if (exist(fullfile(root,'unmixing.mat'),'file'))
+            unmixTime = tic;
+            load(fullfile(root,'unmixing.mat'));
+            imFull = Cuda.LinearUnmixing(imFull,unmixingMatrix,1);
+            MicroscopeData.WriterH5(imFull,imFullD.imageDir,'imageData',imFullD,'verbose',true);
+            fprintf('Unmixed in: %s\n',Utils.PrintTime(toc(unmixTime)));
+        else
+            disp('No unmixing!');
+        end
+        
+        Registration.Results.MakeSVZMask(imFull,imFullD);
+        
+        %MicroscopeData.Colors.WriteMIPcombs(imFull,tmpImageData,tmpImageData.imageDir);
         % Save a colored maximum intensity version
         colors = MicroscopeData.Colors.GetChannelColors(imageData);
-        colorMip = MicroscopeData.Colors.MIP(imFull, tmpImageData, [], colors);
+        colorMip = MicroscopeData.Colors.MIP(imFull, imFullD, [], colors);
         f = figure;
         set(f,'units','normalized','Position',[0,0,1,1]);
         imagesc(colorMip);%,'Parent',ax);
