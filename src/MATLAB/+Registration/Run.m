@@ -201,7 +201,7 @@ if (strcmp(combineHere,'Yes'))
         end
         
         % Save a smoothed version
-        outImage = Cuda.ContrastEnhancement(outImage,[75,75,75],[3,3,3],1);
+        outImage = ImProc.ContrastEnhancement(outImage,[75,75,75],[3,3,3]);
         outImage = ImUtils.ConvertType(outImage,class(outImage),true);
         MicroscopeData.WriterH5(outImage,outPath,'imageData',tmpImageData,'chanList',chan,'verbose',true);
         
