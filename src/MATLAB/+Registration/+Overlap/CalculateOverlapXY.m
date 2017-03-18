@@ -7,17 +7,17 @@ function [image1ROI,image2ROI, minXdist, minYdist] = CalculateOverlapXY(imageDat
 if (~exist('unitFactor','var') || isempty(unitFactor))
     unitFactor = 1e6;
 end
-if (~isfield(imageData1,'ZPosition'))
-    imageData1.ZPosition = 0;
+if (~isfield(imageData1,'Position'))
+    imageData1.Position = [0,0,0];
 end
-if (~isfield(imageData2,'ZPosition'))
-    imageData2.ZPosition = 0;
+if (~isfield(imageData2,'Position'))
+    imageData2.Position = [0,0,0];
 end
-if (~isfield(imageData1,'ZPixelPhysicalSize'))
-    imageData1.ZPixelPhysicalSize = 1;
+if (~isfield(imageData1,'PixelPhysicalSize'))
+    imageData1.PixelPhysicalSize = [1,1,1];
 end
-if (~isfield(imageData2,'ZPixelPhysicalSize'))
-    imageData2.ZPixelPhysicalSize = 1;
+if (~isfield(imageData2,'PixelPhysicalSize'))
+    imageData2.PixelPhysicalSize = [1,1,1];
 end
 
 %% default values
