@@ -18,7 +18,7 @@ end
 totalTime = tic;
 
 %% Get all the metadata
-[ imageDatasets, datasetName ] = Registration.GetMontageSubMeta(listPath);
+[ imageDatasets, datasetName] = Registration.GetMontageSubMeta(listPath);
 
 if (isempty(imageDatasets))
     warning('No images found!');
@@ -73,13 +73,15 @@ elseif (0==deltasPresent)
     prefix = [datasetName '_Montage'];
 end
 
-outPath = MicroscopeData.Helper.CreateUniqueWordedPath(fullfile(pathName,prefix,datasetName));
-lastSlash = find(outPath=='\',1,'last');
-if (lastSlash==length(outPath))
-    lastSlash = find(outPath=='\',2,'last');
-    lastSlash = lastSlash(2);
+dirs = regexpi(pathName,'\\','split');
+if (strcmp(dirs(end),'..'))
+    dirs = dirs(1:end-2);
 end
-outPath = outPath(1:lastSlash);
+outPath = '';
+for i=1:length(dirs)
+    outPath = fullfile(outPath,dirs{i});
+end
+outPath = [outPath,filesep()];
 
 if (strcmp(combineHere,'Yes'))
     %% Start a log dirctory
@@ -197,13 +199,13 @@ if (strcmp(combineHere,'Yes'))
         % Save out the result
         if (strcmp(visualize,'Visualize Only')==0)
             imwrite(imMIP(:,:,1,chan),fullfile(outPath, ['_' datasetName sprintf('_c%02d_t%04d.tif',chan,1)]),'tif','Compression','lzw');
-            MicroscopeData.WriterH5(outImage,fullfile(outPath,'Original'),'imageData',tmpImageData,'chanList',chan,'verbose',true);
+            MicroscopeData.WriterH5(outImage,outPath,'imageData',tmpImageData,'chanList',chan,'verbose',true);
         end
         
         % Save a smoothed version
         outImage = ImProc.ContrastEnhancement(outImage,[75,75,75],[3,3,3]);
         outImage = ImUtils.ConvertType(outImage,class(outImage),true);
-        MicroscopeData.WriterH5(outImage,outPath,'imageData',tmpImageData,'chanList',chan,'verbose',true);
+        MicroscopeData.WriterH5(outImage,outPath,'imageData',tmpImageData,'imVersion','Processed','chanList',chan,'verbose',true);
         
         % Clean up this channel
         clear outImage;
@@ -229,40 +231,27 @@ if (strcmp(combineHere,'Yes'))
     %% Save out overview results
     if (strcmp(visualize,'Visualize Only')==0)
         % save all MIP combos
-        [imFull,imFullD] = MicroscopeData.ReaderH5(tmpImageData.imageDir,'verbose',true);
-        root = fileparts(imageData.imageDir);
-        if (exist(fullfile(root,'unmixing.mat'),'file'))
-            unmixTime = tic;
-            load(fullfile(root,'unmixing.mat'));
-            imFull = Cuda.LinearUnmixing(imFull,unmixingMatrix,1);
-            MicroscopeData.WriterH5(imFull,imFullD.imageDir,'imageData',imFullD,'verbose',true);
-            fprintf('Unmixed in: %s\n',Utils.PrintTime(toc(unmixTime)));
-        else
-            disp('No unmixing!');
+        [imFull,imFullD] = MicroscopeData.ReaderH5(tmpImageData.imageDir,'imVersion','Processed','verbose',true);
+        if ~isempty(imFull)
+            root = fileparts(imageData.imageDir);
+            
+            Registration.Results.MakeSVZMask(imFull,imFullD);
+            
+            %MicroscopeData.Colors.WriteMIPcombs(imFull,tmpImageData,tmpImageData.imageDir);
+            % Save a colored maximum intensity version
+            colors = MicroscopeData.Colors.GetChannelColors(imageData);
+            colorMip = MicroscopeData.Colors.MIP(imFull, imFullD, [], colors);
+            f = figure;
+            set(f,'units','normalized','Position',[0,0,1,1]);
+            imagesc(colorMip);%,'Parent',ax);
+            ax = get(f,'CurrentAxes');
+            Registration.Results.DrawBoxesLines(f,ax,imageDatasets,minPos_XY,0,tmpImageData.DatasetName);
+            frm = getframe(ax);
+            imwrite(frm.cdata,fullfile(outPath,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
+            close(f);
+            clear colorMip
+            clear imFull
         end
-        
-        Registration.Results.MakeSVZMask(imFull,imFullD);
-        
-        %MicroscopeData.Colors.WriteMIPcombs(imFull,tmpImageData,tmpImageData.imageDir);
-        % Save a colored maximum intensity version
-        colors = MicroscopeData.Colors.GetChannelColors(imageData);
-        colorMip = MicroscopeData.Colors.MIP(imFull, imFullD, [], colors);
-        f = figure;
-        set(f,'units','normalized','Position',[0,0,1,1]);
-        imagesc(colorMip);%,'Parent',ax);
-        ax = get(f,'CurrentAxes');
-        %     if (tmpImageData.XDimension~=imageData.XDimension)
-        %         camroll(ax,90);
-        %     end
-        Registration.Results.DrawBoxesLines(f,ax,imageDatasets,minPos_XY,0,tmpImageData.DatasetName);
-        %     if (size(colorMip,1)>size(colorMip,2))
-        %         camroll(ax,-90);
-        %     end
-        frm = getframe(ax);
-        imwrite(frm.cdata,fullfile(outPath,sprintf('_%s_graph.tif',tmpImageData.DatasetName)),'tif','Compression','lzw');
-        close(f);
-        clear colorMip
-        clear imFull
     end    
     
 end
