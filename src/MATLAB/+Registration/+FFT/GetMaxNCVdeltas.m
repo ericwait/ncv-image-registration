@@ -34,8 +34,8 @@ dims = ndims( ncvMatrix );
 subsCell2 = cell(1, dims );
 
 cntrPt_RC = size(im2) - orginCoords_RC;
-searchBounds_RC =  [max(cntrPt_RC - maxSearchSize, ones(1,ndims(im2)));...
-    min(cntrPt_RC + maxSearchSize, size(ncvMatrix))];
+searchBounds_RC =  round([max(cntrPt_RC - maxSearchSize, ones(1,ndims(im2)));...
+    min(cntrPt_RC + maxSearchSize, size(ncvMatrix))]);
 
 fullOrgin_RC = cntrPt_RC - searchBounds_RC(1,:) +1;
 
