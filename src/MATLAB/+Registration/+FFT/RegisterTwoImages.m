@@ -10,7 +10,7 @@ end
 if (~exist('maxSearchSize','var') || isempty(maxSearchSize))
     maxSearchSize = 100;
 end
-if (~exist('logFile','var') || isempty(logFile))
+if (~exist('logFile','var'))
     logFile = 1;
 end
 if (~exist('visualize','var') || isempty(visualize))
@@ -18,15 +18,16 @@ if (~exist('visualize','var') || isempty(visualize))
 end
 
 %% setup and early out
-
-if (logFile~=1)
-    fHand = fopen(logFile,'at');
-else
-    fHand = 1;
-end
-fprintf(fHand,'%s \n\t--> %s\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
-if (fHand~=1)
-    fclose(fHand);
+if (~isempty(logFile))
+    if (logFile~=1)
+        fHand = fopen(logFile,'at');
+    else
+        fHand = 1;
+    end
+    fprintf(fHand,'%s \n\t--> %s\n',imageDataset1.DatasetName,imageDataset2.DatasetName);
+    if (fHand~=1)
+        fclose(fHand);
+    end
 end
 
 %% check to see if the image has data and is big enough
@@ -46,10 +47,10 @@ im1ROI = im1(imageROI1_XY(2):imageROI1_XY(5),imageROI1_XY(1):imageROI1_XY(4),ima
 im2ROI = im2(imageROI2_XY(2):imageROI2_XY(5),imageROI2_XY(1):imageROI2_XY(4),imageROI2_XY(3):imageROI2_XY(6),:,:);
 
 [~,~,maxVal] = Utils.GetClassBits(im1ROI);
-if (max(im1ROI(:))<=0.28*maxVal || max(im2ROI(:))<=0.28*maxVal)
-    % no real info in the image
-    return
-end
+% if (max(im1ROI(:))<=0.28*maxVal || max(im2ROI(:))<=0.28*maxVal)
+%     % no real info in the image
+%     return
+% end
 if (overlapSize <= 0.01* min(prod(imageDataset1.Dimensions(1:2)),prod(imageDataset2.Dimensions(1:2))))
     % does not have enough overall overlap
     return
@@ -90,17 +91,19 @@ for c=1:imageDataset1.NumberOfChannels
 end
 
 tm = toc(totalTm);
+if (~isempty(logFile))
+    if (logFile~=1)
+        fHand = fopen(logFile,'at');
+    else
+        fHand = 1;
+    end
+    fprintf(fHand,'\t%s, NVC:%04.3f at (%d,%d) on channel:%d\n',...
+        Utils.PrintTime(tm),maxNCV,bestDeltas_XY(1),bestDeltas_XY(2),bestChan);
+    if (fHand~=1)
+        fclose(fHand);
+    end
+end
 
-if (logFile~=1)
-    fHand = fopen(logFile,'at');
-else
-    fHand = 1;
-end
-fprintf(fHand,'\t%s, NVC:%04.3f at (%d,%d) on channel:%d\n',...
-    Utils.PrintTime(tm),maxNCV,bestDeltas_XY(1),bestDeltas_XY(2),bestChan);
-if (fHand~=1)
-    fclose(fHand);
-end
 bestDeltas_XY = [bestDeltas_XY([1,2]),0];
 deltasZ_XY = bestDeltas_XY;
 maxNcovZ = maxNCV;
@@ -119,21 +122,25 @@ if (size(im1,3)>1)
     deltasZ_XY = Utils.SwapXY_RC(deltasZ_RC);
     
     tm = toc(totalTm);
-    
-    if (logFile~=1)
-        fHand = fopen(logFile,'at');
-    else
-        fHand = 1;
-    end
-    fprintf(fHand,'\t%s, NVC:%04.3f at (%d,%d,%d)\n',...
-        Utils.PrintTime(tm),maxNcovZ,deltasZ_XY(1),deltasZ_XY(2),deltasZ_XY(3));
-    
+   
     changeDelta_XY = bestDeltas_XY - deltasZ_XY;
-    if (changeDelta_XY(1)~=0 || changeDelta_XY(2)~=0)
-        fprintf(fHand,'\tA better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', changeDelta_XY(1),changeDelta_XY(2),changeDelta_XY(3),maxNcovZ,maxNCV);
-    end
-    if (fHand~=1)
-        fclose(fHand);
+    
+    if (~isempty(logFile))
+        if (logFile~=1)
+            fHand = fopen(logFile,'at');
+        else
+            fHand = 1;
+        end
+        
+        fprintf(fHand,'\t%s, NVC:%04.3f at (%d,%d,%d)\n',...
+            Utils.PrintTime(tm),maxNcovZ,deltasZ_XY(1),deltasZ_XY(2),deltasZ_XY(3));
+        
+        if (changeDelta_XY(1)~=0 || changeDelta_XY(2)~=0)
+            fprintf(fHand,'\tA better delta was found when looking in Z. Change in deltas=(%d,%d,%d) Old NCV:%f new:%f\n', changeDelta_XY(1),changeDelta_XY(2),changeDelta_XY(3),maxNcovZ,maxNCV);
+        end
+        if (fHand~=1)
+            fclose(fHand);
+        end
     end
     
     if (visualize==true)
@@ -161,18 +168,18 @@ end
 
 overlapSize = max(xEnd1-xStart1,1) * max(yEnd1-yStart1,1) * max(zEnd1-zStart1,1);
 
-if (maxNcovZ>0.7 && overlapSize >= minOverlap^3)
+% if (maxNcovZ>0.0 && overlapSize >= minOverlap^3)
     ultimateDeltaX = deltasZ_XY(1);
     ultimateDeltaY = deltasZ_XY(2);
     ultimateDeltaZ = deltasZ_XY(3);
     
     maxNCV = maxNcovZ;
-else
-    maxNCV = -inf;
-    ultimateDeltaX = 0;
-    ultimateDeltaY = 0;
-    ultimateDeltaZ = 0;
-end
+% else
+%     maxNCV = -inf;
+%     ultimateDeltaX = 0;
+%     ultimateDeltaY = 0;
+%     ultimateDeltaZ = 0;
+% end
 
 clear imROI1 imROI2
 end
