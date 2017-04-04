@@ -1,3 +1,22 @@
+% ***********************************************************************
+%      Copyright 2011-2016 Drexel University
+
+%      Registration is free software: you can redistribute it and/or modify
+%      it under the terms of the GNU General Public License as published by
+%      the Free Software Foundation, either version 3 of the License, or
+%      (at your option) any later version.
+
+%      Registration is distributed in the hope that it will be useful,
+%      but WITHOUT ANY WARRANTY; without even the implied warranty of
+%      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%      GNU General Public License for more details.
+
+%      You should have received a copy of the GNU General Public License
+%      along with Registration in file "gnu gpl v3.txt".  If not, see
+%      <http://www.gnu.org/licenses/>.
+
+% ***********************************************************************/
+
 function [ NCshiftMatrix ] = NormalizedCovariance( im1,im2, minOverlap, im1Mask, im2Mask )
 %NORMALIZEDCOVARIANCE Summary of this function goes here
 %   Detailed explanation goes here
@@ -30,6 +49,8 @@ else
 end
 
 %% Set up Fourier Transform.
+EPSILON = 1e-7;
+
 sizeBigImage = sizeIm1 + sizeIm2;
 im2flip = im2;
 % Flip second image to get correlation instead of convolution.
@@ -75,7 +96,7 @@ clear imEmb2;
 
 % Transform Overlap Sumproducts for covariances.
 SumOverlapIm = ifftn( im1fft.*im2fft );
-SumOverlapIm(SumOverlapIm<0) = 0;
+% SumOverlapIm(SumOverlapIm<0) = 0;
 
 % Compute sizes of the overlaps.
 Noverlap = round(ifftn( im1fftOnes.*im2fftOnes ));
@@ -98,7 +119,7 @@ clear im2fftSq;
 
 % Compute Overlap Covariace and geometric mean of variances.
 covIm1Im2 = Noverlap.*SumOverlapIm - sumProd1.*sumProd2;
-sqrtVar1Var2 = sqrt(varIm1.*(varIm1>0)).*sqrt(varIm2.*(varIm2>0));
+sqrtVar1Var2 = sqrt(varIm1.*(varIm1>EPSILON)).*sqrt(varIm2.*(varIm2>EPSILON));
 
 clear SumOverlapIm;
 clear sumProd1;
@@ -115,7 +136,7 @@ clear covIm1Im2;
 clear sqrtVar1Var2;
 
 % Remove noisy peaks.
-NormCov(NormCov>1) = 0;
+NormCov(abs(NormCov)>1) = 0;
 NormCov( Noverlap < minOverlap )=0;
 
 % Output.
