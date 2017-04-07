@@ -1,5 +1,5 @@
 function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = RegisterTwoImages(im1,imageDataset1,im2,...
-    imageDataset2,unitFactor,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize)
+    imageDataset2,unitFactor,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize, imMask1, imMask2)
 clear global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
 global Rect1 Rect2
 
@@ -16,7 +16,12 @@ end
 if (~exist('visualize','var') || isempty(visualize))
     visualize = 0;
 end
-
+if (~exist('imMask1','var'))
+    imMask1 = [];
+end
+if (~exist('imMask2','var'))
+    imMask2 = [];
+end
 %% setup and early out
 if (~isempty(logFile))
     if (logFile~=1)
@@ -45,6 +50,16 @@ overlapSize = max(min(imageROI1Org_XY(4)-imageROI1Org_XY(1),imageROI2Org_XY(4)-i
 
 im1ROI = im1(imageROI1_XY(2):imageROI1_XY(5),imageROI1_XY(1):imageROI1_XY(4),imageROI1_XY(3):imageROI1_XY(6),:,:);
 im2ROI = im2(imageROI2_XY(2):imageROI2_XY(5),imageROI2_XY(1):imageROI2_XY(4),imageROI2_XY(3):imageROI2_XY(6),:,:);
+if (~isempty(imMask1))
+    imMask1ROI = imMask1(imageROI1_XY(2):imageROI1_XY(5),imageROI1_XY(1):imageROI1_XY(4),imageROI1_XY(3):imageROI1_XY(6),:,:);
+else
+    imMask1ROI = [];
+end
+if (~isempty(imMask2))
+    imMask2ROI = imMask2(imageROI2_XY(2):imageROI2_XY(5),imageROI2_XY(1):imageROI2_XY(4),imageROI2_XY(3):imageROI2_XY(6),:,:);
+else
+    imMask2ROI = [];
+end
 
 [~,~,maxVal] = Utils.GetClassBits(im1ROI);
 % if (max(im1ROI(:))<=0.28*maxVal || max(im2ROI(:))<=0.28*maxVal)
@@ -69,7 +84,7 @@ for c=1:imageDataset1.NumberOfChannels
         Registration.Iterative.SetupVisualizer(im1MaxChan,im2MaxChan,imageROI1Org_XY,imageROI2Org_XY,imageDataset1,imageDataset2);
     end
     
-    [deltas_RC,curNCV] = Registration.FFT.GetMaxNCVdeltas(im1MaxROI(:,:,c),im2MaxROI(:,:,c),minOverlap^2,maxSearchSize,newOrgin_RC([1,2]),visualize,c);
+    [deltas_RC,curNCV] = Registration.FFT.GetMaxNCVdeltas(im1MaxROI(:,:,c),im2MaxROI(:,:,c),minOverlap^2,maxSearchSize,newOrgin_RC([1,2]),visualize,c,[],imMask1ROI, imMask2ROI);
     deltas_XY = Utils.SwapXY_RC(deltas_RC);
     if (curNCV>maxNCV)
         bestChan = c;
