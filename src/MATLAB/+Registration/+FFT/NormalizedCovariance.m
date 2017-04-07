@@ -53,9 +53,11 @@ EPSILON = 1e-7;
 
 sizeBigImage = sizeIm1 + sizeIm2;
 im2flip = im2;
+im2MaskFlip = im2Mask;
 % Flip second image to get correlation instead of convolution.
 for d = 1:dimIm2
     im2flip = flip(im2flip,d);
+    im2MaskFlip = flip(im2MaskFlip,d);
 end
 
 % Pad by zeros to make circular convolation equivalent to linear.
@@ -73,7 +75,7 @@ end
 imEmb1(subsCell1{:}) = im1;
 imEmb2(subsCell2{:}) = im2flip;
 imEmb1ones(subsCell1{:}) = im1Mask;
-imEmb2ones(subsCell2{:}) = im2Mask;
+imEmb2ones(subsCell2{:}) = im2MaskFlip;
 
 %% Compute the Fourier transforms
 % Transform images.
