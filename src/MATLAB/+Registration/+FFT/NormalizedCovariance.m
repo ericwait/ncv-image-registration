@@ -75,8 +75,8 @@ for d = 1:dimIm1
     subsCell2{d} = 1:sizeIm2(d);
 end
 
-imEmb1(subsCell1{:}) = im1;
-imEmb2(subsCell2{:}) = im2flip;
+imEmb1(subsCell1{:}) = mat2gray(im1);
+imEmb2(subsCell2{:}) = mat2gray(im2flip);
 imEmb1ones(subsCell1{:}) = im1Mask;
 imEmb2ones(subsCell2{:}) = im2MaskFlip;
 
