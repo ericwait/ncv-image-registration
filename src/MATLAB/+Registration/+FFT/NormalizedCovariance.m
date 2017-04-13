@@ -48,6 +48,9 @@ else
     im2Mask = im2double(im2Mask);
 end
 
+im1(~im1Mask) = 0;
+im2(~im2Mask) = 0;
+
 %% Set up Fourier Transform.
 EPSILON = 1e-7;
 
