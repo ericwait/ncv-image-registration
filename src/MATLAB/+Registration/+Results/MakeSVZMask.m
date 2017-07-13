@@ -5,7 +5,7 @@ end
 
 disp(imD.DatasetName)
 if (~exist('im','var') || isempty(im))
-    im = MicroscopeData.ReaderH5('imageData',imD);
+    im = MicroscopeData.ReaderH5('imageData',imD,'imVersion','Processed','getMIP',true);
 end
 colors = MicroscopeData.Colors.GetChannelColors(imD);
 
