@@ -123,7 +123,7 @@ end
 hold off
 set(f,'units','normalized','Position',[0,0,1,1]);
 set(gca,'units','normalized','Position',[0,0,1,1]);
-
+%%
 frm = getframe(gca);
 imwrite(frm.cdata,fullfile(imageDatasets(1).imageDir,'..',sprintf('_%s_pos.tif',imageDatasets(1).DatasetName)),'tif','Compression','lzw');
 
@@ -133,8 +133,8 @@ close(f);
 for i=1:length(imageDatasets)
     d = imageDatasets(i);
     
-    numIdx = regexp(imageDatasets(i).DatasetName,'#\d') +1;
-    numStr = imageDatasets(i).DatasetName(numIdx:end);
+    numIdx = regexp(imageDatasets(i).DatasetName,'\d+');
+    numStr = imageDatasets(i).DatasetName(numIdx(end):end);
     n = str2double(numStr);
     % Make the positions start at 0
     curPos_RC = pos_RC(n,:)-1;
