@@ -172,8 +172,8 @@ if (size(im1,3)>1)
 end
 
 %% fixup results
-if (maxNcovZ-maxNCV < -0.0001 || maxNcovZ-maxNCV > 0.0001)
-    warning('ROI normalized covariance (%f) did not match the max (%f)',maxNcovZ,maxNCV);
+if (maxNcovZ-maxNCV < -0.1)
+    warning('ROI normalized covariance is worse in 3D (%f) than in 2D (%f)',maxNcovZ,maxNCV);
 %     maxNcovZ = max(maxNcovZ,maxNCV);
 end
 
