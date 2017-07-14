@@ -68,6 +68,7 @@ end
 % end
 if (overlapSize <= 0.01* min(prod(imageDataset1.Dimensions(1:2)),prod(imageDataset2.Dimensions(1:2))))
     % does not have enough overall overlap
+    warning('No overlap found');
     return
 end
 
