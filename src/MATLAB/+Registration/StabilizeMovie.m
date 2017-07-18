@@ -47,6 +47,28 @@ function [imOut, imageDataOut] = StabilizeMovie(imIn, imageDataIn,unitFactor,min
         imMask2 = [];
     end
 
+    %% calculate the size of the parallel pool needed
+    numVoxels = prod(imageDataIn.Dimensions);
+    w = whos('imIn');
+    memNeededBytes = numVoxels*8*8 + 2*w.bytes;
+    m = memory;
+    pc = parcluster('local');
+    
+    numWorkers = floor((m.MemAvailableAllArrays*0.80)/memNeededBytes);
+    numWorkers = min(pc.NumWorkers,numWorkers);
+    
+    p = gcp('nocreate');
+    oldWorkers = 0;
+    if (isvalid(p))
+        oldWorkers = p.NumWorkers;
+    end
+    if (oldWorkers==0)
+        parpool(numWorkers);
+    elseif (oldWorkers>numWorkers)
+        delete(p);
+        parpool(numWorkers);
+    end    
+    
 %% run the reg
     is = tic;
     imDt = imageDataIn;
@@ -89,6 +111,12 @@ function [imOut, imageDataOut] = StabilizeMovie(imIn, imageDataIn,unitFactor,min
         newPosStart = cumulativeDeltas_rc(t,:) - minDelta_rc +1;
         newPosEnd = newPosStart + imageDataIn.Dimensions([2,1,3]) -1;
         imOut(newPosStart(1):newPosEnd(1),newPosStart(2):newPosEnd(2),newPosStart(3):newPosEnd(3),:,t) = imIn(:,:,:,:,t);
+    end
+    
+    if (oldWorkers~=0 && numWorkers~=oldWorkers)
+        p = gcp('nocreate');
+        delete(p);
+        parpool(oldWorkers);
     end
     
     imageDataOut = imageDataIn;
