@@ -1,5 +1,5 @@
 function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = RegisterTwoImages(im1,imageDataset1,im2,...
-    imageDataset2,unitFactor,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize, imMask1, imMask2)
+    imageDataset2,unitFactor,minOverlap,maxSearchSize,logFile,visualize, imMask1, imMask2)
 clear global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
 global Rect1 Rect2
 
@@ -22,8 +22,28 @@ end
 if (~exist('imMask2','var'))
     imMask2 = [];
 end
-%% setup and early out
-if (~isempty(logFile))
+
+if (~exist('imageDataset1','var') || isempty(imageDataset1))
+    imageDataset1 = MicroscopeData.GetEmptyMetadata();
+    sz = [size(im1,1),size(im1,2),size(im1,3),size(im1,4),size(im1,5)];
+    imageDataset1.Dimensions = sz([2,1,3]);
+    imageDataset1.NumberOfChannels = sz(4);
+    imageDataset1.NumberOfFrames = sz(5);
+    imageDataset1.DatasetName = 'image 1';
+    imageDataset1.PixelPhysicalSize = ones(1,3);
+end
+
+if (~exist('imageDataset2','var') || isempty(imageDataset2))
+    imageDataset2 = MicroscopeData.GetEmptyMetadata();
+    sz = [size(im2,1),size(im2,2),size(im2,3),size(im2,4),size(im2,5)];
+    imageDataset2.Dimensions = sz([2,1,3]);
+    imageDataset2.NumberOfChannels = sz(4);
+    imageDataset2.NumberOfFrames = sz(5);
+    imageDataset2.DatasetName = 'image 1';
+    imageDataset2.PixelPhysicalSize = ones(1,3);
+end
+
+if (exist('logFile','var') && ~isempty(logFile))
     if (logFile~=1)
         fHand = fopen(logFile,'at');
     else
