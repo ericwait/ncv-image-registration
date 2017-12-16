@@ -1,4 +1,4 @@
-function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize] = RegisterTwoImages(im1,imageDataset1,im2,...
+function [ultimateDeltaX,ultimateDeltaY,ultimateDeltaZ,maxNCV,overlapSize,ncvMatrixROI] = RegisterTwoImages(im1,imageDataset1,im2,...
     imageDataset2,unitFactor,minOverlap,maxSearchSize,logFile,visualize, imMask1, imMask2)
 clear global Fig Rect1 Rect2 SubImOrg1 SubImOrg2 SubImBest1 SubImBest2 MaxCovar MaxCovar SubImBest1 SubImBest2 DecisionFig DecisionAxes
 global Rect1 Rect2
@@ -10,9 +10,9 @@ end
 if (~exist('maxSearchSize','var') || isempty(maxSearchSize))
     maxSearchSize = 100;
 end
-if (~exist('logFile','var'))
-    logFile = 1;
-end
+% if (~exist('logFile','var'))
+%     logFile = 1;
+% end
 if (~exist('visualize','var') || isempty(visualize))
     visualize = 0;
 end
@@ -105,7 +105,7 @@ for c=1:imageDataset1.NumberOfChannels
         Registration.Iterative.SetupVisualizer(im1MaxChan,im2MaxChan,imageROI1Org_XY,imageROI2Org_XY,imageDataset1,imageDataset2);
     end
     
-    [deltas_RC,curNCV] = Registration.FFT.GetMaxNCVdeltas(im1MaxROI(:,:,c),im2MaxROI(:,:,c),minOverlap^2,maxSearchSize,newOrgin_RC([1,2]),visualize,c,[],imMask1ROI, imMask2ROI);
+    [deltas_RC,curNCV,ncvMatrixROI] = Registration.FFT.GetMaxNCVdeltas(im1MaxROI(:,:,c),im2MaxROI(:,:,c),minOverlap^2,maxSearchSize,newOrgin_RC([1,2]),visualize,c,[],imMask1ROI, imMask2ROI);
     deltas_XY = Utils.SwapXY_RC(deltas_RC);
     if (curNCV>maxNCV)
         bestChan = c;
@@ -127,7 +127,7 @@ for c=1:imageDataset1.NumberOfChannels
 end
 
 tm = toc(totalTm);
-if (~isempty(logFile))
+if (exist('logFile','var') && ~isempty(logFile))
     if (logFile~=1)
         fHand = fopen(logFile,'at');
     else
@@ -154,14 +154,14 @@ if (size(im1,3)>1)
         Registration.Iterative.SetupVisualizer(im1MaxChan,im2MaxChan,imageROI1Org_XY,imageROI2Org_XY,imageDataset1,imageDataset2);
     end
     
-    [deltasZ_RC,maxNcovZ] = Registration.FFT.GetMaxNCVdeltas(im1ROI(:,:,:,bestChan),im2ROI(:,:,:,bestChan),minOverlap^3,maxSearchSize,newOrgin_RC,visualize,bestChan);
+    [deltasZ_RC,maxNcovZ,ncvMatrixROI] = Registration.FFT.GetMaxNCVdeltas(im1ROI(:,:,:,bestChan),im2ROI(:,:,:,bestChan),minOverlap^3,maxSearchSize,newOrgin_RC,visualize,bestChan);
     deltasZ_XY = Utils.SwapXY_RC(deltasZ_RC);
     
     tm = toc(totalTm);
    
     changeDelta_XY = bestDeltas_XY - deltasZ_XY;
     
-    if (~isempty(logFile))
+    if (exist('logFile','var') && ~isempty(logFile))
         if (logFile~=1)
             fHand = fopen(logFile,'at');
         else

@@ -1,4 +1,4 @@
-function [deltas_RC,maxNCV] = GetMaxNCVdeltas(im1,im2,minOverlapVolume,maxSearchSize,orginCoords_RC,showDecisionSurf,chan,ang, im1Mask, im2Mask,saveFrames )
+function [deltas_RC,maxNCV,ncvMatrixROI] = GetMaxNCVdeltas(im1,im2,minOverlapVolume,maxSearchSize,orginCoords_RC,showDecisionSurf,chan,ang, im1Mask, im2Mask,saveFrames )
 %[deltas,maxNCV] = RegisterTwoImages(im1,im2,minOverlapVolume)
 % DELTAS is the shift of the upper left coners ....
 
