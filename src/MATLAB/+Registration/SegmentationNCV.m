@@ -56,16 +56,18 @@ function cost = SegmentationNCV(im1,seg1Mask,im2,seg2Mask,maxDelta,visualize)
         title('T');
         
         subplot(2,3,4)
-        ImUtils.ThreeD.ShowMaxImage(imROI1,false,3,gca);
+        ImUtils.ThreeD.ShowMaxImage(imROI2,false,3,gca);
         title('T+1');
         
+        z = min(coord_rcz(3));
+        
         subplot(2,3,[2,5])
-        surf(X(:,:,min(coord_rcz(3),1)),Y(:,:,min(coord_rcz(3)),1),ncvMatrixROI(:,:,min(coord_rcz(3),1)),'LineStyle','none');
+        surf(X(:,:,z),Y(:,:,z),ncvMatrixROI(:,:,z),'LineStyle','none');
         colormap(gca,'parula');
         text(deltaX,deltaY,maxNCV,sprintf('(%d,%d,%d): %f',deltaX,deltaY,deltaZ,maxNCV));
         
         subplot(2,3,[3,6])
-        surf(X,Y,newNCV(:,:,min(coord_rcz(3),1)),'LineStyle','none');
+        surf(X(:,:,z),Y(:,:,z),newNCV(:,:,z,1),'LineStyle','none');
         colormap(gca,'parula');
         text(coord_xy(1),coord_xy(2),newNCV(I),sprintf('(%d,%d,%d): %f',coord_xy(1),coord_xy(2),deltaZ,cost));
     end

@@ -78,8 +78,9 @@ if (showDecisionSurf)
         surf(X,Y,ncvMatrix,'LineStyle','none');
         nvcZ = 0;
     else
-        surf(X,Y,ncvMatrix(:,:,ncvCoords_RC(3)),'LineStyle','none');
-        nvcZ = ncvCoords_RC(3) - (size(im2,3) + orginCoords_RC(3));
+        z = floor(size(ncvMatrix,3)/2 - size(ncvMatrixROI,3)/2 + ncvCoords_RC(3));
+        surf(X,Y,ncvMatrix(:,:,z),'LineStyle','none');
+        nvcZ = fullncvCoords_RC(3);
     end
     hold on
     text(fullncvCoords_RC(2),fullncvCoords_RC(1),fullmaxNCV,...
