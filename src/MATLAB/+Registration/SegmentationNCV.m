@@ -37,10 +37,24 @@ function cost = SegmentationNCV(im1,seg1Mask,im2,seg2Mask,maxDelta,visualize)
     
     cent = false(size(ncvMatrixROI));
     cent(mid(1),mid(2),mid(3)) = true;
-    moveDist = double(bwdist(cent));
-    moveDist = moveDist./maxDelta;
-    newNCV = ncvMatrixROI-moveDist;
-    newNCV(newNCV<0) = 0;
+    
+    % make a mask that removes any out of range distances
+    se = ImProc.MakeBallMask(maxDelta);
+    midSE = ceil(size(se)/2);
+    startSE = max(ones(1,numel(mid)),midSE - mid +1);
+    endSE = min(size(se),size(ncvMatrixROI) + startSE -1);
+    se = se(startSE(1):endSE(1),startSE(2):endSE(2),startSE(3):endSE(3));
+    seFull = false(size(ncvMatrixROI));
+    seStart = ceil((size(ncvMatrixROI) - size(se))./2)+1;
+    seStart = max(ones(1,numel(mid)),seStart);
+    seEnd = seStart + size(se) -1;
+    seFull(seStart(1):seEnd(1),seStart(2):seEnd(2),seStart(3):seEnd(3)) = se;
+    
+    moveDist = double(bwdist(cent)); % distance transform
+    moveDist = (max(moveDist(:)) - moveDist)./max(moveDist(:)); % flip the transform so that the center is maximal
+    moveDist = moveDist ./ max(moveDist(:)); % normalize the center to 1
+    moveDist(~seFull) = 0; % mask out the distances that are out of the bounds
+    newNCV = ncvMatrixROI.*moveDist; % multiply the ncv by this new bias factor
     
     [v,I] = max(newNCV(:));
     coord_rcz = Utils.IndToCoord(size(newNCV),I);
