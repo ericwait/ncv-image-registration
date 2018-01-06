@@ -15,6 +15,9 @@ function cost = SegmentationNCV(im1,seg1Mask,im2,seg2Mask,maxDelta,visualize)
     minOverlap = max(size1,size2);
     
     extents = [min(extents1_rcz(1,:),extents2_rcz(1,:));max(extents1_rcz(2,:),extents2_rcz(2,:))];
+    if (size(extents,2)==2)
+        extents(:,3) = [1;1];
+    end
     extents(1,:) = max(extents(1,:)-10,ones(1,3));
     extents(2,:) = min(extents(2,:)+10,[size(im1,1),size(im1,2),size(im1,3)]);
     
@@ -27,27 +30,31 @@ function cost = SegmentationNCV(im1,seg1Mask,im2,seg2Mask,maxDelta,visualize)
     [deltaX,deltaY,deltaZ,maxNCV,volOverlap,ncvMatrixROI] = Registration.FFT.RegisterTwoImages(imROI1,[],imROI2,[],[],minOverlap,maxDelta,[],visualize);
     
     ncvMatrixROI = max(ncvMatrixROI,0);
+    ncvMatrixROIsz = [size(ncvMatrixROI,1),size(ncvMatrixROI,2),size(ncvMatrixROI,3)];
     
-    mid = ceil(size(ncvMatrixROI)/2);
-    ncvExtents = [-mid+1;mid];
+    mid = size(ncvMatrixROI)/2;
+    ncvExtents = [-floor(mid);floor(mid)+round(mod(mid,1))];
+    mid = floor(mid);
     if (numel(mid)==2)
-        ncvExtents(:,3) = 0;
+        ncvExtents(:,3) = [0;1];
+        mid(3) = 1;
     end
     [X,Y,Z] = meshgrid(ncvExtents(1,2):ncvExtents(2,2)-1,ncvExtents(1,1):ncvExtents(2,1)-1,ncvExtents(1,3):ncvExtents(2,3)-1);
     
-    cent = false(size(ncvMatrixROI));
+    cent = false(ncvMatrixROIsz);
     cent(mid(1),mid(2),mid(3)) = true;
     
     % make a mask that removes any out of range distances
     se = ImProc.MakeBallMask(maxDelta);
     midSE = ceil(size(se)/2);
-    startSE = max(ones(1,numel(mid)),midSE - mid +1);
-    endSE = min(size(se),size(ncvMatrixROI) + startSE -1);
+    startSE = max(ones(1,3),midSE - mid +1);
+    endSE = min(size(se),ncvMatrixROIsz + startSE -1);
     se = se(startSE(1):endSE(1),startSE(2):endSE(2),startSE(3):endSE(3));
-    seFull = false(size(ncvMatrixROI));
-    seStart = ceil((size(ncvMatrixROI) - size(se))./2)+1;
+    seSz = [size(se,1),size(se,2),size(se,3)];
+    seFull = false(ncvMatrixROIsz);
+    seStart = ceil((ncvMatrixROIsz - seSz)./2)+1;
     seStart = max(ones(1,numel(mid)),seStart);
-    seEnd = seStart + size(se) -1;
+    seEnd = seStart + seSz -1;
     seFull(seStart(1):seEnd(1),seStart(2):seEnd(2),seStart(3):seEnd(3)) = se;
     
     moveDist = double(bwdist(cent)); % distance transform
@@ -73,7 +80,11 @@ function cost = SegmentationNCV(im1,seg1Mask,im2,seg2Mask,maxDelta,visualize)
         ImUtils.ThreeD.ShowMaxImage(imROI2,false,3,gca);
         title('T+1');
         
+        if (numel(coord_rcz)==3)
         z = min(coord_rcz(3));
+        else
+            z = 1;
+        end
         
         subplot(2,3,[2,5])
         surf(X(:,:,z),Y(:,:,z),ncvMatrixROI(:,:,z),'LineStyle','none');
