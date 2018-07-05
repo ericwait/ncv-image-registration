@@ -10,17 +10,20 @@ end
 if (~exist('maxSearchSize','var') || isempty(maxSearchSize))
     maxSearchSize = 100;
 end
-% if (~exist('logFile','var'))
-%     logFile = 1;
-% end
+if (~exist('logFile','var'))
+    logFile = 1;
+end
 if (~exist('visualize','var') || isempty(visualize))
-    visualize = 0;
+    visualize = false;
 end
 if (~exist('imMask1','var'))
     imMask1 = [];
 end
 if (~exist('imMask2','var'))
     imMask2 = [];
+end
+if (~exist('unitFactor','var'))
+    unitFactor = [];
 end
 
 if (~exist('imageDataset1','var') || isempty(imageDataset1))
@@ -193,10 +196,10 @@ if (size(im1,3)>1)
 end
 
 %% fixup results
-if (maxNcovZ-maxNCV < -0.1)
-    warning('ROI normalized covariance is worse in 3D (%f) than in 2D (%f)',maxNcovZ,maxNCV);
-%     maxNcovZ = max(maxNcovZ,maxNCV);
-end
+% if (maxNcovZ-maxNCV < -0.1)
+%     warning('ROI normalized covariance is worse in 3D (%f) than in 2D (%f)',maxNcovZ,maxNCV);
+% %     maxNcovZ = max(maxNcovZ,maxNCV);
+% end
 
 [xStart1,xStart2,xEnd1,xEnd2] = Registration.Overlap.CalculateROIs(deltasZ_XY(1),imageROI1Org_XY(1),imageROI2Org_XY(1),size(im1,2),size(im2,2));
 [yStart1,yStart2,yEnd1,yEnd2] = Registration.Overlap.CalculateROIs(deltasZ_XY(2),imageROI1Org_XY(2),imageROI2Org_XY(2),size(im1,1),size(im2,1));
