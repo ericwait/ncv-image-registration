@@ -81,7 +81,7 @@ function cost = SegmentationNCV(im1,seg1Mask,im2,seg2Mask,maxDelta,visualize)
         title('T+1');
         
         if (numel(coord_rcz)==3)
-        z = min(coord_rcz(3));
+            z = min(coord_rcz(3));
         else
             z = 1;
         end
