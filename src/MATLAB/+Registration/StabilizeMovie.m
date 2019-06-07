@@ -1,4 +1,4 @@
-function [imOut, imageDataOut,cumulativeDeltas_rc] = StabilizeMovie(imIn,imageDataIn,cumulativeDeltas_rc,unitFactor,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize, imMask1, imMask2)
+function [imOut, imageDataOut,cumulativeDeltas_rc] = StabilizeMovie(imIn,imageDataIn,cumulativeDeltas_rc,toFirstFrame,unitFactor,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize, imMask1, imMask2)
 %RUN Takes a movie and attempts to stabilize the objects between frames by
 % translation of sebsequent frames
 %[imOut, imageDataOut,cumulativeDeltas_rc] = StabilizeMovie(imIn,imageDataIn,cumulativeDeltas_rc,unitFactor,minOverlap,maxSearchSize,logFile,showDecisionSurf,visualize, imMask1, imMask2)
@@ -7,6 +7,8 @@ function [imOut, imageDataOut,cumulativeDeltas_rc] = StabilizeMovie(imIn,imageDa
 %The following are optional paramaters:
 %       cumulativeDeltas_rc - these are the deltas that will be applied to
 %          the sequence without running interframe registration
+%       toFirstFrame - use the first frame as reference if true, otherwise
+%           register to the previous frame
 %       unitFactor - this is a multiplyer to get the position data into the
 %           same units as the PixelPhysicalSize
 %       minOverlap - this is the 
@@ -24,8 +26,14 @@ function [imOut, imageDataOut,cumulativeDeltas_rc] = StabilizeMovie(imIn,imageDa
 
 
 %% check inputs
+    if (~exist('imageDataIn','var') || isempty(imageDataIn))
+        imageDataIn = MicroscopeData.MakeMetadataFromImage(imIn);
+    end
     if (~exist('cumulativeDeltas_rc','var'))
         cumulativeDeltas_rc = [];
+    end
+    if (~exist('toFirstFrame','var'))
+        toFirstFrame = false;
     end
     if (~exist('unitFactor','var'))
         unitFactor = [];
@@ -84,7 +92,11 @@ function [imOut, imageDataOut,cumulativeDeltas_rc] = StabilizeMovie(imIn,imageDa
 
         frameDeltas_xyz = zeros(imageDataIn.NumberOfFrames,5);
         parfor t=1:imageDataIn.NumberOfFrames-1
-            curFrame = imIn(:,:,:,:,t);
+            if (toFirstFrame)
+                curFrame = imIn(:,:,:,:,1);
+            else
+                curFrame = imIn(:,:,:,:,t);
+            end
             curD = imDt;
             curD.Position = [0,0,0];
             %curD.Position = squeeze(posT(1,1,t,:))';
@@ -104,7 +116,12 @@ function [imOut, imageDataOut,cumulativeDeltas_rc] = StabilizeMovie(imIn,imageDa
         end
 
         frameDeltas_rc = Utils.SwapXY_RC(frameDeltas_xyz);
-        cumulativeDeltas_rc = cumsum(frameDeltas_rc(:,1:3),1);
+        if (toFirstFrame)
+            cumulativeDeltas_rc = frameDeltas_rc(:,1:3);
+        else
+            cumulativeDeltas_rc = cumsum(frameDeltas_rc(:,1:3),1);
+        end       
+        
     end
 
 %% apply deltas
