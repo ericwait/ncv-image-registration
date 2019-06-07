@@ -5,8 +5,8 @@ function newIm = ShiftImages(im1,im2,deltaX,deltaY,deltaZ)
 
     deltas_rc = [deltaY,deltaX,deltaZ];
     
-    im1Sz = size(im1);
-    im2Sz = size(im2);
+    im1Sz = ImUtils.Size(im1);
+    im2Sz = ImUtils.Size(im2);
 
     im1Start_rc = max(-deltas_rc+1,[1,1,1]);
     im2Start_rc = max(deltas_rc+1,[1,1,1]);
