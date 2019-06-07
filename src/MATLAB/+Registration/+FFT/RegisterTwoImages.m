@@ -32,7 +32,7 @@ if (~exist('imageDataset1','var') || isempty(imageDataset1))
     imageDataset1.Dimensions = sz([2,1,3]);
     imageDataset1.NumberOfChannels = sz(4);
     imageDataset1.NumberOfFrames = sz(5);
-    imageDataset1.DatasetName = 'image 1';
+    imageDataset1.DatasetName = 'input 1';
     imageDataset1.PixelPhysicalSize = ones(1,3);
 end
 
@@ -42,7 +42,7 @@ if (~exist('imageDataset2','var') || isempty(imageDataset2))
     imageDataset2.Dimensions = sz([2,1,3]);
     imageDataset2.NumberOfChannels = sz(4);
     imageDataset2.NumberOfFrames = sz(5);
-    imageDataset2.DatasetName = 'image 1';
+    imageDataset2.DatasetName = 'input 2';
     imageDataset2.PixelPhysicalSize = ones(1,3);
 end
 
