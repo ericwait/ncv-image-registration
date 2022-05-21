@@ -142,7 +142,9 @@ clear sqrtVar1Var2;
 
 % Remove noisy peaks.
 NormCov(abs(NormCov)>1) = 0;
-NormCov( Noverlap < minOverlap )=0;
+if exist('minOverlap', 'var') && ~isempty(minOverlap)
+    NormCov( Noverlap < minOverlap )=0;
+end
 
 % Output.
 NCshiftMatrix = NormCov;
